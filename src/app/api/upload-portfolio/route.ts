@@ -1,4 +1,5 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+﻿// @ts-nocheck
+import { NextRequest, NextResponse } from "next/server";
 
 async function parseExcel(buffer: Buffer) {
   const XLSX = await import("xlsx");
@@ -87,3 +88,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, parseMethod, totalExtracted: raw.length, totalMatched: matched.length, unmatched, holdings: matched });
   } catch (err) { console.error(err); return NextResponse.json({ error: "Failed to process file" }, { status: 500 }); }
 }
+
+

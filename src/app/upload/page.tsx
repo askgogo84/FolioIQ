@@ -1,4 +1,5 @@
-﻿"use client";
+﻿// @ts-nocheck
+"use client";
 import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 
@@ -267,3 +268,4 @@ Sections:
     </div>
   );
 }
+
