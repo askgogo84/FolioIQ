@@ -24,6 +24,16 @@ type PortfolioFund = {
 
 type AISection = { title: string; body: string }
 
+const AI_HEADINGS = [
+  "Verdict",
+  "Exit or Reduce",
+  "Hold and Watch",
+  "Increase SIP",
+  "Portfolio Gaps",
+  "Tax Efficiency Tip",
+  "This Week Action",
+]
+
 function formatCurrency(value: number) {
   if (!Number.isFinite(value)) return "Rs. 0"
   const abs = Math.abs(value)
@@ -35,8 +45,7 @@ function formatCurrency(value: number) {
 
 function formatPercent(value: number) {
   if (!Number.isFinite(value)) return "0%"
-  const sign = value > 0 ? "+" : ""
-  return `${sign}${value.toFixed(1)}%`
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`
 }
 
 function cleanMarkdown(text: string) {
@@ -45,35 +54,39 @@ function cleanMarkdown(text: string) {
     .replace(/\*\*/g, "")
     .replace(/---/g, "")
     .replace(/`/g, "")
+    .replace(/\n{3,}/g, "\n\n")
     .trim()
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 function parseAISections(text: string): AISection[] {
   const clean = cleanMarkdown(text)
-  const headings = [
-    "Verdict",
-    "Exit or Reduce",
-    "Hold and Watch",
-    "Increase SIP",
-    "Portfolio Gaps",
-    "Tax Efficiency Tip",
-    "This Week Action",
-  ]
-
-  const escaped = headings.map((heading) => heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-  const splitRegex = new RegExp(`\\b(${escaped.join("|")})\\b:?`, "gi")
+  const splitRegex = new RegExp(`(?:^|\\n)\\s*(${AI_HEADINGS.map(escapeRegExp).join("|")})\\s*:?\\s*`, "gi")
   const parts = clean.split(splitRegex).map((part) => part.trim()).filter(Boolean)
+  const merged = new Map<string, string[]>()
+  let intro: string[] = []
 
-  const sections: AISection[] = []
-  for (let index = 0; index < parts.length; index += 2) {
-    const possibleTitle = parts[index]
-    const possibleBody = parts[index + 1]
-    const matchedHeading = headings.find((heading) => heading.toLowerCase() === possibleTitle.toLowerCase())
-    if (matchedHeading && possibleBody) sections.push({ title: matchedHeading, body: possibleBody.trim() })
+  for (let index = 0; index < parts.length; index++) {
+    const title = AI_HEADINGS.find((heading) => heading.toLowerCase() === parts[index].toLowerCase())
+    if (title) {
+      const body = parts[index + 1] || ""
+      const cleanedBody = body.trim()
+      if (cleanedBody) merged.set(title, [...(merged.get(title) || []), cleanedBody])
+      index += 1
+    } else if (!merged.size) {
+      intro.push(parts[index])
+    }
   }
 
+  const sections = AI_HEADINGS
+    .filter((heading) => merged.has(heading))
+    .map((heading) => ({ title: heading, body: (merged.get(heading) || []).join("\n\n") }))
+
   if (sections.length) return sections
-  return [{ title: "FolioIQ Analysis", body: clean }]
+  return [{ title: "FolioIQ Analysis", body: intro.length ? intro.join("\n\n") : clean }]
 }
 
 function daysBetween(dateString: string) {
@@ -187,6 +200,12 @@ export default function DashboardPage() {
     }
   }, [portfolio])
 
+  const concentration = useMemo(() => {
+    if (!portfolio.length || !totals.currentValue) return null
+    const largest = portfolio.reduce((max, fund) => fund.currentValue > max.currentValue ? fund : max, portfolio[0])
+    return { fund: largest.schemeName, pct: (largest.currentValue / totals.currentValue) * 100 }
+  }, [portfolio, totals.currentValue])
+
   const aiSections = useMemo(() => aiAnalysis ? parseAISections(aiAnalysis) : [], [aiAnalysis])
 
   async function addFund() {
@@ -243,11 +262,7 @@ export default function DashboardPage() {
       setPortfolio(updated)
       setAiAnalysis("")
       setMessage("NAVs refreshed successfully.")
-    } catch {
-      setMessage("Could not refresh NAVs. Try again.")
-    } finally {
-      setRefreshing(false)
-    }
+    } catch { setMessage("Could not refresh NAVs. Try again.") } finally { setRefreshing(false) }
   }
 
   async function runAIAnalysis() {
@@ -262,6 +277,7 @@ export default function DashboardPage() {
         currentValue: formatCurrency(fund.currentValue),
         afterTaxReturn: formatPercent(fund.afterTaxReturnPct),
         taxIfSoldToday: formatCurrency(fund.tax),
+        planType: fund.schemeName.toLowerCase().includes("regular") ? "Regular plan" : fund.schemeName.toLowerCase().includes("direct") ? "Direct plan" : "Unknown plan",
         holdingDays: daysBetween(fund.purchaseDate),
       }))
       const response = await fetch("/api/claude", {
@@ -269,11 +285,11 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-5-20250929",
-          max_tokens: 1200,
-          system: "You are FolioIQ, a sharp Indian mutual fund portfolio advisor. Give practical portfolio observations in plain English. Do not claim SEBI registration. Do not use markdown headings or asterisks. Include a short educational disclaimer at the end.",
+          max_tokens: 950,
+          system: "You are FolioIQ, a sharp Indian mutual fund portfolio advisor. Give concise, practical portfolio observations in plain English. Do not claim SEBI registration. Do not use markdown, bullets with asterisks, hashtags, tables, or repeated headings. Mention regular plan vs direct plan if relevant. Include a short educational disclaimer only once at the end.",
           messages: [{
             role: "user",
-            content: `Analyse this Indian mutual fund portfolio. Total invested: ${formatCurrency(totals.invested)}. Current value: ${formatCurrency(totals.currentValue)}. After-tax gain: ${formatCurrency(totals.afterTaxGain)}. Tax if sold today: ${formatCurrency(totals.tax)}. Health score: ${totals.healthScore}/100. Holdings: ${JSON.stringify(portfolioSummary)}. Use exactly these section headings: Verdict, Exit or Reduce, Hold and Watch, Increase SIP, Portfolio Gaps, Tax Efficiency Tip, This Week Action.`
+            content: `Analyse this Indian mutual fund portfolio. Total invested: ${formatCurrency(totals.invested)}. Current value: ${formatCurrency(totals.currentValue)}. After-tax gain: ${formatCurrency(totals.afterTaxGain)}. Tax if sold today: ${formatCurrency(totals.tax)}. Health score: ${totals.healthScore}/100. Largest fund concentration: ${concentration ? `${concentration.pct.toFixed(0)}% in ${concentration.fund}` : "NA"}. Holdings: ${JSON.stringify(portfolioSummary)}. Return exactly one paragraph under each heading and use each heading only once: Verdict, Exit or Reduce, Hold and Watch, Increase SIP, Portfolio Gaps, Tax Efficiency Tip, This Week Action.`
           }],
         }),
       })
@@ -322,6 +338,8 @@ export default function DashboardPage() {
           <Stat title="After Tax Return" value={formatPercent(totals.afterTaxReturnPct)} note={`Net gain ${formatCurrency(totals.afterTaxGain)}`} green />
           <Stat title="Health Score" value={portfolio.length ? `${totals.healthScore}/100` : "--/100"} note={`Tax liability ${formatCurrency(totals.tax)}`} />
         </div>
+
+        {concentration && concentration.pct > 50 && <div className="mt-5 rounded-2xl border border-[#f5d59a] bg-[#fff7ed] p-4 text-sm text-[#92400e]"><strong>Concentration risk:</strong> {concentration.pct.toFixed(0)}% of your portfolio is in one fund. Diversification should be reviewed before adding more to the same scheme.</div>}
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-2xl border border-[#e0dcd5] bg-white p-5 shadow-sm md:p-6">
