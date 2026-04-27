@@ -34,6 +34,12 @@
           >
             Take Risk Profile
           </a>
+          
+            href="/upload"
+            className="rounded-full bg-[#1a7a4a] px-8 py-4 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#155730]"
+          >
+            Upload Portfolio
+          </a>
         </div>
 
         <div className="mt-14 grid w-full max-w-4xl gap-4 md:grid-cols-3">
@@ -65,3 +71,4 @@
     </main>
   )
 }
+
