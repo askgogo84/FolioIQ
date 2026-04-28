@@ -4,8 +4,8 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone()
 
   if (url.pathname === '/') {
-    url.pathname = '/upload'
-    return NextResponse.redirect(url)
+    url.pathname = '/home'
+    return NextResponse.rewrite(url)
   }
 
   if (url.pathname === '/dashboard' || url.pathname === '/risk') {
