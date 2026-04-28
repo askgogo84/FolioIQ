@@ -70,11 +70,11 @@ async function parseWithVision(base64, mediaType) {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514", max_tokens: 3000,
-      system: "You are an expert at reading Indian mutual fund portfolio statements from NJ Wealth, Kuvera, Groww, Zerodha Coin, ET Money, CAMS CAS PDF, KFintech, MF Central, SIP Valuation Reports. Extract ALL holdings. Return ONLY valid JSON array.",
+      model: "claude-sonnet-4-20250514", max_tokens: 5000,
+      system: "You extract Indian mutual fund portfolio rows. Be extremely careful with multi-page NJ Wealth SIP Valuation Reports. Never skip page 2. Do not merge rows with the same folio. Each Sr No row is a separate holding. Return ONLY valid JSON array, no markdown.",
       messages: [{ role: "user", content: [
         { type: isPDF?"document":"image", source: { type:"base64", media_type:mediaType, data:base64 } },
-        { type: "text", text: "Extract every mutual fund holding. Return JSON array: [{name,units,avgNav,currentValue,investedAmount,sipAmount,purchaseDate,currentNAV}]. purchaseDate as YYYY-MM-DD. Return ONLY the array." }
+        { type: "text", text: "Extract EVERY row from the table. If the report says Total No of SIP: 17, return 17 objects. Include row 17 even if it is on page 2. Return JSON array only with keys: name, units, avgNav, currentValue, investedAmount, sipAmount, purchaseDate, currentNAV. Use Scheme as name, Bal. Units as units, Cur. NAV as currentNAV, Current Value as currentValue, Total Invested Value as investedAmount, SIP Installment Amount as sipAmount, Start Date as purchaseDate in YYYY-MM-DD. Do not include cumulative Total (Rs.) as currentValue. Do not combine duplicate scheme names." }
       ]}]
     })
   });
@@ -171,9 +171,9 @@ export async function POST(req) {
       }));
       for (const r of results) if (r.status==="fulfilled"&&r.value) matched.push(r.value);
     }
-    return NextResponse.json({ success:true, parseMethod, preEnriched, totalExtracted:raw.length, totalMatched:matched.length, unmatched, holdings:matched });
+    return NextResponse.json({ success:true, parseMethod, preEnriched, totalExtracted:raw.length, totalMatched:matched.length, expectedCount: raw.length, unmatched, holdings:matched });
   } catch (err) {
     console.error("Upload error:", err);
     return NextResponse.json({ error:"Failed to process file: "+String(err.message) }, { status:500 });
   }
-  }
+}
