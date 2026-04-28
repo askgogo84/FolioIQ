@@ -17,16 +17,16 @@ export default function HomePage() {
     }
   }, [])
 
-  function continueWithEmail() {
+  function goNext() {
     if (email.trim()) {
       localStorage.setItem(EMAIL_KEY, email.trim())
       setSaved(true)
     }
-    window.location.href = "/investments/mutual-fund/explore-all"
+    window.location.href = "/explore"
   }
 
   function skip() {
-    window.location.href = "/investments/mutual-fund/explore-all"
+    window.location.href = "/explore"
   }
 
   return (
@@ -38,11 +38,11 @@ export default function HomePage() {
             <div className="text-lg font-black">FolioIQ</div>
           </Link>
           <nav className="hidden items-center gap-7 text-sm font-semibold text-black/65 md:flex">
-            <Link href="/investments/mutual-fund/explore-all">Mutual Funds</Link>
+            <Link href="/explore">Mutual Funds</Link>
             <Link href="/upload">Upload</Link>
             <Link href="/dashboard-v2">Dashboard</Link>
           </nav>
-          <Link href="/upload" className="rounded-full bg-[#009b63] px-5 py-2.5 text-sm font-black text-white">Check your portfolio</Link>
+          <Link href="/explore" className="rounded-full bg-[#009b63] px-5 py-2.5 text-sm font-black text-white">Check your portfolio</Link>
         </div>
       </header>
 
@@ -58,24 +58,25 @@ export default function HomePage() {
             Upload your portfolio and FolioIQ tells you what to fix, what to keep and what to add next — in plain English.
           </p>
 
-          <div className="mt-8 max-w-xl rounded-[2rem] border border-black/10 bg-[#fafafa] p-5 shadow-[0_18px_70px_rgba(0,0,0,0.06)]">
-            <div className="text-sm font-black">Get your portfolio score</div>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 max-w-xl rounded-[2rem] border border-black/10 bg-white p-6 shadow-[0_22px_90px_rgba(0,0,0,0.08)]">
+            <div className="mb-1 text-2xl font-black">Welcome to FolioIQ</div>
+            <div className="mb-5 text-sm text-black/50">Enter your email to save your analysis, or skip and try it instantly.</div>
+            <div className="flex flex-col gap-3 sm:flex-row">
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter email ID"
                 type="email"
-                className="min-h-12 flex-1 rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none focus:border-[#009b63]"
+                className="min-h-12 flex-1 rounded-2xl border border-black/10 bg-[#f8fafc] px-4 text-sm outline-none focus:border-[#009b63]"
               />
-              <button onClick={continueWithEmail} className="rounded-2xl bg-[#009b63] px-6 py-3 text-sm font-black text-white">
+              <button onClick={goNext} className="rounded-2xl bg-[#009b63] px-6 py-3 text-sm font-black text-white">
                 Continue
               </button>
             </div>
-            <button onClick={skip} className="mt-3 text-sm font-bold text-black/50 underline underline-offset-4">
+            <button onClick={skip} className="mt-4 text-sm font-bold text-black/50 underline underline-offset-4">
               Skip for now
             </button>
-            {saved && <div className="mt-3 text-xs font-bold text-[#009b63]">Email saved locally. You can continue.</div>}
+            {saved && <div className="mt-3 text-xs font-bold text-[#009b63]">Email saved locally.</div>}
           </div>
         </div>
 
