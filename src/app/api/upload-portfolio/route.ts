@@ -2,6 +2,72 @@
 /* eslint-disable */
 import { NextRequest, NextResponse } from "next/server";
 
+const FUND_HOUSES = ["Axis","Canara","HDFC","ICICI","Invesco","Mirae","Nippon","Parag","PGIM","SBI","Kotak","UTI","Motilal","DSP","Tata","Quant","Franklin","Bandhan","Edelweiss","HSBC","Aditya","Sundaram","WhiteOak"];
+
+function parseNumber(v) {
+  if (v == null) return 0;
+  return Number(String(v).replace(/,/g, "").replace(/[₹\s]/g, "")) || 0;
+}
+
+function fundNameFromInvestorAndScheme(text) {
+  const s = String(text || "").replace(/\s+/g, " ").trim();
+  for (const house of FUND_HOUSES) {
+    const idx = s.toLowerCase().indexOf(house.toLowerCase());
+    if (idx >= 0) return s.slice(idx).trim();
+  }
+  return s.replace(/^\S+\s+\S+\s+/, "").trim();
+}
+
+async function parseNJWealthPDFText(buffer) {
+  try {
+    const mod = await import("pdf-parse");
+    const pdfParse = mod.default || mod;
+    const parsed = await pdfParse(buffer);
+    const text = String(parsed?.text || "").replace(/\r/g, "\n");
+    const expectedMatch = text.match(/Total\s+No\s+of\s+SIP\s*:?\s*(\d+)/i);
+    const expectedCount = expectedMatch ? Number(expectedMatch[1]) : null;
+
+    const rows = [];
+    const lines = text.split("\n").map((x) => x.replace(/\s+/g, " ").trim()).filter(Boolean);
+    const joinedLines = [];
+
+    for (const line of lines) {
+      if (/^\d{1,2}\s+/.test(line)) joinedLines.push(line);
+      else if (joinedLines.length && !/^Total\b/i.test(line)) joinedLines[joinedLines.length - 1] += " " + line;
+    }
+
+    const rowRegex = /^(\d{1,2})\s+(.+?)\s+(\*?\d[\d\/]+)\s+(\d{2}-\d{2}-\d{4})\s+(\d{2}-\d{2}-\d{4})\s+(Monthly|Quarterly|Weekly|Daily)\s+(\d+)\s+([\d,]+(?:\.\d+)?)\s+([\d,]+(?:\.\d+)?)\s+([\d,]+(?:\.\d+)?)\s+([\d,]+(?:\.\d+)?)\s+([\d,]+(?:\.\d+)?)/i;
+
+    for (const line of joinedLines) {
+      const m = line.match(rowRegex);
+      if (!m) continue;
+      const name = fundNameFromInvestorAndScheme(m[2]);
+      const startDate = m[4];
+      const sipAmount = parseNumber(m[8]);
+      const investedAmount = parseNumber(m[9]);
+      const units = parseNumber(m[10]);
+      const currentNAV = parseNumber(m[11]);
+      const currentValue = parseNumber(m[12]);
+      if (name && units > 0) {
+        rows.push({
+          name,
+          units,
+          avgNav: units > 0 ? investedAmount / units : 0,
+          currentValue,
+          investedAmount,
+          sipAmount,
+          purchaseDate: parseDateStr(startDate),
+          currentNAV,
+        });
+      }
+    }
+
+    return { rows, expectedCount, textLength: text.length };
+  } catch (err) {
+    return { rows: [], expectedCount: null, error: String(err?.message || err) };
+  }
+}
+
 async function parseNJWealthXLS(buffer) {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(buffer, { type: "buffer", cellDates: true });
@@ -65,6 +131,7 @@ async function parseExcel(buffer) {
 }
 
 async function parseWithVision(base64, mediaType) {
+  if (!process.env.ANTHROPIC_API_KEY) throw new Error("Missing ANTHROPIC_API_KEY. Excel upload will work, but PDF/screenshot needs this key or PDF text parser.");
   const isPDF = mediaType === "application/pdf";
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -78,6 +145,10 @@ async function parseWithVision(base64, mediaType) {
       ]}]
     })
   });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error("Vision extraction failed: " + t.slice(0, 300));
+  }
   const d = await res.json();
   const text = d.content?.[0]?.text || "[]";
   try { return JSON.parse(text.replace(/```json\n?|```\n?/g,"").trim()); }
@@ -105,9 +176,9 @@ async function matchToAMFI(name) {
 
 function parseDateStr(s) {
   if (!s) return "";
-  const m = s.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  const m = String(s).match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
   if (m) return m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0");
-  if (s.match(/^\d{4}-\d{2}-\d{2}$/)) return s;
+  if (String(s).match(/^\d{4}-\d{2}-\d{2}$/)) return s;
   return "";
 }
 
@@ -118,7 +189,7 @@ export async function POST(req) {
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
     const filename = file.name.toLowerCase();
     const buffer = Buffer.from(await file.arrayBuffer());
-    let raw = [], parseMethod = "", preEnriched = false;
+    let raw = [], parseMethod = "", preEnriched = false, expectedCount = null, parserNote = "";
 
     if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
       const nj = await parseNJWealthXLS(buffer);
@@ -130,18 +201,16 @@ export async function POST(req) {
       const sh = wb.Sheets[wb.SheetNames[0]];
       raw = XLSX.utils.sheet_to_json(sh, { defval:"" }).map((r) => ({
         name: String(r["Fund Name"]||r["Scheme Name"]||r["Fund"]||"").trim(),
-        units: parseFloat(String(r["Units"]||"0")),
-        avgNav: parseFloat(String(r["Avg NAV"]||"0")),
-        currentValue: parseFloat(String(r["Current Value"]||"0")),
-        investedAmount: parseFloat(String(r["Invested Amount"]||"0")),
-        purchaseDate: String(r["Purchase Date"]||"").trim(),
-        sipAmount: parseFloat(String(r["SIP Amount"]||"0")),
-        currentNAV: parseFloat(String(r["Current NAV"]||"0")),
+        units: parseFloat(String(r["Units"]||"0")), avgNav: parseFloat(String(r["Avg NAV"]||"0")), currentValue: parseFloat(String(r["Current Value"]||"0")), investedAmount: parseFloat(String(r["Invested Amount"]||"0")), purchaseDate: String(r["Purchase Date"]||"").trim(), sipAmount: parseFloat(String(r["SIP Amount"]||"0")), currentNAV: parseFloat(String(r["Current NAV"]||"0")),
       })).filter((h) => h.name && h.name.length > 3);
       parseMethod = "csv";
     } else if (filename.endsWith(".pdf")) {
-      raw = await parseWithVision(buffer.toString("base64"), "application/pdf");
-      parseMethod="vision-pdf"; preEnriched=true;
+      const parsedPdf = await parseNJWealthPDFText(buffer);
+      raw = parsedPdf.rows || [];
+      expectedCount = parsedPdf.expectedCount || null;
+      parserNote = parsedPdf.error ? "PDF text parser error: " + parsedPdf.error : "";
+      if (raw.length > 0) { parseMethod="pdf-text"; preEnriched=true; }
+      else { raw = await parseWithVision(buffer.toString("base64"), "application/pdf"); parseMethod="vision-pdf"; preEnriched=true; }
     } else if (filename.match(/\.(jpg|jpeg|png|webp)$/)) {
       const mt = { jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp" };
       raw = await parseWithVision(buffer.toString("base64"), mt[filename.split(".").pop()]||"image/jpeg");
@@ -150,7 +219,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Upload .xlsx .xls .csv .pdf .jpg .png or .webp" }, { status:400 });
     }
 
-    if (!raw.length) return NextResponse.json({ error:"No mutual fund holdings found. Make sure the file shows fund names and investment amounts.", parseMethod }, { status:422 });
+    if (!raw.length) return NextResponse.json({ error:"No mutual fund holdings found. Excel upload works today. PDF/screenshot needs readable text or Anthropic API key.", parseMethod, parserNote }, { status:422 });
 
     const matched=[], unmatched=[];
     for (let i=0; i<raw.length; i+=3) {
@@ -171,7 +240,7 @@ export async function POST(req) {
       }));
       for (const r of results) if (r.status==="fulfilled"&&r.value) matched.push(r.value);
     }
-    return NextResponse.json({ success:true, parseMethod, preEnriched, totalExtracted:raw.length, totalMatched:matched.length, expectedCount: raw.length, unmatched, holdings:matched });
+    return NextResponse.json({ success:true, parseMethod, parserNote, preEnriched, totalExtracted:raw.length, totalMatched:matched.length, expectedCount: expectedCount || raw.length, unmatched, holdings:matched });
   } catch (err) {
     console.error("Upload error:", err);
     return NextResponse.json({ error:"Failed to process file: "+String(err.message) }, { status:500 });
