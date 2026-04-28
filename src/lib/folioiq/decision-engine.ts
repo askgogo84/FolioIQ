@@ -17,24 +17,25 @@ export type ActionItem = {
   reason: string
   action: string
   confidence: 'High' | 'Medium' | 'Low'
+  priority: 'High' | 'Medium' | 'Low'
+  impact: string
+  why: string[]
 }
 
 export type PortfolioDecision = {
   healthScore: number
   riskStyle: 'Conservative' | 'Balanced' | 'Aggressive'
   verdict: string
+  plainEnglishVerdict: string
   simpleSummary: string
-  money: {
-    invested: number
-    current: number
-    gain: number
-    returnPct: number
-  }
+  money: { invested: number; current: number; gain: number; returnPct: number }
   problems: string[]
   review: ActionItem[]
   keep: ActionItem[]
   add: ActionItem[]
   weeklyAction: string
+  confidenceScore: number
+  logic: string[]
 }
 
 export function money(n: number) {
@@ -48,13 +49,7 @@ export function money(n: number) {
 }
 
 export function cleanFundName(name = '') {
-  return name
-    .replace(/ - Direct.*/i, '')
-    .replace(/ Fund/gi, '')
-    .replace(/Regular/gi, 'Regular')
-    .replace(/Growth/gi, 'Growth')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return name.replace(/ - Direct.*/i, '').replace(/ Fund/gi, '').replace(/\s+/g, ' ').trim()
 }
 
 export function fundType(name = '', category = '') {
@@ -67,59 +62,34 @@ export function fundType(name = '', category = '') {
   if (s.includes('multi cap') || s.includes('multicap')) return 'Multi Cap'
   if (s.includes('index') || s.includes('nifty') || s.includes('sensex')) return 'Index'
   if (s.includes('gold')) return 'Gold'
+  if (s.includes('nasdaq') || s.includes('international') || s.includes('global') || s.includes('us ')) return 'International'
   if (s.includes('debt') || s.includes('liquid') || s.includes('bond') || s.includes('gilt') || s.includes('short duration')) return 'Debt'
   if (s.includes('technology') || s.includes('infra') || s.includes('sector') || s.includes('thematic')) return 'Thematic'
   return 'Equity'
 }
 
-function isRegular(name = '') {
-  return /regular|reg\s/i.test(name)
-}
-
-function isDividend(name = '') {
-  return /dividend|idcw/i.test(name)
-}
-
-function returnPct(h: Holding) {
-  const invested = Number(h.investedAmount || 0)
-  const current = Number(h.currentValue || 0)
-  if (!invested) return 0
-  return ((current - invested) / invested) * 100
-}
-
-function getCounts(holdings: Holding[]) {
-  const counts: Record<string, number> = {}
-  holdings.forEach((h) => {
-    const t = fundType(h.schemeName, h.category)
-    counts[t] = (counts[t] || 0) + 1
-  })
-  return counts
-}
+function isRegular(name = '') { return /regular|reg\s/i.test(name) }
+function isDividend(name = '') { return /dividend|idcw/i.test(name) }
+function returnPct(h: Holding) { const i = Number(h.investedAmount || 0); const c = Number(h.currentValue || 0); return i ? ((c - i) / i) * 100 : 0 }
+function getCounts(holdings: Holding[]) { const counts: Record<string, number> = {}; holdings.forEach((h) => { const t = fundType(h.schemeName, h.category); counts[t] = (counts[t] || 0) + 1 }); return counts }
+function valueByType(holdings: Holding[]) { const values: Record<string, number> = {}; holdings.forEach((h) => { const t = fundType(h.schemeName, h.category); values[t] = (values[t] || 0) + Number(h.currentValue || h.investedAmount || 0) }); return values }
 
 function inferRiskStyle(holdings: Holding[]): 'Conservative' | 'Balanced' | 'Aggressive' {
   if (!holdings.length) return 'Balanced'
   const value = holdings.reduce((s, h) => s + Number(h.currentValue || h.investedAmount || 0), 0) || 1
-  const highRisk = holdings
-    .filter((h) => ['Small Cap', 'Mid Cap', 'Thematic'].includes(fundType(h.schemeName, h.category)))
-    .reduce((s, h) => s + Number(h.currentValue || h.investedAmount || 0), 0)
-  const debt = holdings
-    .filter((h) => ['Debt', 'Gold'].includes(fundType(h.schemeName, h.category)))
-    .reduce((s, h) => s + Number(h.currentValue || h.investedAmount || 0), 0)
-
-  const highRiskPct = highRisk / value
-  const cushionPct = debt / value
-
-  if (highRiskPct > 0.45) return 'Aggressive'
+  const values = valueByType(holdings)
+  const highRiskPct = ((values['Small Cap'] || 0) + (values['Mid Cap'] || 0) + (values['Thematic'] || 0)) / value
+  const cushionPct = ((values['Debt'] || 0) + (values['Gold'] || 0)) / value
+  if (highRiskPct > 0.42) return 'Aggressive'
   if (cushionPct > 0.25) return 'Conservative'
   return 'Balanced'
 }
 
 function score(holdings: Holding[], problems: string[]) {
   if (!holdings.length) return 0
-  let s = 82
+  let s = 86
   const counts = getCounts(holdings)
   const amcs = new Set(holdings.map((h) => h.amc || h.schemeName?.split(' ')?.[0]).filter(Boolean)).size
-
   if (holdings.length > 8) s -= 10
   if (holdings.length > 12) s -= 12
   if (holdings.length > 16) s -= 8
@@ -128,10 +98,14 @@ function score(holdings: Holding[], problems: string[]) {
   if ((counts['Thematic'] || 0) > 2) s -= 8
   if (!(counts['Debt'] || 0)) s -= 8
   if (!(counts['Index'] || 0)) s -= 6
+  if (!(counts['International'] || 0)) s -= 4
   if (amcs < 3 && holdings.length > 4) s -= 8
-  s -= Math.min(10, problems.length * 2)
-
+  s -= Math.min(8, problems.length * 2)
   return Math.max(18, Math.min(96, Math.round(s)))
+}
+
+function action(name: string, reason: string, action: string, confidence: 'High'|'Medium'|'Low', priority: 'High'|'Medium'|'Low', impact: string, why: string[]): ActionItem {
+  return { name, reason, action, confidence, priority, impact, why }
 }
 
 export function analysePortfolio(holdings: Holding[]): PortfolioDecision {
@@ -143,31 +117,20 @@ export function analysePortfolio(holdings: Holding[]): PortfolioDecision {
   const problems: string[] = []
 
   if (!holdings.length) {
-    return {
-      healthScore: 0,
-      riskStyle: 'Balanced',
-      verdict: 'Add your portfolio first.',
-      simpleSummary: 'Upload or add your mutual funds. FolioIQ will then tell you what to keep, review and add.',
-      money: { invested: 0, current: 0, gain: 0, returnPct: 0 },
-      problems: [],
-      review: [],
-      keep: [],
-      add: [],
-      weeklyAction: 'Upload your portfolio statement or add your first fund.',
-    }
+    return { healthScore: 0, riskStyle: 'Balanced', verdict: 'Add your portfolio first.', plainEnglishVerdict: 'Upload your funds and FolioIQ will tell you what to fix first.', simpleSummary: 'No portfolio found yet.', money: { invested: 0, current: 0, gain: 0, returnPct: 0 }, problems: [], review: [], keep: [], add: [], weeklyAction: 'Upload your portfolio statement or add your first fund.', confidenceScore: 0, logic: ['No portfolio data found yet.'] }
   }
 
-  if (holdings.length > 8) problems.push(`You have ${holdings.length} funds. Most people only need 6–8 well-chosen funds.`)
-  if ((counts['ELSS'] || 0) > 2) problems.push(`You have ${counts['ELSS']} tax-saver funds. This creates clutter.`)
-  if ((counts['Small Cap'] || 0) > 3) problems.push(`You have ${counts['Small Cap']} small-cap funds. This can move sharply in bad markets.`)
-  if ((counts['Thematic'] || 0) > 2) problems.push(`You have many sector/theme funds. These are risky if held without a clear reason.`)
-  if (!(counts['Debt'] || 0)) problems.push('No debt or cushion fund is visible. Add stability.')
-  if (!(counts['Index'] || 0)) problems.push('No simple low-cost index fund is visible.')
+  if (holdings.length > 8) problems.push(`You have ${holdings.length} funds. Most people only need 6–8 funds.`)
+  if ((counts['ELSS'] || 0) > 2) problems.push(`You have ${counts['ELSS']} tax-saver funds. Keep only 1–2.`)
+  if ((counts['Small Cap'] || 0) > 3) problems.push('Small-cap exposure is high. This can fall sharply in bad markets.')
+  if ((counts['Thematic'] || 0) > 2) problems.push('Too many sector/theme bets. These should not dominate a portfolio.')
+  if (!counts['Debt']) problems.push('No debt/cushion fund. Portfolio may feel too volatile.')
+  if (!counts['Index']) problems.push('No low-cost index core. Add a simple base fund.')
+  if (!counts['International']) problems.push('No global exposure. Portfolio depends only on India.')
 
   const review: ActionItem[] = []
   const keep: ActionItem[] = []
   const seenType: Record<string, number> = {}
-
   const sorted = [...holdings].sort((a, b) => returnPct(a) - returnPct(b))
 
   sorted.forEach((h) => {
@@ -176,61 +139,27 @@ export function analysePortfolio(holdings: Holding[]): PortfolioDecision {
     const r = returnPct(h)
     seenType[type] = (seenType[type] || 0) + 1
 
-    if (review.length < 6 && isDividend(h.schemeName)) {
-      review.push({ name, reason: 'Dividend/IDCW plans are usually tax-inefficient.', action: 'Switch future money to Growth option.', confidence: 'High' })
-      return
-    }
-
-    if (review.length < 6 && isRegular(h.schemeName)) {
-      review.push({ name, reason: 'Regular plan may have higher commission cost.', action: 'Check if Direct Growth version is available.', confidence: 'High' })
-      return
-    }
-
-    if (review.length < 6 && type === 'ELSS' && seenType[type] > 2) {
-      review.push({ name, reason: 'Duplicate tax-saving fund. Too many ELSS funds reduce clarity.', action: 'Keep only 1–2 strongest ELSS funds.', confidence: 'Medium' })
-      return
-    }
-
-    if (review.length < 6 && type === 'Small Cap' && seenType[type] > 3) {
-      review.push({ name, reason: 'Too much small-cap exposure can be risky.', action: 'Reduce and keep only best small-cap exposure.', confidence: 'Medium' })
-      return
-    }
-
-    if (review.length < 6 && r < -5) {
-      review.push({ name, reason: 'This fund is showing weak returns in your portfolio.', action: 'Review before adding more SIP.', confidence: 'Medium' })
-      return
-    }
-
-    if (keep.length < 6) {
-      keep.push({ name, reason: r >= 0 ? 'This is doing okay in your portfolio.' : 'Not urgent, but monitor.', action: 'Hold for now. Do not add blindly.', confidence: 'Medium' })
-    }
+    if (review.length < 3 && isDividend(h.schemeName)) { review.push(action(name, 'Dividend/IDCW plan is usually not tax-friendly.', 'Use Growth option for future investments.', 'High', 'High', 'Can reduce tax leakage and improve compounding clarity.', ['Dividend payouts may create tax leakage.', 'Growth option is simpler for compounding.'])); return }
+    if (review.length < 3 && isRegular(h.schemeName)) { review.push(action(name, 'Regular plan may have higher commission cost.', 'Compare with Direct Growth version.', 'High', 'High', 'Can improve long-term compounding by reducing hidden cost.', ['Direct funds usually have lower expense ratios.', 'Cost difference compounds over years.'])); return }
+    if (review.length < 3 && type === 'ELSS' && seenType[type] > 2) { review.push(action(name, 'Duplicate tax-saving fund.', 'Keep only 1–2 ELSS funds.', 'Medium', 'Medium', 'Reduces clutter and lock-in confusion.', ['Too many ELSS funds creates clutter.', 'ELSS has lock-in, so be selective.'])); return }
+    if (review.length < 3 && type === 'Small Cap' && seenType[type] > 3) { review.push(action(name, 'Too much small-cap exposure.', 'Reduce small-cap count.', 'Medium', 'Medium', 'Can reduce portfolio volatility.', ['Small caps can fall sharply.', 'You need controlled allocation, not many similar funds.'])); return }
+    if (review.length < 3 && r < -5) { review.push(action(name, 'Weak return in your portfolio.', 'Pause extra SIP until reviewed.', 'Medium', 'Medium', 'Prevents adding more to a weak holding blindly.', ['This fund is lagging in your portfolio.', 'Do not add more just because it is down.'])); return }
+    if (keep.length < 3) keep.push(action(name, r >= 0 ? 'Doing okay for now.' : 'Not urgent, but monitor.', 'Hold. Do not add blindly.', 'Medium', 'Low', 'Keeps portfolio stable while you fix bigger issues.', ['No immediate red flag found.', 'Keep only if it fits your final allocation.']))
   })
 
   const add: ActionItem[] = []
-  if (!(counts['Index'] || 0)) add.push({ name: 'Nifty 50 / Sensex Index Fund', reason: 'Gives simple low-cost core exposure.', action: 'Use as portfolio base.', confidence: 'High' })
-  if (!(counts['Debt'] || 0)) add.push({ name: 'Short Duration Debt Fund', reason: 'Adds stability when equity markets fall.', action: 'Use as cushion, not for high returns.', confidence: 'High' })
-  if (!(counts['Gold'] || 0)) add.push({ name: 'Small Gold Allocation', reason: 'Useful hedge during uncertain periods.', action: 'Keep allocation small.', confidence: 'Low' })
+  if (!counts['Index']) add.push(action('Low-cost Nifty 50 / Sensex index fund', 'Missing simple core allocation.', 'Shortlist funds with low expense ratio and low tracking error.', 'High', 'High', 'Creates a clean base for the portfolio.', ['Check expense ratio.', 'Check tracking error.', 'Prefer Direct Growth if suitable.']))
+  if (!counts['Debt']) add.push(action('Short-duration debt / corporate bond fund', 'Missing stability cushion.', 'Use for stability, not for high returns.', 'High', 'Medium', 'Can reduce portfolio shock during equity falls.', ['Check credit quality.', 'Avoid chasing high yield.', 'Match with your time horizon.']))
+  if (!counts['International']) add.push(action('International index exposure', 'Missing global diversification.', 'Keep allocation small and understand taxation.', 'Medium', 'Low', 'Reduces dependence on only Indian equities.', ['Check cost.', 'Check taxation.', 'Do not over-allocate.']))
 
   const healthScore = score(holdings, problems)
   const riskStyle = inferRiskStyle(holdings)
-  const verdict = healthScore >= 75 ? 'Looks good. Needs small cleanup.' : healthScore >= 55 ? 'Decent, but needs simplification.' : 'Needs cleanup. Too many moving parts.'
+  const verdict = healthScore >= 75 ? 'Mostly fine. Just simplify a little.' : healthScore >= 55 ? 'Decent, but needs cleanup.' : 'Needs cleanup. Too many moving parts.'
+  const plainEnglishVerdict = healthScore >= 75 ? 'You are mostly on track. Fix one or two small things.' : healthScore >= 55 ? 'Your portfolio is not bad, but it has avoidable clutter.' : 'Your portfolio is doing too many things at once. Simplify first.'
   const simpleSummary = `${money(invested)} invested is now ${money(current)}. You are ${returnPercentage >= 0 ? 'up' : 'down'} ${Math.abs(returnPercentage).toFixed(1)}%.`
-  const weeklyAction = review.length
-    ? `This week: review ${review[0].name}. Do not add more money there until you decide.`
-    : add.length
-      ? `This week: consider adding ${add[0].name} to improve balance.`
-      : 'This week: do nothing. Your portfolio looks manageable.'
+  const weeklyAction = review.length ? `This week: start with ${review[0].name}. ${review[0].action}` : add.length ? `This week: research ${add[0].name}.` : 'This week: do nothing. Your portfolio looks manageable.'
+  const confidenceScore = Math.min(95, Math.max(40, 70 + review.filter((x) => x.confidence === 'High').length * 8 + problems.length * 2))
+  const logic = ['We infer risk style from your existing fund mix.', 'We check clutter: too many funds, duplicate ELSS, small-cap overload and sector bets.', 'We check missing building blocks: low-cost index core, debt cushion and global exposure.', 'We show category-first alternatives, not blind fund switching.', 'Output is limited to Fix / Keep / Explore so users can act quickly.']
 
-  return {
-    healthScore,
-    riskStyle,
-    verdict,
-    simpleSummary,
-    money: { invested, current, gain, returnPct: returnPercentage },
-    problems,
-    review,
-    keep,
-    add,
-    weeklyAction,
-  }
+  return { healthScore, riskStyle, verdict, plainEnglishVerdict, simpleSummary, money: { invested, current, gain, returnPct: returnPercentage }, problems, review, keep, add, weeklyAction, confidenceScore, logic }
 }
