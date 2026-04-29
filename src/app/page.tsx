@@ -1,644 +1,429 @@
-// @ts-nocheck
-/* eslint-disable */
 "use client";
-import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 
-// ── TAX ENGINE ───────────────────────────────────────────────
-const CESS = 0.04;
-const isEq = (c) => /large|mid|small|flexi|multi|focused|value|contra|elss|index|etf|equity|sectoral|thematic/i.test(c||"");
-const isDb = (c) => /liquid|overnight|money market|ultra short|low dur|short dur|medium dur|long dur|corporate bond|banking|credit|gilt|dynamic bond|floater|conservative hybrid|arbitrage/i.test(c||"");
+import React, { useState, useMemo } from "react";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis } from "recharts";
+import { TrendingUp, AlertTriangle, CheckCircle, Brain, Zap, ChevronRight, ArrowUpRight, Wallet, Clock, Star, Info, Target, PieChart as PieIcon, Activity, Upload, Search, Filter, Bell, Menu, X, User, Settings, Layers, BarChart3, Award, Lightbulb, Sparkles } from "lucide-react";
 
-function afterTax(inv, cur, days, cat, slab=0.30) {
-  const g = cur - inv;
-  if (g <= 0) return { tax:0, netGain:g, netPct:inv>0?g/inv*100:0 };
-  let tax = 0;
-  if (isEq(cat)) tax = days>=365 ? Math.max(0,g-125000)*0.125*(1+CESS) : g*0.20*(1+CESS);
-  else if (isDb(cat)) tax = g*slab*(1+CESS);
-  else tax = days>=730 ? g*0.125*(1+CESS) : g*slab*(1+CESS);
-  return { tax, netGain:g-tax, netPct:(g-tax)/inv*100 };
+interface MutualFund {
+  id: string; schemeName: string; amc: string; category: string; subCategory: string;
+  nav: number; units: number; investedAmount: number; currentValue: number;
+  absoluteReturn: number; xirr: number; rating: number;
+  riskLevel: "Low" | "Moderate" | "High" | "Very High";
+  expenseRatio: number; aum: number; fundManager: string; benchmark: string;
+  holdings: { name: string; sector: string; weight: number }[];
+  sipAmount?: number; sipDate?: string; purchaseDate: string; status: "Active" | "Paused" | "Redeemed";
+  dayChange?: number; dayChangePercent?: number;
 }
 
-function daysFrom(s) { try { return Math.round((Date.now()-new Date(s).getTime())/86400000); } catch { return 730; } }
-function cagrFn(arr,y) {
-  if(!arr||arr.length<2) return null;
-  const d=Math.round(y*365); if(arr.length<=d) return null;
-  const c=parseFloat(arr[0].nav),p=parseFloat(arr[Math.min(d,arr.length-1)].nav);
-  return (!p||p<=0)?null:(Math.pow(c/p,1/y)-1)*100;
-}
-const fmtC = (n) => { if(!n||isNaN(n)) return "—"; const a=Math.abs(n),s=n<0?"-":""; return a>=10000000?s+"₹"+(a/10000000).toFixed(2)+"Cr":a>=100000?s+"₹"+(a/100000).toFixed(2)+"L":s+"₹"+a.toLocaleString("en-IN",{maximumFractionDigits:0}); };
-const fmtP = (n,dp=1) => n==null||isNaN(n)?"—":(n>0?"+":"")+Number(n).toFixed(dp)+"%";
+const FUNDS: MutualFund[] = [
+  { id: "1", schemeName: "Nippon India Small Cap Fund", amc: "Nippon India", category: "Equity", subCategory: "Small Cap", nav: 147.85, units: 1014.52, investedAmount: 100000, currentValue: 150000, absoluteReturn: 50.0, xirr: 28.5, rating: 5, riskLevel: "Very High", expenseRatio: 0.82, aum: 45000, fundManager: "Samir Rachh", benchmark: "Nifty Smallcap 250 TRI", holdings: [{name:"KPIT Technologies",sector:"IT",weight:4.2},{name:"Tejas Networks",sector:"Telecom",weight:3.8},{name:"Mishra Dhatu",sector:"Metals",weight:3.5}], sipAmount: 5000, sipDate: "5th of every month", purchaseDate: "2022-01-05", status: "Active", dayChange: 1250, dayChangePercent: 0.84 },
+  { id: "2", schemeName: "SBI Bluechip Equity Fund", amc: "SBI Mutual Fund", category: "Equity", subCategory: "Large Cap", nav: 72.45, units: 1380.26, investedAmount: 75000, currentValue: 100000, absoluteReturn: 33.33, xirr: 18.2, rating: 4, riskLevel: "Moderate", expenseRatio: 1.05, aum: 32000, fundManager: "Sohini Andani", benchmark: "S&P BSE 100", holdings: [{name:"HDFC Bank",sector:"Financial",weight:9.5},{name:"ICICI Bank",sector:"Financial",weight:8.2},{name:"Reliance",sector:"Energy",weight:7.8}], sipAmount: 3000, sipDate: "10th of every month", purchaseDate: "2021-06-10", status: "Active", dayChange: 420, dayChangePercent: 0.42 },
+  { id: "3", schemeName: "Mirae Asset Emerging Bluechip", amc: "Mirae Asset", category: "Equity", subCategory: "Large & Mid Cap", nav: 95.30, units: 1573.98, investedAmount: 100000, currentValue: 150000, absoluteReturn: 50.0, xirr: 22.4, rating: 5, riskLevel: "High", expenseRatio: 0.76, aum: 28000, fundManager: "Neelesh Surana", benchmark: "Nifty LargeMidcap 250", holdings: [{name:"HDFC Bank",sector:"Financial",weight:7.2},{name:"Axis Bank",sector:"Financial",weight:5.8},{name:"Infosys",sector:"IT",weight:5.5}], sipAmount: 5000, sipDate: "15th of every month", purchaseDate: "2021-03-15", status: "Active", dayChange: 890, dayChangePercent: 0.59 },
+  { id: "4", schemeName: "HDFC Balanced Advantage Fund", amc: "HDFC Mutual Fund", category: "Hybrid", subCategory: "Balanced Advantage", nav: 42.15, units: 4744.96, investedAmount: 150000, currentValue: 200000, absoluteReturn: 33.33, xirr: 15.8, rating: 4, riskLevel: "Moderate", expenseRatio: 0.92, aum: 55000, fundManager: "Gopal Agrawal", benchmark: "CRISIL Hybrid 50+50", holdings: [{name:"ICICI Bank",sector:"Financial",weight:6.5},{name:"TCS",sector:"IT",weight:5.2},{name:"GOI 2024",sector:"G-Sec",weight:12.0}], sipAmount: 10000, sipDate: "1st of every month", purchaseDate: "2020-08-01", status: "Active", dayChange: 340, dayChangePercent: 0.17 },
+  { id: "5", schemeName: "Axis Long Term Equity Fund", amc: "Axis Mutual Fund", category: "Equity", subCategory: "ELSS (Tax Saver)", nav: 68.90, units: 725.69, investedAmount: 50000, currentValue: 50000, absoluteReturn: 0, xirr: -2.1, rating: 3, riskLevel: "High", expenseRatio: 1.15, aum: 18000, fundManager: "Jinesh Gopani", benchmark: "S&P BSE 200", holdings: [{name:"Bajaj Finance",sector:"Financial",weight:8.5},{name:"Titan",sector:"Consumer",weight:6.2},{name:"M&M",sector:"Auto",weight:5.8}], purchaseDate: "2023-01-01", status: "Active", dayChange: -180, dayChangePercent: -0.36 },
+  { id: "6", schemeName: "ICICI Pru Liquid Fund", amc: "ICICI Prudential", category: "Debt", subCategory: "Liquid", nav: 100.15, units: 4992.51, investedAmount: 500000, currentValue: 500000, absoluteReturn: 6.5, xirr: 6.8, rating: 5, riskLevel: "Low", expenseRatio: 0.15, aum: 45000, fundManager: "Rahul Goswami", benchmark: "CRISIL Liquid Fund Index", holdings: [{name:"T-Bills 91D",sector:"G-Sec",weight:25.0},{name:"CD HDFC Bank",sector:"CD",weight:15.0},{name:"CP L&T",sector:"CP",weight:12.0}], purchaseDate: "2024-01-01", status: "Active", dayChange: 12, dayChangePercent: 0.002 },
+  { id: "7", schemeName: "Quant Tax Plan", amc: "Quant Mutual Fund", category: "Equity", subCategory: "ELSS (Tax Saver)", nav: 185.45, units: 539.23, investedAmount: 75000, currentValue: 100000, absoluteReturn: 33.33, xirr: 24.8, rating: 5, riskLevel: "High", expenseRatio: 0.64, aum: 12000, fundManager: "Sanjeev Sharma", benchmark: "S&P BSE 200", holdings: [{name:"Adani Ports",sector:"Infrastructure",weight:8.2},{name:"Bajaj Finance",sector:"Financial",weight:7.5},{name:"Tata Motors",sector:"Auto",weight:6.8}], sipAmount: 2500, sipDate: "20th of every month", purchaseDate: "2022-04-20", status: "Active", dayChange: 520, dayChangePercent: 0.52 },
+  { id: "8", schemeName: "PGIM India Midcap Opportunities", amc: "PGIM India", category: "Equity", subCategory: "Mid Cap", nav: 52.30, units: 1912.05, investedAmount: 75000, currentValue: 100000, absoluteReturn: 33.33, xirr: 19.5, rating: 4, riskLevel: "High", expenseRatio: 0.93, aum: 22000, fundManager: "Aniruddha Naha", benchmark: "Nifty Midcap 150 TRI", holdings: [{name:"Persistent Systems",sector:"IT",weight:6.5},{name:"Cholamandalam Finance",sector:"Financial",weight:5.8},{name:"Schaeffler India",sector:"Auto",weight:5.2}], sipAmount: 3000, sipDate: "12th of every month", purchaseDate: "2021-09-12", status: "Active", dayChange: 380, dayChangePercent: 0.38 },
+];
 
-// ── NIFTY BENCHMARK ──────────────────────────────────────────
-async function fetchNifty() {
-  try {
-    const res = await fetch("https://api.mfapi.in/mf/120716"); // Nippon Nifty 50 Index
-    const d = await res.json();
-    const nav = d?.data || [];
-    if (nav.length < 252) return null;
-    const cur = parseFloat(nav[0].nav);
-    const p1y = parseFloat(nav[Math.min(252,nav.length-1)].nav);
-    const p3y = parseFloat(nav[Math.min(756,nav.length-1)].nav);
-    return { r1y: p1y>0?(cur/p1y-1)*100:null, r3y: p3y>0?(Math.pow(cur/p3y,1/3)-1)*100:null };
-  } catch { return null; }
-}
+const AI_INSIGHTS = [
+  { id:"i1", type:"warning", title:"Small Cap Overexposure", description:"Your portfolio has 35% in small cap funds vs recommended 15%. Market volatility risk is elevated.", impact:"High risk in market downturns", priority:"High", icon: AlertTriangle },
+  { id:"i2", type:"opportunity", title:"Tax Saver ELSS Limit Not Utilized", description:"You've invested ₹50,000 in ELSS but can claim ₹1.5L under 80C. Consider increasing SIP to ₹12,500/month.", impact:"Save ₹31,200 in taxes annually", priority:"High", icon: Star },
+  { id:"i3", type:"action", title:"Axis Long Term Underperforming", description:"This fund has underperformed category average by 8% over 3 years. Consider switching to Quant Tax Plan.", impact:"Potential 8-12% better returns", priority:"Medium", icon: Zap },
+  { id:"i4", type:"info", title:"Perfect Emergency Fund Allocation", description:"Your ₹5L liquid fund allocation covers 6 months of expenses. Well done!", impact:"Financial security maintained", priority:"Low", icon: CheckCircle },
+  { id:"i5", type:"opportunity", title:"Debt Allocation Opportunity", description:"Current debt allocation is only 28%. For your age profile, 40% debt is recommended for stability.", impact:"Better risk-adjusted returns", priority:"Medium", icon: Lightbulb },
+  { id:"i6", type:"success", title:"Nifty 50 Outperformance", description:"Your portfolio XIRR of 18.5% beats Nifty 50's 15.2% over 3 years. Great fund selection!", impact:"Alpha generation confirmed", priority:"Low", icon: Award },
+];
 
-// ── TAX HARVEST CALC ─────────────────────────────────────────
-function calcHarvest(holdings) {
-  const EXEMPT = 125000;
-  let totalGain = 0;
-  const candidates = [];
-  for (const h of holdings) {
-    const inv = h.investedAmount || h.units * h.avgNav;
-    const cur = h.currentValue || h.units * h.currentNAV;
-    const gain = cur - inv;
-    const days = h.holdingDays || daysFrom(h.purchaseDate);
-    if (!isEq(h.category) || days < 365 || gain <= 0) continue;
-    totalGain += gain;
-    const ratio = Math.min(1, EXEMPT / gain);
-    candidates.push({ ...h, gain, unitsToSell: Math.floor(h.units * ratio * 100) / 100, amountToSell: Math.floor(cur * ratio) });
-  }
-  const usable = Math.min(EXEMPT, totalGain);
-  return { totalGain, usable, taxSaved: usable * 0.125 * (1+CESS), candidates: candidates.sort((a,b)=>b.gain-a.gain) };
-}
+const formatCurrency = (v: number) => { if (v >= 10000000) return `₹${(v/10000000).toFixed(2)}Cr`; if (v >= 100000) return `₹${(v/100000).toFixed(2)}L`; if (v >= 1000) return `₹${(v/1000).toFixed(1)}K`; return `₹${v.toFixed(0)}`; };
+const getRiskColor = (risk: string) => { switch(risk) { case "Low": return "bg-emerald-100 text-emerald-700"; case "Moderate": return "bg-blue-100 text-blue-700"; case "High": return "bg-orange-100 text-orange-700"; case "Very High": return "bg-red-100 text-red-700"; default: return "bg-slate-100 text-slate-700"; } };
+const getInsightColor = (type: string) => { switch(type) { case "warning": return { bg: "bg-amber-50", border: "border-amber-200", icon: "text-amber-600", badge: "bg-amber-100 text-amber-700" }; case "opportunity": return { bg: "bg-emerald-50", border: "border-emerald-200", icon: "text-emerald-600", badge: "bg-emerald-100 text-emerald-700" }; case "action": return { bg: "bg-blue-50", border: "border-blue-200", icon: "text-blue-600", badge: "bg-blue-100 text-blue-700" }; case "info": return { bg: "bg-slate-50", border: "border-slate-200", icon: "text-slate-600", badge: "bg-slate-100 text-slate-600" }; case "success": return { bg: "bg-purple-50", border: "border-purple-200", icon: "text-purple-600", badge: "bg-purple-100 text-purple-700" }; default: return { bg: "bg-slate-50", border: "border-slate-200", icon: "text-slate-600", badge: "bg-slate-100 text-slate-600" }; } };
 
-// ── SIP CALENDAR ─────────────────────────────────────────────
-function getSIPCal(holdings) {
-  const today = new Date();
-  return holdings
-    .filter(h => h.sipAmount > 0)
-    .map(h => {
-      const sipDay = new Date(h.purchaseDate).getDate() || 1;
-      let next = new Date(today.getFullYear(), today.getMonth(), sipDay);
-      if (next <= today) next = new Date(today.getFullYear(), today.getMonth()+1, sipDay);
-      return { name: h.schemeName, amount: h.sipAmount, nextDate: next, daysUntil: Math.round((next-today)/86400000), amc: h.amc };
-    })
-    .sort((a,b) => a.daysUntil - b.daysUntil);
-}
+export default function FolioIQ() {
+  const [currentView, setCurrentView] = useState<"landing" | "dashboard" | "upload" | "fund-detail">("landing");
+  const [selectedFund, setSelectedFund] = useState<MutualFund | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
-// ── PDF/HTML REPORT ──────────────────────────────────────────
-function buildReport(holdings, stats, aiText, nifty) {
-  const date = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
-  const { ti, tc, tn, tt, np } = stats;
-  const rows = holdings.map(h => {
-    const g = (h.investedAmount||0)>0 ? ((h.currentValue||0)-(h.investedAmount||0))/(h.investedAmount||1)*100 : 0;
-    const sig = h.signal==="PAUSE"?"🔴 Pause":h.signal==="INCREASE"?"🟢 Increase":"🟡 Continue";
-    return `<tr><td>${(h.schemeName||"").replace(/ - Direct.*/i,"").substring(0,38)}</td><td align="right">${fmtC(h.investedAmount)}</td><td align="right" style="color:${(h.currentValue||0)>=(h.investedAmount||0)?"#15803d":"#dc2626"}">${fmtC(h.currentValue)}</td><td align="right" style="color:${g>=0?"#15803d":"#dc2626"}">${fmtP(g)}</td><td align="right" style="color:${(h.netReturnPct||0)>=0?"#15803d":"#dc2626"}">${fmtP(h.netReturnPct)}</td><td align="center">${sig}</td></tr>`;
-  }).join("");
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>FolioIQ Report ${date}</title>
-<style>body{font-family:Arial,sans-serif;margin:0;padding:28px;color:#1a1714;max-width:900px;margin:0 auto}
-.hdr{background:#1a1714;color:#fff;padding:20px 24px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
-.logo{font-size:22px;font-weight:700}.sub{font-size:12px;opacity:.6;margin-top:3px}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.kpi{background:#f7f5f0;border:1px solid #e4e0d8;border-radius:10px;padding:14px}
-.kl{font-size:10px;color:#7a7669;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
-.kv{font-size:20px;font-weight:700}
-.bench{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:13px}
-.harvest{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:13px}
-.sec-title{font-size:14px;font-weight:700;border-bottom:2px solid #1a7a4a;padding-bottom:6px;margin-bottom:12px}
-table{width:100%;border-collapse:collapse}th{font-size:10px;color:#7a7669;text-transform:uppercase;padding:8px 6px;border-bottom:2px solid #e4e0d8;letter-spacing:.8px}
-td{padding:8px 6px;font-size:11px;border-bottom:1px solid #f2f0eb}
-.ai{background:#edf7f2;border:1px solid #b0dcc4;border-radius:10px;padding:16px;font-size:12px;line-height:1.8;white-space:pre-wrap;margin-bottom:18px}
-.footer{font-size:10px;color:#b4b0a6;text-align:center;border-top:1px solid #e4e0d8;padding-top:12px;margin-top:20px}
-</style></head><body>
-<div class="hdr"><div><div class="logo">FolioIQ</div><div class="sub">Portfolio Intelligence Report</div></div><div style="text-align:right;color:rgba(255,255,255,.7);font-size:12px">${date}</div></div>
-<div class="kpis">
-<div class="kpi"><div class="kl">Total Invested</div><div class="kv">${fmtC(ti)}</div></div>
-<div class="kpi"><div class="kl">Current Value</div><div class="kv" style="color:${tc>=ti?"#15803d":"#dc2626"}">${fmtC(tc)}</div></div>
-<div class="kpi" style="background:#edf7f2;border-color:#b0dcc4"><div class="kl">After-Tax Return</div><div class="kv" style="color:#15803d">${fmtP(np)}</div><div style="font-size:11px;color:#15803d;margin-top:3px">${fmtC(tn)} net profit</div></div>
-<div class="kpi"><div class="kl">Tax Liability</div><div class="kv" style="color:#92400e">${fmtC(tt)}</div><div style="font-size:11px;color:#92400e;margin-top:3px">if sold today</div></div>
-</div>
-${nifty?`<div class="bench"><strong style="color:#1d4ed8">📊 Nifty 50 Benchmark Comparison</strong> &nbsp;|&nbsp; Your portfolio after-tax: <strong>${fmtP(np)}</strong> &nbsp;|&nbsp; Nifty 50 1Y: <strong style="color:#1d4ed8">${fmtP(nifty.r1y)}</strong> &nbsp;|&nbsp; Nifty 50 3Y CAGR: <strong>${fmtP(nifty.r3y)}</strong></div>`:""}
-<div class="sec-title" style="margin-bottom:12px">Holdings — After-Tax Returns</div>
-<table><thead><tr><th>Fund</th><th align="right">Invested</th><th align="right">Current</th><th align="right">Gross P&L</th><th align="right">After-Tax Return</th><th align="center">Signal</th></tr></thead><tbody>${rows}</tbody></table>
-${aiText?`<div style="margin-top:18px"><div class="sec-title">AI Advisor Analysis</div><div class="ai">${aiText}</div></div>`:""}
-<div class="footer">Generated by FolioIQ · folio-iq.vercel.app · Not SEBI-registered investment advice · After-tax uses Budget 2024 rules</div>
-</body></html>`;
-}
-
-// ── MAIN COMPONENT ────────────────────────────────────────────
-export default function Dashboard() {
-  const [holdings, setHoldings] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [aiText, setAiText] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [nifty, setNifty] = useState(null);
-  const [tab, setTab] = useState("holdings");
-  const [searchQ, setSearchQ] = useState("");
-  const [searchRes, setSearchRes] = useState([]);
-  const [showDrop, setShowDrop] = useState(false);
-  const [addForm, setAddForm] = useState({units:"",avgNav:"",purchaseDate:"",sipAmt:""});
-  const [harvest, setHarvest] = useState(null);
-  const [sipCal, setSipCal] = useState([]);
-  const [toast, setToast] = useState("");
-  const timer = useRef(null);
-
-  function showToast(m) { setToast(m); setTimeout(()=>setToast(""),3000); }
-
-  function save(h) {
-    localStorage.setItem("folioiq_h",JSON.stringify(h));
-    setHoldings(h);
-    setHarvest(calcHarvest(h));
-    setSipCal(getSIPCal(h));
-  }
-
-  useEffect(() => {
-    const s = localStorage.getItem("folioiq_h");
-    if (s) { const h=JSON.parse(s); setHoldings(h); setHarvest(calcHarvest(h)); setSipCal(getSIPCal(h)); }
-    fetchNifty().then(setNifty);
+  const summary = useMemo(() => {
+    const totalInvested = FUNDS.reduce((s, f) => s + f.investedAmount, 0);
+    const currentValue = FUNDS.reduce((s, f) => s + f.currentValue, 0);
+    const absoluteReturn = ((currentValue - totalInvested) / totalInvested) * 100;
+    const weightedXirr = FUNDS.reduce((s, f) => s + (f.xirr * f.investedAmount), 0) / totalInvested;
+    const activeSIPs = FUNDS.filter(f => f.sipAmount && f.status === "Active").length;
+    const monthlySIP = FUNDS.reduce((s, f) => s + (f.sipAmount || 0), 0);
+    const dayChange = FUNDS.reduce((s, f) => s + (f.dayChange || 0), 0);
+    const dayChangePercent = (dayChange / currentValue) * 100;
+    let score = 70; if (absoluteReturn > 20) score += 10; if (activeSIPs >= 3) score += 5; if (FUNDS.some(f => f.riskLevel === "Low")) score += 5; if (absoluteReturn < 0) score -= 15; score = Math.min(100, Math.max(0, score));
+    return { totalInvested, currentValue, absoluteReturn, xirr: weightedXirr, totalFunds: FUNDS.length, activeSIPs, monthlySIP, dayChange, dayChangePercent, score };
   }, []);
 
-  useEffect(() => {
-    clearTimeout(timer.current);
-    if (searchQ.length < 2) { setSearchRes([]); setShowDrop(false); return; }
-    timer.current = setTimeout(async () => {
-      const r = await fetch("https://api.mfapi.in/mf/search?q="+encodeURIComponent(searchQ));
-      const d = await r.json();
-      setSearchRes((d||[]).slice(0,8)); setShowDrop(true);
-    }, 350);
-  }, [searchQ]);
+  const categoryData = useMemo(() => { const cats: Record<string, number> = {}; FUNDS.forEach(f => { cats[f.category] = (cats[f.category] || 0) + f.currentValue; }); return Object.entries(cats).map(([name, value]) => ({ name, value, color: name === "Equity" ? "#10b981" : name === "Debt" ? "#3b82f6" : name === "Hybrid" ? "#f59e0b" : "#8b5cf6" })); }, []);
+  const subCategoryData = useMemo(() => { const subs: Record<string, number> = {}; FUNDS.forEach(f => { subs[f.subCategory] = (subs[f.subCategory] || 0) + f.currentValue; }); return Object.entries(subs).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value); }, []);
+  const sectorData = [{ name: "Financial", value: 35, fullMark: 100 }, { name: "IT", value: 22, fullMark: 100 }, { name: "Auto", value: 12, fullMark: 100 }, { name: "Consumer", value: 10, fullMark: 100 }, { name: "Energy", value: 8, fullMark: 100 }, { name: "Others", value: 13, fullMark: 100 }];
+  const performanceData = [{ month: "Jan", equity: 8.5, debt: 0.8, hybrid: 4.2 }, { month: "Feb", equity: -2.1, debt: 0.6, hybrid: 1.8 }, { month: "Mar", equity: 5.3, debt: 0.7, hybrid: 3.1 }, { month: "Apr", equity: 3.2, debt: 0.5, hybrid: 2.4 }, { month: "May", equity: 6.8, debt: 0.9, hybrid: 4.5 }, { month: "Jun", equity: -1.5, debt: 0.7, hybrid: 0.8 }];
+  const riskData = [{ subject: "Diversification", A: 85, fullMark: 100 }, { subject: "Risk Balance", A: 60, fullMark: 100 }, { subject: "Tax Efficiency", A: 75, fullMark: 100 }, { subject: "Cost Control", A: 70, fullMark: 100 }, { subject: "Liquidity", A: 90, fullMark: 100 }, { subject: "Growth", A: 80, fullMark: 100 }];
 
-  async function addFund(fund) {
-    setShowDrop(false); setSearchQ(""); setLoading(true);
-    try {
-      const r = await fetch("https://api.mfapi.in/mf/"+fund.schemeCode);
-      const d = await r.json();
-      const nav = d?.data||[];
-      const cur = nav.length ? parseFloat(nav[0].nav) : 0;
-      const units = parseFloat(addForm.units)||100;
-      const avgNav = parseFloat(addForm.avgNav)||cur;
-      const pd = addForm.purchaseDate||(()=>{const dt=new Date();dt.setFullYear(dt.getFullYear()-2);return dt.toISOString().split("T")[0];})();
-      const sipAmt = parseFloat(addForm.sipAmt)||0;
-      const days = daysFrom(pd);
-      const cat = d?.meta?.scheme_category||"Equity Scheme";
-      const inv=units*avgNav, cv=units*cur;
-      const tax=afterTax(inv,cv,days,cat);
-      const r1y=cagrFn(nav,1);
-      const sig=r1y!==null&&r1y<8?"PAUSE":r1y!==null&&r1y>16?"INCREASE":"CONTINUE";
-      const newH=[...holdings.filter(h=>h.schemeCode!==String(fund.schemeCode)),{
-        schemeCode:String(fund.schemeCode),schemeName:fund.schemeName,category:cat,amc:d?.meta?.fund_house||"",
-        units,avgNav,currentNAV:cur,purchaseDate:pd,sipAmount:sipAmt,holdingDays:days,navArr:nav,
-        investedAmount:inv,currentValue:cv,r1y,r3y:cagrFn(nav,3),...tax,signal:sig,
-      }];
-      save(newH);
-      setAddForm({units:"",avgNav:"",purchaseDate:"",sipAmt:""});
-      showToast("✓ "+fund.schemeName.substring(0,35)+"... added");
-    } catch { showToast("❌ Failed to fetch fund"); }
-    setLoading(false);
-  }
-
-  function removeFund(code) { save(holdings.filter(h=>h.schemeCode!==code)); setAiText(""); }
-
-  async function runAI() {
-    if (!holdings.length) return;
-    setAiLoading(true); setAiText(""); setTab("ai");
-    const ti=holdings.reduce((s,h)=>s+(h.investedAmount||0),0);
-    const tc=holdings.reduce((s,h)=>s+(h.currentValue||0),0);
-    const tn=holdings.reduce((s,h)=>s+(h.netGain||0),0);
-    const tt=holdings.reduce((s,h)=>s+(h.tax||0),0);
-    const lines=holdings.map(h=>`- ${h.schemeName.replace(/ - Direct.*/i,"").replace(/ Fund/i,"")}: invested ${fmtC(h.investedAmount||0)}, after-tax return ${fmtP(h.netReturnPct)}, 1Y CAGR ${h.r1y?fmtP(h.r1y):"N/A"}, signal: ${h.signal}`).join("\n");
-    const nc=nifty?`\nNifty 50 1Y: ${fmtP(nifty.r1y)} | Nifty 50 3Y CAGR: ${fmtP(nifty.r3y)}`:"";
-    try {
-      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1500,
-        system:"You are India best mutual fund advisor. Direct, specific, name exact fund alternatives. Use emojis. No jargon. Compare to Nifty benchmark.",
-        messages:[{role:"user",content:`Analyse this MF portfolio (Budget 2024 after-tax):\n\nInvested: ${fmtC(ti)} | Current: ${fmtC(tc)} | After-Tax Gain: ${fmtC(tn)} | Tax: ${fmtC(tt)}${nc}\n\n${lines}\n\nSections:\n📊 PORTFOLIO VERDICT\n🔴 PAUSE THESE (exact fund + one alternative to switch to)\n🟡 CONTINUE BUT WATCH\n🟢 INCREASE SIP HERE\n📉 MISSING GAPS\n💰 TAX HARVEST MOVE (use ₹1.25L LTCG exemption)\n⚡ DO THIS WEEK`}]
-      })});
-      const d=await res.json();
-      setAiText(d.content?.[0]?.text||"Analysis unavailable.");
-    } catch { setAiText("⚠️ AI failed. Try again."); }
-    setAiLoading(false);
-  }
-
-  function downloadReport() {
-    const ti=holdings.reduce((s,h)=>s+(h.investedAmount||0),0);
-    const tc=holdings.reduce((s,h)=>s+(h.currentValue||0),0);
-    const tn=holdings.reduce((s,h)=>s+(h.netGain||0),0);
-    const tt=holdings.reduce((s,h)=>s+(h.tax||0),0);
-    const np=ti>0?tn/ti*100:0;
-    const html=buildReport(holdings,{ti,tc,tn,tt,np},aiText,nifty);
-    const blob=new Blob([html],{type:"text/html"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    a.href=url; a.download=`FolioIQ-Report-${new Date().toISOString().split("T")[0]}.html`;
-    a.click(); URL.revokeObjectURL(url);
-  }
-
-  const ti=holdings.reduce((s,h)=>s+(h.investedAmount||0),0);
-  const tc=holdings.reduce((s,h)=>s+(h.currentValue||0),0);
-  const tn=holdings.reduce((s,h)=>s+(h.netGain||0),0);
-  const tt=holdings.reduce((s,h)=>s+(h.tax||0),0);
-  const np=ti>0?tn/ti*100:0;
-  const gp=ti>0?(tc-ti)/ti*100:0;
-
-  const TABS = [
-    ["holdings","📊 Holdings"],
-    ["harvest","🌾 Tax Harvest"],
-    ["sip","📅 SIP Calendar"],
-    ["ai","🤖 AI Advisor"],
-    ["add","＋ Add Fund"],
-  ];
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* TOPBAR */}
-      <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center"><span className="text-white font-bold text-sm">F</span></div>
-          <span className="font-bold text-lg text-gray-900">FolioIQ</span>
-        </Link>
-        <div className="flex items-center gap-2">
-          {nifty && <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">📊 Nifty 50: {fmtP(nifty.r1y)} 1Y</div>}
-          <Link href="/upload" className="px-3 py-1.5 bg-green-700 text-white text-xs font-bold rounded-full">📤 Upload</Link>
-          <Link href="/risk" className="px-3 py-1.5 border border-gray-200 text-gray-600 text-xs font-medium rounded-full hover:bg-gray-50">Risk Profile</Link>
+  if (currentView === "landing") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: "2s"}} />
         </div>
-      </header>
-
-      {/* KPI STRIP */}
-      {holdings.length > 0 && (
-        <div className="bg-white border-b border-gray-200 px-6 py-3">
-          <div className="max-w-6xl mx-auto grid grid-cols-5 gap-4">
-            {[
-              {l:"Invested",v:fmtC(ti),c:"text-gray-900"},
-              {l:"Current Value",v:fmtC(tc),c:tc>=ti?"text-green-700":"text-red-600"},
-              {l:"Money You Keep",v:fmtP(np),c:np>=0?"text-green-700":"text-red-600",hl:true},
-              {l:"Gross Return",v:fmtP(gp),c:gp>=0?"text-green-700":"text-red-600"},
-              {l:"Tax Liability",v:fmtC(tt),c:"text-amber-700"},
-            ].map(({l,v,c,hl})=>(
-              <div key={l} className={`text-center py-1 ${hl?"bg-green-50 rounded-lg px-2":""}`}>
-                <div className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">{l}</div>
-                <div className={`text-lg font-bold ${c}`}>{v}</div>
+        <nav className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-slate-700/50 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <TrendingUp size={22} className="text-white" />
+            </div>
+            <span className="text-2xl font-bold tracking-tight">FolioIQ</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <button className="text-sm text-slate-400 hover:text-white transition hidden sm:block">Features</button>
+            <button className="text-sm text-slate-400 hover:text-white transition hidden sm:block">Pricing</button>
+            <button onClick={() => setCurrentView("dashboard")} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-lg shadow-emerald-500/25">Get Started</button>
+          </div>
+        </nav>
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5">
+                <Sparkles size={14} className="text-emerald-400" />
+                <span className="text-sm text-emerald-400 font-medium">AI-Powered Portfolio Intelligence</span>
+              </div>
+              <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
+                Make better<br />
+                <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">mutual fund</span><br />
+                decisions.
+              </h1>
+              <p className="text-lg text-slate-400 leading-relaxed max-w-lg">
+                Upload your portfolio and FolioIQ tells you what to fix, what to keep, and what to add next. Smart analysis that anyone can understand.
+              </p>
+              <div className="flex items-center gap-4">
+                <button onClick={() => setCurrentView("dashboard")} className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-xl font-semibold text-lg transition flex items-center gap-2 shadow-lg shadow-emerald-500/25">
+                  Check your portfolio <ChevronRight size={18} />
+                </button>
+                <button onClick={() => setCurrentView("upload")} className="border border-slate-600 hover:border-slate-400 text-slate-300 hover:text-white px-8 py-4 rounded-xl font-semibold text-lg transition">
+                  Upload CAS
+                </button>
+              </div>
+              <div className="flex items-center gap-8 pt-4">
+                <div className="text-center"><p className="text-2xl font-bold text-white">5 sec</p><p className="text-xs text-slate-500 uppercase tracking-wider">Portfolio Scan</p></div>
+                <div className="w-px h-10 bg-slate-700" />
+                <div className="text-center"><p className="text-2xl font-bold text-white">AI</p><p className="text-xs text-slate-500 uppercase tracking-wider">Powered Checks</p></div>
+                <div className="w-px h-10 bg-slate-700" />
+                <div className="text-center"><p className="text-2xl font-bold text-white">Simple</p><p className="text-xs text-slate-500 uppercase tracking-wider">Action Plan</p></div>
+              </div>
+            </div>
+            <div className="relative lg:pl-8">
+              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl">
+                <div className="bg-white rounded-2xl p-6 shadow-xl">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-500 uppercase tracking-wider">Portfolio Health</h3>
+                      <div className="flex items-end gap-2 mt-1"><span className="text-5xl font-bold text-slate-900">{summary.score}</span><span className="text-sm text-slate-400 mb-2">/100</span></div>
+                    </div>
+                    <div className={`px-3 py-1.5 rounded-full text-xs font-bold ${summary.score >= 70 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{summary.score >= 70 ? "Healthy" : "Needs Work"}</div>
+                  </div>
+                  <div className="w-full h-3 bg-slate-100 rounded-full mb-6 overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-1000" style={{width: `${summary.score}%`}} />
+                  </div>
+                  <div className="space-y-3">
+                    {AI_INSIGHTS.slice(0, 3).map(insight => (
+                      <div key={insight.id} className={`flex items-start gap-3 p-3 rounded-xl ${getInsightColor(insight.type).bg} border ${getInsightColor(insight.type).border}`}>
+                        <insight.icon size={16} className={getInsightColor(insight.type).icon + " mt-0.5 shrink-0"} />
+                        <div><p className="text-xs font-semibold text-slate-800">{insight.title}</p><p className="text-[10px] text-slate-500 mt-0.5">{insight.impact}</p></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -top-6 -right-6 bg-gradient-to-br from-emerald-500 to-teal-500 text-white p-4 rounded-2xl shadow-xl shadow-emerald-500/20 animate-bounce" style={{animationDuration: "3s"}}><TrendingUp size={24} /></div>
+              <div className="absolute -bottom-4 -left-4 bg-white p-4 rounded-2xl shadow-xl"><Zap size={24} className="text-amber-500" /></div>
+            </div>
+          </div>
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">Why FolioIQ?</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">Everything you need to make smarter mutual fund decisions, powered by AI</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[{ icon: Brain, title: "AI Analysis", desc: "Get personalized recommendations based on your portfolio" }, { icon: Zap, title: "Risk Assessment", desc: "Understand your risk exposure across categories" }, { icon: Target, title: "Tax Optimization", desc: "Maximize tax savings with smart harvesting" }, { icon: BarChart3, title: "Visual Analytics", desc: "Beautiful charts for portfolio breakdown" }, { icon: Award, title: "Instant Insights", desc: "5-second portfolio health check" }, { icon: Lightbulb, title: "Expert Grading", desc: "Portfolio score with actionable fixes" }].map((feature, i) => (
+              <div key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition group">
+                <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition">
+                  <feature.icon size={24} className="text-emerald-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-sm text-slate-400">{feature.desc}</p>
               </div>
             ))}
           </div>
         </div>
-      )}
-
-      {/* TABS */}
-      <div className="bg-white border-b border-gray-200 px-6">
-        <div className="max-w-6xl mx-auto flex gap-1 overflow-x-auto">
-          {TABS.map(([id,label])=>(
-            <button key={id} onClick={()=>setTab(id)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tab===id?"border-gray-900 text-gray-900":"border-transparent text-gray-500 hover:text-gray-700"}`}>
-              {label}
-            </button>
-          ))}
-          {holdings.length > 0 && (
-            <button onClick={downloadReport} className="ml-auto px-4 py-3 text-sm font-medium text-green-700 whitespace-nowrap flex items-center gap-1.5 hover:bg-green-50 rounded-t-lg">
-              📄 Download Report
-            </button>
-          )}
-        </div>
       </div>
+    );
+  }
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
-
-        {/* EMPTY STATE */}
-        {holdings.length === 0 && tab !== "add" && (
-          <div className="text-center py-16">
-            <div className="text-4xl mb-4">📊</div>
-            <div className="text-xl font-bold text-gray-900 mb-2">No funds yet</div>
-            <div className="text-gray-500 text-sm mb-6">Upload your NJ Wealth / Kuvera statement or add funds manually</div>
-            <div className="flex gap-3 justify-center">
-              <Link href="/upload" className="px-5 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-semibold">📤 Upload Statement</Link>
-              <button onClick={()=>setTab("add")} className="px-5 py-2.5 border border-gray-200 text-gray-900 rounded-lg text-sm font-medium">＋ Add Manually</button>
-            </div>
+  if (currentView === "fund-detail" && selectedFund) {
+    const f = selectedFund;
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setCurrentView("dashboard")} className="p-2 hover:bg-slate-100 rounded-lg transition"><ChevronRight size={20} className="text-slate-500 rotate-180" /></button>
+            <div><h1 className="font-bold text-slate-800">{f.schemeName}</h1><p className="text-xs text-slate-500">{f.amc} • {f.subCategory}</p></div>
           </div>
-        )}
-
-        {/* ── HOLDINGS TAB ── */}
-        {tab === "holdings" && holdings.length > 0 && (
-          <div>
-            {/* Nifty benchmark banner */}
-            {nifty && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-blue-800 text-sm">📊 vs Nifty 50 Benchmark</span>
-                  <span className="text-blue-700 text-sm ml-3">Nifty 50 1Y: <strong>{fmtP(nifty.r1y)}</strong> &nbsp;·&nbsp; Nifty 50 3Y CAGR: <strong>{fmtP(nifty.r3y)}</strong></span>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-blue-600 font-semibold">Your Portfolio (after-tax)</div>
-                  <div className={`text-lg font-bold ${np>=0?"text-green-700":"text-red-600"}`}>{fmtP(np)}</div>
-                </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${f.absoluteReturn >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{f.absoluteReturn >= 0 ? "+" : ""}{f.absoluteReturn.toFixed(1)}% Return</span>
+            <span className={`text-xs px-3 py-1.5 rounded-full font-semibold border ${getRiskColor(f.riskLevel)}`}>{f.riskLevel} Risk</span>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[{ label: "Current Value", value: formatCurrency(f.currentValue), color: "text-slate-900" }, { label: "Invested", value: formatCurrency(f.investedAmount), color: "text-slate-600" }, { label: "XIRR", value: `${f.xirr.toFixed(1)}%`, color: f.xirr >= 0 ? "text-emerald-600" : "text-red-600" }, { label: "Units", value: f.units.toFixed(2), color: "text-slate-900" }].map((metric, i) => (
+                  <div key={i} className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm"><p className="text-xs text-slate-500 mb-1">{metric.label}</p><p className={`text-xl font-bold ${metric.color}`}>{metric.value}</p></div>
+                ))}
               </div>
-            )}
-
-            {/* Signal summary */}
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              {[
-                {l:"🔴 Pause / Exit",f:holdings.filter(h=>h.signal==="PAUSE"),bg:"bg-red-50",b:"border-red-200",c:"text-red-700"},
-                {l:"🟡 Continue & Watch",f:holdings.filter(h=>h.signal==="CONTINUE"),bg:"bg-yellow-50",b:"border-yellow-200",c:"text-yellow-700"},
-                {l:"🟢 Increase SIP",f:holdings.filter(h=>h.signal==="INCREASE"),bg:"bg-green-50",b:"border-green-200",c:"text-green-700"},
-              ].map(({l,f,bg,b,c})=>(
-                <div key={l} className={`rounded-xl p-4 border ${bg} ${b}`}>
-                  <div className={`text-sm font-bold mb-2 ${c}`}>{l} ({f.length})</div>
-                  {f.length===0?<div className="text-xs text-gray-400">None</div>:f.slice(0,2).map(h=>(
-                    <div key={h.schemeCode} className="text-xs font-medium text-gray-900 mb-1">
-                      {h.schemeName.replace(/ - Direct.*/i,"").replace(/ Fund/i,"").substring(0,28)}
-                      {h.r1y!=null&&<span className="ml-1 text-gray-400">({fmtP(h.r1y)} 1Y)</span>}
+              <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2"><Activity size={18} className="text-emerald-500" /> NAV Performance</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={[{month:"Jan", nav: f.nav * 0.85}, {month:"Feb", nav: f.nav * 0.82}, {month:"Mar", nav: f.nav * 0.90}, {month:"Apr", nav: f.nav * 0.95}, {month:"May", nav: f.nav * 0.98}, {month:"Jun", nav: f.nav}]}>
+                    <defs><linearGradient id="navGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient></defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" /><XAxis dataKey="month" stroke="#94a3b8" fontSize={12} /><YAxis stroke="#94a3b8" fontSize={12} />
+                    <Tooltip contentStyle={{borderRadius: "12px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"}} />
+                    <Area type="monotone" dataKey="nav" stroke="#10b981" fillOpacity={1} fill="url(#navGrad)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2"><Layers size={18} className="text-blue-500" /> Top Holdings</h3>
+                <div className="space-y-4">
+                  {f.holdings.map((h, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center text-sm font-bold text-slate-600">{h.name.charAt(0)}</div>
+                        <div><p className="text-sm font-semibold text-slate-800">{h.name}</p><p className="text-xs text-slate-500">{h.sector}</p></div>
+                      </div>
+                      <div className="text-right"><p className="text-sm font-bold text-slate-800">{h.weight}%</p><div className="w-32 h-2 bg-slate-100 rounded-full mt-1"><div className="h-full bg-emerald-500 rounded-full" style={{width: `${h.weight * 5}%`}} /></div></div>
                     </div>
                   ))}
-                  {f.length>2&&<div className="text-xs text-gray-400">+{f.length-2} more</div>}
                 </div>
-              ))}
+              </div>
             </div>
-
-            {/* Holdings table */}
-            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <div className="font-bold text-gray-900">All Holdings ({holdings.length})</div>
-                <button onClick={runAI} disabled={aiLoading}
-                  className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 disabled:opacity-40">
-                  {aiLoading?"Analysing...":"🤖 AI Analysis"}
-                </button>
+            <div className="space-y-6">
+              <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
+                <h3 className="font-semibold text-slate-800 mb-4">Fund Details</h3>
+                <div className="space-y-3 text-sm">
+                  {[{ label: "Fund Manager", value: f.fundManager }, { label: "Category", value: f.category }, { label: "Benchmark", value: f.benchmark }, { label: "Expense Ratio", value: `${f.expenseRatio}%` }, { label: "AUM", value: `₹${f.aum}Cr` }, { label: "Risk", value: f.riskLevel, isRisk: true }, { label: "Rating", value: "★".repeat(f.rating) + "☆".repeat(5-f.rating), isRating: true }].map((item, i) => (
+                    <div key={i} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+                      <span className="text-slate-500">{item.label}</span>
+                      <span className={`font-medium ${item.isRisk ? (f.riskLevel === "Low" ? "text-emerald-600" : f.riskLevel === "Moderate" ? "text-blue-600" : f.riskLevel === "High" ? "text-orange-600" : "text-red-600") : item.isRating ? "text-amber-500" : "text-slate-800"}`}>{item.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b-2 border-gray-200">
-                    {["Fund","Invested","Current","After-Tax Return","1Y CAGR","3Y CAGR","Signal",""].map(h=>(
-                      <th key={h} className="text-left py-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr></thead>
-                  <tbody>
-                    {holdings.map(h=>{
-                      const sigMap={PAUSE:{bg:"bg-red-100 text-red-700",l:"✕ Pause"},CONTINUE:{bg:"bg-yellow-100 text-yellow-700",l:"◉ Continue"},INCREASE:{bg:"bg-green-100 text-green-700",l:"▲ Increase"}};
-                      const sig=sigMap[h.signal||"CONTINUE"];
-                      return (
-                        <tr key={h.schemeCode} className="border-b border-gray-50 hover:bg-gray-50">
-                          <td className="py-3 px-4 max-w-[200px]">
-                            <div className="font-semibold text-gray-900 text-xs truncate" title={h.schemeName}>{h.schemeName.replace(/ - Direct.*/i,"").replace(/ Fund/i,"")}</div>
-                            <div className="text-gray-400 text-xs mt-0.5">{(h.category||"").replace(/^(Equity|Other|Debt) Scheme - /,"").substring(0,22)} · {(h.amc||"").split(" ")[0]}</div>
-                            {h.sipAmount>0&&<span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-medium">SIP ₹{h.sipAmount.toLocaleString("en-IN")}</span>}
-                          </td>
-                          <td className="py-3 px-4 font-mono text-xs text-gray-700">{fmtC(h.investedAmount||0)}</td>
-                          <td className={"py-3 px-4 font-mono text-xs font-semibold "+((h.currentValue||0)>=(h.investedAmount||0)?"text-green-700":"text-red-600")}>{fmtC(h.currentValue||0)}</td>
-                          <td className={"py-3 px-4 font-mono text-xs font-semibold "+((h.netReturnPct||0)>=0?"text-green-700":"text-red-600")}>{fmtP(h.netReturnPct)}</td>
-                          <td className={"py-3 px-4 font-mono text-xs "+((h.r1y||0)>=0?"text-green-700":"text-red-600")}>{h.r1y!=null?fmtP(h.r1y):"—"}</td>
-                          <td className={"py-3 px-4 font-mono text-xs "+((h.r3y||0)>=0?"text-green-700":"text-red-600")}>{h.r3y!=null?fmtP(h.r3y):"—"}</td>
-                          <td className="py-3 px-4"><span className={"text-xs font-bold px-2 py-1 rounded-full "+sig.bg}>{sig.l}</span></td>
-                          <td className="py-3 px-4"><button onClick={()=>removeFund(h.schemeCode)} className="text-xs text-red-500 hover:text-red-700 font-medium">✕</button></td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="px-5 py-3 bg-yellow-50 border-t border-yellow-100">
-                <p className="text-xs text-yellow-700">After-tax: Equity &gt;12m = LTCG 12.5% (₹1.25L exempt) · Equity &lt;12m = STCG 20% · Debt = slab rate · 4% cess · Assumed redemption today</p>
+              {f.sipAmount && (
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+                  <h3 className="font-semibold text-emerald-800 mb-3 flex items-center gap-2"><Clock size={16} /> SIP Active</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span className="text-emerald-600">Amount</span><span className="font-bold text-emerald-800">₹{f.sipAmount.toLocaleString()}/month</span></div>
+                    <div className="flex justify-between"><span className="text-emerald-600">Date</span><span className="font-medium text-emerald-800">{f.sipDate}</span></div>
+                  </div>
+                </div>
+              )}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-200">
+                <h3 className="font-semibold text-amber-800 mb-2 flex items-center gap-2"><Brain size={16} /> AI Recommendation</h3>
+                <p className="text-sm text-amber-700 leading-relaxed">{f.absoluteReturn < 0 ? "This fund is underperforming. Consider reviewing your allocation or switching to a better alternative in the same category." : f.riskLevel === "Very High" ? "Strong performer but high volatility. Ensure this fits your risk appetite and overall allocation." : "Solid fund with consistent performance. Continue your SIP to benefit from rupee cost averaging."}</p>
               </div>
             </div>
           </div>
-        )}
-
-        {/* ── TAX HARVEST TAB ── */}
-        {tab === "harvest" && (
-          <div>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">🌾 Tax Harvesting</h2>
-              <p className="text-gray-500 text-sm">Every FY you can book ₹1,25,000 of Long Term Capital Gains completely tax-free. Here's how to use it.</p>
-            </div>
-
-            {!harvest || harvest.candidates.length === 0 ? (
-              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-10 text-center">
-                <div className="text-3xl mb-3">✅</div>
-                <div className="font-semibold text-gray-900 mb-1">No harvest opportunities right now</div>
-                <div className="text-sm text-gray-500">Either no equity funds held over 12 months, or no gains to book</div>
-              </div>
-            ) : (
-              <>
-                {/* Summary card */}
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-5">
-                  <div className="grid grid-cols-3 gap-6">
-                    <div>
-                      <div className="text-xs text-green-700 font-bold uppercase tracking-wide mb-1">LTCG Available to Book</div>
-                      <div className="text-2xl font-bold text-green-800">{fmtC(harvest.totalGain)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-green-700 font-bold uppercase tracking-wide mb-1">Tax-Free Exemption</div>
-                      <div className="text-2xl font-bold text-green-800">₹1,25,000</div>
-                    </div>
-                    <div className="bg-green-100 rounded-xl p-4">
-                      <div className="text-xs text-green-700 font-bold uppercase tracking-wide mb-1">💰 Tax You Can Save</div>
-                      <div className="text-3xl font-bold text-green-800">{fmtC(harvest.taxSaved)}</div>
-                      <div className="text-xs text-green-600 mt-1">Book gains before March 31st · Reinvest same day</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* How it works */}
-                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-5">
-                  <div className="font-semibold text-yellow-800 text-sm mb-2">⚡ How to Execute This</div>
-                  <div className="text-yellow-700 text-sm space-y-1">
-                    <div>1. Sell the recommended units of your chosen fund on NJ Wealth / any platform</div>
-                    <div>2. The gain books against your ₹1.25L exemption — zero tax on this</div>
-                    <div>3. Reinvest the exact same amount in the same fund the next day (resets your cost basis)</div>
-                    <div>4. You just saved {fmtC(harvest.taxSaved)} in tax legally</div>
-                  </div>
-                </div>
-
-                {/* Candidates */}
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-gray-100 font-bold text-gray-900">Best Candidates to Harvest From</div>
-                  <table className="w-full text-sm">
-                    <thead><tr className="border-b-2 border-gray-200">
-                      {["Fund","LTCG Gain","Harvest: Sell These Units","Amount to Sell","Then Reinvest"].map(h=>(
-                        <th key={h} className="text-left py-3 px-4 text-xs font-bold text-gray-400 uppercase tracking-wide">{h}</th>
-                      ))}
-                    </tr></thead>
-                    <tbody>
-                      {harvest.candidates.slice(0,5).map(h=>(
-                        <tr key={h.schemeCode} className="border-b border-gray-50">
-                          <td className="py-3 px-4">
-                            <div className="font-semibold text-xs text-gray-900">{h.schemeName.replace(/ - Direct.*/i,"").replace(/ Fund/i,"").substring(0,35)}</div>
-                            <div className="text-xs text-gray-400">{Math.round((h.holdingDays||0)/30)} months held</div>
-                          </td>
-                          <td className="py-3 px-4 font-mono text-xs text-green-700 font-semibold">{fmtC(h.gain)}</td>
-                          <td className="py-3 px-4 font-mono text-xs text-amber-700 font-bold">{h.unitsToSell} units</td>
-                          <td className="py-3 px-4 font-mono text-xs">{fmtC(h.amountToSell)}</td>
-                          <td className="py-3 px-4 text-xs text-green-700 font-medium">Same fund, next day ✓</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── SIP CALENDAR TAB ── */}
-        {tab === "sip" && (
-          <div>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">📅 SIP Calendar</h2>
-              <p className="text-gray-500 text-sm">Upcoming SIP debits across all your funds</p>
-            </div>
-
-            {sipCal.length === 0 ? (
-              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-10 text-center">
-                <div className="text-3xl mb-3">📅</div>
-                <div className="font-semibold text-gray-900 mb-1">No active SIPs found</div>
-                <div className="text-sm text-gray-500">When you add funds with a SIP amount, they appear here</div>
-              </div>
-            ) : (
-              <>
-                {/* Monthly SIP total */}
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 flex items-center justify-between">
-                  <div>
-                    <div className="font-bold text-blue-800 text-sm">Monthly SIP Commitment</div>
-                    <div className="text-xs text-blue-600 mt-0.5">{sipCal.length} active SIPs</div>
-                  </div>
-                  <div className="text-2xl font-bold text-blue-800">
-                    {fmtC(sipCal.reduce((s,h)=>s+h.amount,0))}<span className="text-sm font-normal text-blue-600">/month</span>
-                  </div>
-                </div>
-
-                {/* Calendar grid */}
-                <div className="grid gap-3">
-                  {sipCal.map((s,i)=>{
-                    const urgent = s.daysUntil <= 3;
-                    const soon = s.daysUntil <= 7;
-                    return (
-                      <div key={i} className={`bg-white border rounded-xl p-4 flex items-center gap-4 ${urgent?"border-red-200 bg-red-50":soon?"border-amber-200 bg-amber-50":"border-gray-200"}`}>
-                        <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0 font-bold ${urgent?"bg-red-600 text-white":soon?"bg-amber-500 text-white":"bg-gray-900 text-white"}`}>
-                          <div className="text-xs leading-none">{s.nextDate.toLocaleString("en-IN",{month:"short"})}</div>
-                          <div className="text-lg leading-none">{s.nextDate.getDate()}</div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-gray-900 text-sm">{s.name.replace(/ - Direct.*/i,"").replace(/ Fund/i,"").substring(0,45)}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">{s.amc?.split(" ")[0]} · SIP debit</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-gray-900">{fmtC(s.amount)}</div>
-                          <div className={`text-xs font-medium ${urgent?"text-red-600":soon?"text-amber-600":"text-gray-400"}`}>
-                            {s.daysUntil === 0 ? "Today!" : s.daysUntil === 1 ? "Tomorrow!" : `In ${s.daysUntil} days`}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── AI ADVISOR TAB ── */}
-        {tab === "ai" && (
-          <div>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">🤖 AI Portfolio Advisor</h2>
-              <p className="text-gray-500 text-sm">Personalised analysis with after-tax returns vs Nifty 50 benchmark</p>
-            </div>
-
-            {holdings.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-3xl mb-3">🤖</div>
-                <div className="font-semibold text-gray-900 mb-4">Add funds first</div>
-                <button onClick={()=>setTab("add")} className="px-5 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-semibold">Add Funds</button>
-              </div>
-            ) : (
-              <>
-                <div className="bg-gradient-to-br from-green-50 to-purple-50 border border-green-200 rounded-2xl p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-2.5 h-2.5 bg-green-600 rounded-full animate-pulse"></div>
-                    <div className="font-bold text-gray-900 text-lg">AI Wealth Advisor</div>
-                    <div className="ml-auto flex gap-2">
-                      {aiText && <button onClick={runAI} className="px-3 py-1.5 border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-white">↻ Refresh</button>}
-                      <button onClick={runAI} disabled={aiLoading} className="px-4 py-1.5 bg-green-700 text-white text-xs font-bold rounded-lg hover:bg-green-800 disabled:opacity-40">
-                        {aiLoading?"Analysing...":"⚡ Analyse"}
-                      </button>
-                    </div>
-                  </div>
-                  {aiLoading && (
-                    <div className="flex gap-2 items-center">
-                      <div className="flex gap-1">{[0,1,2].map(i=><div key={i} className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{animationDelay:i*0.15+"s"}}/>)}</div>
-                      <span className="text-sm text-gray-500">Analysing {holdings.length} funds against Nifty 50 benchmark...</span>
-                    </div>
-                  )}
-                  {aiText && <div className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">{aiText}</div>}
-                  {!aiText && !aiLoading && <div className="text-sm text-gray-500">Click Analyse to get personalised recommendations based on your exact portfolio and after-tax returns vs Nifty 50.</div>}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── ADD FUND TAB ── */}
-        {tab === "add" && (
-          <div>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">＋ Add Fund</h2>
-              <p className="text-gray-500 text-sm">Search all ~20,000 AMFI-registered funds · Or <Link href="/upload" className="text-green-700 underline font-medium">upload your statement</Link></p>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-2xl p-6">
-              <div className="relative mb-4">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                <input className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
-                  placeholder="Search fund name, AMC..." value={searchQ} onChange={e=>setSearchQ(e.target.value)}
-                  onFocus={()=>searchRes.length&&setShowDrop(true)} onBlur={()=>setTimeout(()=>setShowDrop(false),200)}/>
-                {showDrop && searchRes.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto mt-1">
-                    {searchRes.map(f=>(
-                      <div key={f.schemeCode} className="px-4 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-0" onMouseDown={()=>addFund(f)}>
-                        <div className="text-sm font-medium text-gray-900">{f.schemeName}</div>
-                        <div className="text-xs text-gray-400">Code: {f.schemeCode}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {[
-                  {l:"Units held",ph:"e.g. 125.50",k:"units"},
-                  {l:"Avg Purchase NAV (₹)",ph:"e.g. 42.50",k:"avgNav"},
-                  {l:"Purchase Date",ph:"",k:"purchaseDate",type:"date"},
-                  {l:"Monthly SIP (₹, or 0)",ph:"0 if lumpsum",k:"sipAmt"},
-                ].map(({l,ph,k,type})=>(
-                  <div key={k}>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">{l}</label>
-                    <input type={type||"text"} placeholder={ph} value={addForm[k]}
-                      onChange={e=>setAddForm(p=>({...p,[k]:e.target.value}))}
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-green-600"/>
-                  </div>
-                ))}
-              </div>
-
-              {loading && <div className="text-sm text-green-700 mb-3">⏳ Fetching live NAV from AMFI...</div>}
-
-              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                ⚠️ <strong>Purchase date is critical</strong> — it determines whether your gains are taxed at 12.5% LTCG or 20% STCG. Set it accurately.
-              </div>
-            </div>
-
-            {/* Current holdings list */}
-            {holdings.length > 0 && (
-              <div className="mt-5 bg-white border border-gray-200 rounded-2xl p-5">
-                <div className="font-bold text-gray-900 mb-4">Current Holdings ({holdings.length})</div>
-                {holdings.map(h=>(
-                  <div key={h.schemeCode} className="flex items-center gap-3 py-3 border-b border-gray-50 last:border-0">
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold text-gray-900">{h.schemeName.replace(/ - Direct.*/i,"").replace(/ Fund/i,"").substring(0,45)}</div>
-                      <div className="text-xs text-gray-400">{h.units} units · {h.purchaseDate}{h.sipAmount>0?` · SIP ₹${h.sipAmount.toLocaleString("en-IN")}`:""}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`text-sm font-semibold ${(h.netReturnPct||0)>=0?"text-green-700":"text-red-600"}`}>{fmtP(h.netReturnPct)}</div>
-                      <div className="text-xs text-gray-400">after-tax</div>
-                    </div>
-                    <button onClick={()=>removeFund(h.schemeCode)} className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded font-medium">✕</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
+        </div>
       </div>
+    );
+  }
 
-      {toast && <div className="fixed bottom-5 right-5 z-50 bg-gray-900 text-white px-4 py-3 rounded-xl text-sm font-medium shadow-xl animate-bounce">{toast}</div>}
+  return (
+    <div className="min-h-screen bg-slate-50 flex">
+      <aside className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} fixed lg:static lg:translate-x-0 z-40 w-64 h-screen bg-white border-r border-slate-200 transition-transform duration-300`}>
+        <div className="p-5">
+          <div className="flex items-center gap-2 mb-8">
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center shadow-md"><TrendingUp size={20} className="text-white" /></div>
+            <span className="font-bold text-slate-800 text-lg">FolioIQ</span>
+          </div>
+          <nav className="space-y-1">
+            {[{id:"overview", icon:PieIcon, label:"Overview"}, {id:"holdings", icon:Layers, label:"Holdings"}, {id:"analysis", icon:BarChart3, label:"Analysis"}, {id:"insights", icon:Brain, label:"AI Insights"}].map(item => (
+              <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition ${activeTab === item.id ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50"}`}><item.icon size={18} /> {item.label}</button>
+            ))}
+            <button onClick={() => setCurrentView("upload")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 font-medium text-sm transition"><Upload size={18} /> Upload CAS</button>
+          </nav>
+        </div>
+        <div className="absolute bottom-0 w-full p-5 border-t border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center"><User size={16} className="text-slate-600" /></div>
+            <div className="flex-1"><p className="text-sm font-medium text-slate-800">Portfolio</p><p className="text-xs text-slate-500">{summary.totalFunds} funds</p></div>
+            <Settings size={16} className="text-slate-400 cursor-pointer hover:text-slate-600" />
+          </div>
+        </div>
+      </aside>
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+      <main className="flex-1 min-w-0">
+        <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 hover:bg-slate-100 rounded-lg transition"><Menu size={20} className="text-slate-600" /></button>
+            <h2 className="font-semibold text-slate-800 text-lg">{activeTab === "overview" ? "Portfolio Overview" : activeTab === "holdings" ? "Your Holdings" : activeTab === "analysis" ? "Portfolio Analysis" : "AI Insights"}</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="p-2 hover:bg-slate-100 rounded-lg transition relative"><Bell size={18} className="text-slate-500" /><span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" /></button>
+            <button onClick={() => setCurrentView("upload")} className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-sm"><Upload size={16} /> Upload</button>
+          </div>
+        </header>
+        <div className="p-6 max-w-7xl mx-auto">
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">Portfolio Health Score</h3>
+                    <div className="flex items-end gap-2 mt-1"><span className="text-5xl font-bold">{summary.score}</span><span className="text-sm text-slate-400 mb-1">/100</span></div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${summary.score >= 70 ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}`}>{summary.score >= 70 ? <CheckCircle size={12} /> : <AlertTriangle size={12} />}{summary.score >= 70 ? "Healthy" : "Needs Work"}</div>
+                    <p className="text-xs text-slate-500 mt-1">{summary.totalFunds} funds analyzed</p>
+                  </div>
+                </div>
+                <div className="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-300 rounded-full transition-all duration-1000" style={{width: `${summary.score}%`}} />
+                </div>
+                <div className="flex items-center gap-6 mt-4 text-xs text-slate-400">
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 bg-emerald-500 rounded-full" /> Excellent (80-100)</span>
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 bg-teal-400 rounded-full" /> Good (60-79)</span>
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 bg-amber-400 rounded-full" /> Needs Work (0-59)</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[{label:"Current Value", value:formatCurrency(summary.currentValue), icon:Wallet, color:"emerald", trend:`↑ ${summary.dayChangePercent.toFixed(2)}%`, sub:`+${formatCurrency(summary.dayChange)} today`}, {label:"Total Invested", value:formatCurrency(summary.totalInvested), icon:DollarSign, color:"blue", sub:`Across ${summary.totalFunds} funds`}, {label:"Total Returns", value:`${summary.absoluteReturn >= 0 ? "+" : ""}${summary.absoluteReturn.toFixed(1)}%`, icon:ArrowUpRight, color:"purple", sub:`XIRR: ${summary.xirr.toFixed(1)}%`, isReturn:true}, {label:"Monthly SIP", value:formatCurrency(summary.monthlySIP), icon:Clock, color:"orange", sub:`${summary.activeSIPs} active SIPs`}].map((card, i) => (
+                  <div key={i} className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{card.label}</p>
+                      <div className={`p-1.5 bg-${card.color}-50 rounded-lg`}><card.icon size={14} className={`text-${card.color}-600`} /></div>
+                    </div>
+                    <p className={`text-2xl font-bold ${card.isReturn ? (summary.absoluteReturn >= 0 ? "text-emerald-600" : "text-red-600") : "text-slate-900"}`}>{card.value}</p>
+                    <div className="flex items-center gap-2 mt-1">{card.trend && <span className={`text-xs font-semibold ${card.color === "emerald" ? "text-emerald-600 bg-emerald-50" : "text-slate-600 bg-slate-50"} px-2 py-0.5 rounded-full`}>{card.trend}</span>}<span className="text-xs text-slate-400">{card.sub}</span></div>
+                  </div>
+                ))}
+              </div>
+              <div className="grid lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                  <h3 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2"><PieIcon size={16} className="text-emerald-500" /> Asset Allocation</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart><Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">{categoryData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value: number) => formatCurrency(value)} /><Legend verticalAlign="bottom" height={36} iconType="circle" /></PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                  <h3 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2"><BarChart3 size={16} className="text-blue-500" /> Category Breakdown</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={subCategoryData} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} /><XAxis type="number" stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `₹${(v/100000).toFixed(0)}L`} /><YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} width={100} /><Tooltip formatter={(value: number) => formatCurrency(value)} /><Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} /></BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                <h3 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2"><Activity size={16} className="text-purple-500" /> Monthly Performance</h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={performanceData}><CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" /><XAxis dataKey="month" stroke="#94a3b8" fontSize={12} /><YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(v) => `${v}%`} /><Tooltip contentStyle={{borderRadius: "12px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"}} /><Legend /><Area type="monotone" dataKey="equity" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.3} name="Equity" /><Area type="monotone" dataKey="debt" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} name="Debt" /><Area type="monotone" dataKey="hybrid" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.3} name="Hybrid" /></AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                <h3 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2"><Target size={16} className="text-red-500" /> Risk Analysis</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={riskData}><PolarGrid stroke="#e2e8f0" /><PolarAngleAxis dataKey="subject" tick={{fill: '#64748b', fontSize: 12}} /><PolarAngleAxis angle={30} domain={[0, 100]} tick={{fill: '#94a3b8', fontSize: 10}} /><Radar name="Your Portfolio" dataKey="A" stroke="#10b981" fill="#10b981" fillOpacity={0.3} strokeWidth={2} /></RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+          {activeTab === "holdings" && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="font-semibold text-slate-800">Your Funds ({FUNDS.length})</h3>
+                  <div className="flex items-center gap-2"><button className="p-2 hover:bg-slate-100 rounded-lg transition"><Search size={16} className="text-slate-400" /></button><button className="p-2 hover:bg-slate-100 rounded-lg transition"><Filter size={16} className="text-slate-400" /></button></div>
+                </div>
+                <div className="divide-y divide-slate-50">
+                  {FUNDS.map((fund, index) => (
+                    <div key={`${fund.id}-${index}`} onClick={() => { setSelectedFund(fund); setCurrentView("fund-detail"); }} className="px-6 py-4 hover:bg-slate-50 cursor-pointer transition">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-slate-800 text-sm truncate">{fund.schemeName}</h4>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${fund.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{fund.status}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${getRiskColor(fund.riskLevel)}`}>{fund.riskLevel}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-slate-500"><span>{fund.amc}</span><span>•</span><span>{fund.subCategory}</span><span>•</span><span>Exp: {fund.expenseRatio}%</span></div>
+                        </div>
+                        <div className="text-right mr-6 hidden sm:block"><p className="text-sm font-bold text-slate-900">{formatCurrency(fund.currentValue)}</p><p className="text-xs text-slate-500">{formatCurrency(fund.investedAmount)} invested</p></div>
+                        <div className="text-right w-20 shrink-0"><p className={`text-sm font-bold ${fund.absoluteReturn >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fund.absoluteReturn >= 0 ? "+" : ""}{fund.absoluteReturn.toFixed(1)}%</p><p className="text-xs text-slate-500">XIRR {fund.xirr.toFixed(1)}%</p></div>
+                        <ChevronRight size={16} className="text-slate-300 ml-2 shrink-0" />
+                      </div>
+                      {fund.sipAmount && <div className="mt-2 flex items-center gap-2"><span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">SIP ₹{fund.sipAmount.toLocaleString()}/month</span></div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {activeTab === "analysis" && (
+            <div className="space-y-6">
+              <div className="grid lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                  <h3 className="font-semibold text-slate-800 text-sm mb-4">Sector Allocation</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RadarChart data={sectorData}><PolarGrid stroke="#e2e8f0" /><PolarAngleAxis dataKey="name" tick={{fill: '#64748b', fontSize: 12}} /><PolarAngleAxis angle={30} domain={[0, 100]} tick={{fill: '#94a3b8', fontSize: 10}} /><Radar name="Allocation %" dataKey="value" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} strokeWidth={2} /></RadarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
+                  <h3 className="font-semibold text-slate-800 text-sm mb-4">Return Comparison</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={FUNDS.map(f => ({ name: f.schemeName.substring(0, 15), return: f.xirr, benchmark: f.xirr - 2 }))}><CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" /><XAxis dataKey="name" stroke="#94a3b8" fontSize={10} angle={-45} textAnchor="end" height={80} /><YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(v) => `${v}%`} /><Tooltip /><Legend /><Bar dataKey="return" fill="#10b981" name="Your XIRR" radius={[4, 4, 0, 0]} /><Bar dataKey="benchmark" fill="#94a3b8" name="Category Avg" radius={[4, 4, 0, 0]} /></BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          )}
+          {activeTab === "insights" && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+                <div className="flex items-center gap-3 mb-4"><Brain size={24} className="text-emerald-400" /><div><h3 className="font-bold text-lg">AI Portfolio Advisor</h3><p className="text-sm text-slate-400">Personalized recommendations based on your portfolio</p></div></div>
+                <div className="grid grid-cols-3 gap-4 mt-6">
+                  <div className="text-center"><p className="text-2xl font-bold text-emerald-400">{AI_INSIGHTS.filter(i => i.priority === "High").length}</p><p className="text-xs text-slate-400">High Priority</p></div>
+                  <div className="text-center"><p className="text-2xl font-bold text-amber-400">{AI_INSIGHTS.filter(i => i.priority === "Medium").length}</p><p className="text-xs text-slate-400">Medium Priority</p></div>
+                  <div className="text-center"><p className="text-2xl font-bold text-blue-400">{AI_INSIGHTS.filter(i => i.priority === "Low").length}</p><p className="text-xs text-slate-400">Low Priority</p></div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {AI_INSIGHTS.map(insight => {
+                  const colors = getInsightColor(insight.type);
+                  return (
+                    <div key={insight.id} className={`${colors.bg} border ${colors.border} rounded-xl p-5 hover:shadow-md transition`}>
+                      <div className="flex items-start gap-4">
+                        <div className={`p-2 rounded-lg ${colors.bg} shrink-0`}><insight.icon size={20} className={colors.icon} /></div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-slate-800">{insight.title}</h4>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${insight.priority === "High" ? "bg-red-100 text-red-700" : insight.priority === "Medium" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>{insight.priority}</span>
+                          </div>
+                          <p className="text-sm text-slate-600 leading-relaxed mb-2">{insight.description}</p>
+                          <div className="flex items-center gap-2"><Target size={14} className="text-slate-400" /><span className="text-xs font-medium text-slate-700">Impact: {insight.impact}</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
