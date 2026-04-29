@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0f172a;
+  --color-primary-light: #1e293b;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #2563eb;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #06b6d4;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+
+  --font-sans: 'Geist', 'Inter', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
+
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-elevated: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px -5px rgb(59 130 246 / 0.3);
+}
+
+@layer base {
+  body {
+    @apply bg-surface-elevated text-text-primary antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface rounded-xl border border-border shadow-card transition-all duration-200;
+  }
+
+  .card:hover {
+    @apply shadow-elevated;
+  }
+
+  .card-elevated {
+    @apply bg-surface rounded-xl border border-border shadow-elevated;
+  }
+
+  .btn-primary {
+    @apply bg-accent text-white px-4 py-2.5 rounded-lg font-medium 
+           hover:bg-accent-hover active:scale-[0.98] transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-surface-elevated text-text-primary px-4 py-2.5 rounded-lg font-medium 
+           border border-border hover:bg-border/50 active:scale-[0.98] transition-all duration-150;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-success/10 text-success;
+  }
+
+  .badge-warning {
+    @apply badge bg-warning/10 text-warning;
+  }
+
+  .badge-danger {
+    @apply badge bg-danger/10 text-danger;
+  }
+
+  .badge-info {
+    @apply badge bg-info/10 text-info;
+  }
+
+  .metric-card {
+    @apply card p-6 flex flex-col gap-2;
+  }
+
+  .metric-value {
+    @apply text-3xl font-bold tracking-tight text-text-primary;
+  }
+
+  .metric-label {
+    @apply text-sm font-medium text-text-secondary;
+  }
+
+  .metric-change {
+    @apply text-sm font-semibold flex items-center gap-1;
+  }
+
+  .fund-row {
+    @apply flex items-center justify-between p-4 rounded-lg 
+           hover:bg-surface-elevated transition-colors duration-150
+           border border-transparent hover:border-border;
+  }
+
+  .status-indicator {
+    @apply w-2.5 h-2.5 rounded-full;
+  }
+
+  .status-continue {
+    @apply status-indicator bg-success shadow-[0_0_8px_rgba(16,185,129,0.4)];
+  }
+
+  .status-pause {
+    @apply status-indicator bg-warning shadow-[0_0_8px_rgba(245,158,11,0.4)];
+  }
+
+  .status-stop {
+    @apply status-indicator bg-danger shadow-[0_0_8px_rgba(239,68,68,0.4)];
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-accent to-info bg-clip-text text-transparent;
+  }
+
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 2s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
