@@ -318,13 +318,13 @@ export default function FolioIQ() {
                 <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
                   <h3 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2"><PieIcon size={16} className="text-emerald-500" /> Asset Allocation</h3>
                   <ResponsiveContainer width="100%" height={250}>
-                    <PieChart><Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">{categoryData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value: number) => formatCurrency(value)} /><Legend verticalAlign="bottom" height={36} iconType="circle" /></PieChart>
+                    <PieChart><Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">{categoryData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value: any) => formatCurrency(Number(value) || 0)} /><Legend verticalAlign="bottom" height={36} iconType="circle" /></PieChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm">
                   <h3 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2"><BarChart3 size={16} className="text-blue-500" /> Category Breakdown</h3>
                   <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={subCategoryData} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} /><XAxis type="number" stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `₹${(v/100000).toFixed(0)}L`} /><YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} width={100} /><Tooltip formatter={(value: number) => formatCurrency(value)} /><Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} /></BarChart>
+                    <BarChart data={subCategoryData} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} /><XAxis type="number" stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `₹${(v/100000).toFixed(0)}L`} /><YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} width={100} /><Tooltip formatter={(value: any) => formatCurrency(Number(value) || 0)} /><Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} /></BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
