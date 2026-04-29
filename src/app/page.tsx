@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis } from "recharts";
-import { TrendingUp, AlertTriangle, CheckCircle, Brain, Zap, ChevronRight, ArrowUpRight, Wallet, Clock, Star, Info, Target, PieChart as PieIcon, Activity, Upload, Search, Filter, Bell, Menu, X, User, Settings, Layers, BarChart3, Award, Lightbulb, Sparkles } from "lucide-react";
+import { TrendingUp, AlertTriangle, CheckCircle, Brain, Zap, ChevronRight, ArrowUpRight, Wallet, Clock, Star, Info, Target, PieChart as PieIcon, Activity, Upload, Search, Filter, Bell, Menu, X, User, Settings, Layers, BarChart3, Award, Lightbulb, Sparkles, Banknote } from "lucide-react";
 
 interface MutualFund {
   id: string; schemeName: string; amc: string; category: string; subCategory: string;
@@ -303,7 +303,7 @@ export default function FolioIQ() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[{label:"Current Value", value:formatCurrency(summary.currentValue), icon:Wallet, color:"emerald", trend:`↑ ${summary.dayChangePercent.toFixed(2)}%`, sub:`+${formatCurrency(summary.dayChange)} today`}, {label:"Total Invested", value:formatCurrency(summary.totalInvested), icon:DollarSign, color:"blue", sub:`Across ${summary.totalFunds} funds`}, {label:"Total Returns", value:`${summary.absoluteReturn >= 0 ? "+" : ""}${summary.absoluteReturn.toFixed(1)}%`, icon:ArrowUpRight, color:"purple", sub:`XIRR: ${summary.xirr.toFixed(1)}%`, isReturn:true}, {label:"Monthly SIP", value:formatCurrency(summary.monthlySIP), icon:Clock, color:"orange", sub:`${summary.activeSIPs} active SIPs`}].map((card, i) => (
+                {[{label:"Current Value", value:formatCurrency(summary.currentValue), icon:Wallet, color:"emerald", trend:`↑ ${summary.dayChangePercent.toFixed(2)}%`, sub:`+${formatCurrency(summary.dayChange)} today`}, {label:"Total Invested", value:formatCurrency(summary.totalInvested), icon:Banknote, color:"blue", sub:`Across ${summary.totalFunds} funds`}, {label:"Total Returns", value:`${summary.absoluteReturn >= 0 ? "+" : ""}${summary.absoluteReturn.toFixed(1)}%`, icon:ArrowUpRight, color:"purple", sub:`XIRR: ${summary.xirr.toFixed(1)}%`, isReturn:true}, {label:"Monthly SIP", value:formatCurrency(summary.monthlySIP), icon:Clock, color:"orange", sub:`${summary.activeSIPs} active SIPs`}].map((card, i) => (
                   <div key={i} className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{card.label}</p>
