@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
-nimport { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis } from "recharts";
 import { TrendingUp, AlertTriangle, CheckCircle, Wallet, Clock, PieChart as PieIcon, Activity, Upload, Bell, User, Home, Layers, BarChart3, Sparkles, Banknote, ArrowUpRight } from "lucide-react";
 
@@ -18,8 +18,8 @@ const DEFAULT_FUNDS = [
   { name: "Canara Hybrid", category: "Balanced", value: 100000, invested: 92000, returns: 8.70 },
 ];
 
-function formatL(value) { return `₹${(value/100000).toFixed(2)}L`; }
-function formatFull(value) { return `₹${value.toLocaleString('en-IN')}`; }
+function formatL(value) { return `?${(value/100000).toFixed(2)}L`; }
+function formatFull(value) { return `?${value.toLocaleString('en-IN')}`; }
 
 export default function Dashboard() {
   const router = useRouter();
@@ -93,7 +93,7 @@ export default function Dashboard() {
             {label:"Current Value", icon:Wallet, val:formatL(summary.currentValue), sub:`+${ret}% all time`, color:"text-emerald-600"},
             {label:"Total Invested", icon:Banknote, val:formatL(summary.totalInvested), sub:`Across ${summary.fundCount} funds`, color:"text-gray-500"},
             {label:"Total Returns", icon:TrendingUp, val:`+${ret}%`, sub:"XIRR: 13.7%", color:"text-emerald-600"},
-            {label:"Monthly SIP", icon:Clock, val:"₹28.5K", sub:"6 active SIPs", color:"text-gray-500"}
+            {label:"Monthly SIP", icon:Clock, val:"?28.5K", sub:"6 active SIPs", color:"text-gray-500"}
           ].map((card,i)=>(
             <div key={i} className="bg-white rounded-xl p-6 border">
               <div className="flex justify-between mb-2"><p className="text-sm text-gray-500 uppercase">{card.label}</p><card.icon className="w-5 h-5 text-gray-400"/></div>
@@ -111,7 +111,7 @@ export default function Dashboard() {
           </div>
           <div className="bg-white rounded-xl p-6 border">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-blue-500"/> Category Breakdown</h3>
-            <ResponsiveContainer width="100%" height={250}><BarChart data={catData} layout="vertical"><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" tickFormatter={(v)=>`₹${(v/100000).toFixed(0)}L`}/><YAxis type="category" dataKey="name" width={100}/><Tooltip formatter={(v)=>formatL(v)}/><Bar dataKey="value" fill="#00C49F" radius={[0,4,4,0]}/></BarChart></ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={250}><BarChart data={catData} layout="vertical"><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" tickFormatter={(v)=>`?${(v/100000).toFixed(0)}L`}/><YAxis type="category" dataKey="name" width={100}/><Tooltip formatter={(v)=>formatL(v)}/><Bar dataKey="value" fill="#00C49F" radius={[0,4,4,0]}/></BarChart></ResponsiveContainer>
           </div>
         </div>
 
