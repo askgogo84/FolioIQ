@@ -4,8 +4,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { TrendingUp, CheckCircle, Wallet, Clock, PieChart as PieIcon, Activity, Upload, Bell, User, Home, Layers, BarChart3, Banknote, LogOut } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 
+// Inline supabase client
+const supabase = {
+  auth: {
+    getSession: async () => {
+      const session = typeof window !== "undefined" ? localStorage.getItem("sb-session") : null;
+      return { data: { session: session ? JSON.parse(session) : null } };
+    },
+    signOut: async () => {
+      if (typeof window !== "undefined") localStorage.removeItem("sb-session");
+    }
+  }
+};
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const DEFAULT_FUNDS = [
