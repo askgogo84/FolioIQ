@@ -15,7 +15,7 @@ import {
   User, LogOut, Bell, Plus
 } from "lucide-react";
 
-// ─── Inline UI Components (since shadcn/ui not installed) ───
+// Inline UI Components
 function Button({ children, onClick, className = "", variant = "default", size = "md" }: any) {
   const base = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50";
   const variants: any = {
@@ -67,26 +67,20 @@ function Progress({ value, className = "" }: any) {
   );
 }
 
-// ─── Supabase Client (inline) ─────────────────────────
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+// Inline supabase
 const supabase = {
   auth: {
     getSession: async () => {
-      // Simple localStorage fallback
       const session = typeof window !== "undefined" ? localStorage.getItem("sb-session") : null;
       return { data: { session: session ? JSON.parse(session) : null } };
     },
     signOut: async () => {
       if (typeof window !== "undefined") localStorage.removeItem("sb-session");
     }
-  },
-  from: (table: string) => ({
-    select: () => ({ eq: () => ({ single: async () => ({ data: null }) }) }),
-  }),
+  }
 };
 
-// ─── Types ──────────────────────────────────────────
+// Types
 interface PortfolioData {
   totalValue: number;
   totalInvested: number;
@@ -123,7 +117,7 @@ const DEMO_DATA: PortfolioData = {
   topHoldings: [],
 };
 
-// ─── Score Ring ────────────────────────────────────
+// Score Ring
 function ScoreRing({ score, label, color, icon: Icon, size = 140 }: any) {
   const radius = (size - 20) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -156,7 +150,7 @@ function ScoreRing({ score, label, color, icon: Icon, size = 140 }: any) {
   );
 }
 
-// ─── Stat Card ──────────────────────────────────────
+// Stat Card
 function StatCard({ icon: Icon, label, value, subtext, color, delay = 0 }: any) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.5 }}>
@@ -178,7 +172,7 @@ function StatCard({ icon: Icon, label, value, subtext, color, delay = 0 }: any) 
   );
 }
 
-// ─── Main Page ──────────────────────────────────────
+// Main Page
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -191,32 +185,113 @@ export default function ProfilePage() {
   }, []);
 
   async function checkUser() {
-    // DEMO MODE: Skip auth check, show data directly
-    setUser({ email: localStorage.getItem("folioiq_email") || "demo@folioiq.com" });
-    setHasData(true); // Demo mode - show data
-    setPortfolio({
-      ...DEMO_DATA,
-      totalValue: 2450000, totalInvested: 2100000, totalReturn: 350000, returnPercent: 16.67,
-      riskScore: 72, diversificationScore: 85, healthScore: 78, investmentScore: 80,
-      riskAppetite: "Moderate", totalFunds: 12, totalAmcs: 8, fundsAtRisk: 2,
-      monthlyData: [
-        { month: "Jan", value: 2100000 }, { month: "Feb", value: 2150000 },
-        { month: "Mar", value: 2080000 }, { month: "Apr", value: 2250000 },
-        { month: "May", value: 2380000 }, { month: "Jun", value: 2450000 },
-      ],
-      allocation: [
-        { name: "Equity", value: 55, color: "#10b981" },
-        { name: "Debt", value: 30, color: "#3b82f6" },
-        { name: "Hybrid", value: 10, color: "#f59e0b" },
-        { name: "Liquid", value: 5, color: "#06b6d4" },
-      ],
-      topHoldings: [
-        { name: "SBI Bluechip Fund", value: 450000, percent: 18.4, return: 22.5 },
-        { name: "HDFC Top 100", value: 380000, percent: 15.5, return: 18.2 },
-        { name: "Axis Midcap", value: 320000, percent: 13.1, return: 28.4 },
-        { name: "Nippon India Small Cap", value: 280000, percent: 11.4, return: 35.1 },
-      ],
-    });
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user || { email: localStorage.getItem("folioiq_email") || "demo@folioiq.com" });
+    
+    // Check for uploaded portfolio data
+    const savedPortfolio = localStorage.getItem("folioiq_portfolio");
+    if (savedPortfolio) {
+      setHasData(true);
+      const parsed = JSON.parse(savedPortfolio);
+      const funds = parsed.funds || [];
+      const summary = parsed.summary || {};
+      
+      // Calculate allocation from real data
+      const allocMap: any = {};
+      funds.forEach((f: any) => {
+        const cat = f.category === "Debt" || f.category === "Liquid" || f.category === "Arbitrage" ? "Debt" : 
+                    f.category === "Hybrid" || f.category === "Balanced" ? "Hybrid" : "Equity";
+        allocMap[cat] = (allocMap[cat] || 0) + (f.value || 0);
+      });
+      const totalVal = summary.currentValue || 5532843;
+      const allocation = Object.keys(allocMap).map(k => ({
+        name: k,
+        value: Math.round((allocMap[k] / totalVal) * 100),
+        color: k === "Equity" ? "#10b981" : k === "Debt" ? "#3b82f6" : k === "Hybrid" ? "#f59e0b" : "#06b6d4"
+      }));
+      
+      const invested = summary.totalInvested || 3911171;
+      const current = summary.currentValue || 5532843;
+      
+      setPortfolio({
+        ...DEMO_DATA,
+        totalValue: current,
+        totalInvested: invested,
+        totalReturn: current - invested,
+        returnPercent: parseFloat(summary.totalReturns || "41.46"),
+        riskScore: 72,
+        diversificationScore: Math.min(95, 60 + funds.length * 2),
+        healthScore: 78,
+        investmentScore: 80,
+        riskAppetite: "Moderate",
+        totalFunds: funds.length || 24,
+        totalAmcs: new Set(funds.map((f: any) => f.name.split(" ")[0])).size || 15,
+        fundsAtRisk: funds.filter((f: any) => f.returns < 0).length || 2,
+        monthlyData: [
+          { month: "Jan", value: invested },
+          { month: "Feb", value: invested + (current - invested) * 0.15 },
+          { month: "Mar", value: invested + (current - invested) * 0.30 },
+          { month: "Apr", value: invested + (current - invested) * 0.55 },
+          { month: "May", value: invested + (current - invested) * 0.80 },
+          { month: "Jun", value: current },
+        ],
+        allocation: allocation.length > 0 ? allocation : [
+          { name: "Equity", value: 55, color: "#10b981" },
+          { name: "Debt", value: 30, color: "#3b82f6" },
+          { name: "Hybrid", value: 10, color: "#f59e0b" },
+          { name: "Liquid", value: 5, color: "#06b6d4" },
+        ],
+        topHoldings: funds.length > 0 ? funds.slice(0, 5).map((f: any) => ({
+          name: f.name,
+          value: f.value,
+          percent: Math.round((f.value / current) * 100),
+          return: f.returns,
+        })) : [
+          { name: "Parag Parikh Flexi Cap", value: 633035, percent: 11.4, return: 16.81 },
+          { name: "Invesco India Gold ETF", value: 723777, percent: 13.1, return: 34.69 },
+          { name: "Nippon India Small Cap", value: 522495, percent: 9.4, return: 16.47 },
+          { name: "Axis ELSS Tax Saver", value: 155248, percent: 2.8, return: 11.76 },
+        ],
+      });
+    } else {
+      // Demo data
+      setHasData(true);
+      setPortfolio({
+        ...DEMO_DATA,
+        totalValue: 2450000,
+        totalInvested: 2100000,
+        totalReturn: 350000,
+        returnPercent: 16.67,
+        riskScore: 72,
+        diversificationScore: 85,
+        healthScore: 78,
+        investmentScore: 80,
+        riskAppetite: "Moderate",
+        totalFunds: 12,
+        totalAmcs: 8,
+        fundsAtRisk: 2,
+        monthlyData: [
+          { month: "Jan", value: 2100000 },
+          { month: "Feb", value: 2150000 },
+          { month: "Mar", value: 2080000 },
+          { month: "Apr", value: 2250000 },
+          { month: "May", value: 2380000 },
+          { month: "Jun", value: 2450000 },
+        ],
+        allocation: [
+          { name: "Equity", value: 55, color: "#10b981" },
+          { name: "Debt", value: 30, color: "#3b82f6" },
+          { name: "Hybrid", value: 10, color: "#f59e0b" },
+          { name: "Liquid", value: 5, color: "#06b6d4" },
+        ],
+        topHoldings: [
+          { name: "SBI Bluechip Fund", value: 450000, percent: 18.4, return: 22.5 },
+          { name: "HDFC Top 100", value: 380000, percent: 15.5, return: 18.2 },
+          { name: "Axis Midcap", value: 320000, percent: 13.1, return: 28.4 },
+          { name: "Nippon India Small Cap", value: 280000, percent: 11.4, return: 35.1 },
+        ],
+      });
+    }
     setLoading(false);
   }
 
@@ -294,24 +369,6 @@ export default function ProfilePage() {
             )}
           </div>
         </motion.div>
-
-        {/* Empty State */}
-        {!hasData && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-8 text-center">
-              <div className="relative z-10">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-                  <Upload className="w-8 h-8 text-white" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">Get Started with Your Portfolio</h2>
-                <p className="text-emerald-100 mb-6 max-w-md mx-auto">Upload your mutual fund CAS statement to unlock AI-powered insights and recommendations.</p>
-                <Button size="lg" onClick={() => router.push("/upload")} className="bg-white text-emerald-700 hover:bg-emerald-50 gap-2 font-semibold">
-                  Upload Portfolio Now <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         {/* Score Rings */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

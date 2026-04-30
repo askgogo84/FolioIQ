@@ -5,18 +5,6 @@ import { useRouter } from "next/navigation";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { TrendingUp, CheckCircle, Wallet, Clock, PieChart as PieIcon, Activity, Upload, Bell, User, Home, Layers, BarChart3, Banknote, LogOut } from "lucide-react";
 
-// Inline supabase client
-const supabase = {
-  auth: {
-    getSession: async () => {
-      const session = typeof window !== "undefined" ? localStorage.getItem("sb-session") : null;
-      return { data: { session: session ? JSON.parse(session) : null } };
-    },
-    signOut: async () => {
-      if (typeof window !== "undefined") localStorage.removeItem("sb-session");
-    }
-  }
-};
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const DEFAULT_FUNDS = [
@@ -30,29 +18,20 @@ const DEFAULT_FUNDS = [
   { name: "Canara Hybrid", category: "Balanced", value: 100000, invested: 92000, returns: 8.70 },
 ];
 
-function formatL(value) {
+function formatL(value: number) {
   return "₹" + (value / 100000).toFixed(2) + "L";
 }
 
-function formatFull(value) {
+function formatFull(value: number) {
   return "₹" + value.toLocaleString("en-IN");
 }
 
 export default function Dashboard() {
   const router = useRouter();
-  const [portfolio, setPortfolio] = useState(null);
+  const [portfolio, setPortfolio] = useState<any>(null);
   const [email, setEmail] = useState("");
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Check auth
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-      if (!data.session) {
-        router.push("/");
-      }
-    });
-    
     setEmail(localStorage.getItem("folioiq_email") || "");
     const saved = localStorage.getItem("folioiq_portfolio");
     if (saved) {
@@ -74,11 +53,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/");
-  }
-
   if (!portfolio) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -91,15 +65,15 @@ export default function Dashboard() {
   const summary = portfolio.summary;
   const ret = (((summary.currentValue - summary.totalInvested) / summary.totalInvested) * 100).toFixed(2);
 
-  const allocMap = {};
-  funds.forEach((f) => {
+  const allocMap: any = {};
+  funds.forEach((f: any) => {
     const t = f.category === "Liquid" || f.category === "Debt" ? "Debt" : f.category === "Hybrid" || f.category === "Balanced" ? "Hybrid" : "Equity";
     allocMap[t] = (allocMap[t] || 0) + f.value;
   });
   const assetAlloc = Object.keys(allocMap).map((k) => ({ name: k, value: allocMap[k] }));
 
-  const catMap = {};
-  funds.forEach((f) => {
+  const catMap: any = {};
+  funds.forEach((f: any) => {
     catMap[f.category] = (catMap[f.category] || 0) + f.value;
   });
   const catData = Object.keys(catMap)
@@ -108,7 +82,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      {/* Header */}
       <header className="bg-slate-900/80 border-b border-slate-800 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -127,15 +100,11 @@ export default function Dashboard() {
             <div className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700">
               <User className="w-4 h-4 text-slate-400" />
             </div>
-            <button onClick={handleLogout} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-400 transition-colors">
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Portfolio Health Score */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 mb-8 border border-slate-700/50 shadow-xl">
           <div className="flex justify-between mb-4">
             <div>
@@ -157,7 +126,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-800/50 backdrop-blur-sm">
             <div className="flex justify-between mb-2">
@@ -193,7 +161,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-800/50 backdrop-blur-sm">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
@@ -202,14 +169,11 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie data={assetAlloc} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
-                  {assetAlloc.map((_, i) => (
+                  {assetAlloc.map((_: any, i: number) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", color: "#fff" }}
-                  formatter={(v) => formatL(v)} 
-                />
+                <Tooltip contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", color: "#fff" }} formatter={(v: any) => formatL(v)} />
                 <Legend wrapperStyle={{ color: "#94a3b8" }} />
               </PieChart>
             </ResponsiveContainer>
@@ -223,17 +187,13 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                 <XAxis type="number" tickFormatter={(v) => `₹${(v / 100000).toFixed(0)}L`} tick={{ fill: "#64748b" }} />
                 <YAxis type="category" dataKey="name" width={100} tick={{ fill: "#94a3b8" }} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", color: "#fff" }}
-                  formatter={(v) => formatL(v)} 
-                />
+                <Tooltip contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", color: "#fff" }} formatter={(v: any) => formatL(v)} />
                 <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Monthly Performance */}
         <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-800/50 backdrop-blur-sm mb-8">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
             <Activity className="w-5 h-5 text-purple-400" /> Monthly Performance
@@ -252,9 +212,7 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis dataKey="m" tick={{ fill: "#64748b" }} />
               <YAxis tickFormatter={(v) => `${v}%`} tick={{ fill: "#64748b" }} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", color: "#fff" }}
-              />
+              <Tooltip contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", color: "#fff" }} />
               <Legend wrapperStyle={{ color: "#94a3b8" }} />
               <Area type="monotone" dataKey="D" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
               <Area type="monotone" dataKey="E" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
@@ -263,7 +221,6 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Holdings Table */}
         <div className="bg-slate-900/50 rounded-xl border border-slate-800/50 backdrop-blur-sm overflow-hidden">
           <div className="p-6 border-b border-slate-800/50">
             <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
@@ -282,7 +239,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
-                {funds.map((f, i) => (
+                {funds.map((f: any, i: number) => (
                   <tr key={i} className="hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4">
                       <p className="font-medium text-slate-200">{f.name}</p>
