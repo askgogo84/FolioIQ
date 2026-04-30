@@ -198,7 +198,7 @@ export default function UploadPage() {
           throw new Error(errorData.error || "Failed to process file");
         }
 
-        const data = await response.json();
+        const data = await response.json(); console.log("API response:", data);
         portfolio = data.portfolio;
         setProgress(100);
       }
