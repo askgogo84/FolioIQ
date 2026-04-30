@@ -214,7 +214,7 @@ export default function UploadPage() {
       setStage("success");
 
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push('/dashboard-v2');
       }, 2000);
 
     } catch (err: any) {
@@ -269,7 +269,7 @@ export default function UploadPage() {
             </div>
             <span className="font-bold text-gray-900">FolioIQ</span>
           </div>
-          <button onClick={() => router.push('/dashboard')} className="text-sm text-gray-600 hover:text-gray-900">
+          <button onClick={() => router.push('/dashboard-v2')} className="text-sm text-gray-600 hover:text-gray-900">
             Dashboard →
           </button>
         </div>
@@ -369,7 +369,7 @@ export default function UploadPage() {
             <p className="text-gray-500 mb-2">{fileName}</p>
             {detectedFunds > 0 && <p className="text-sm text-emerald-600 mb-4">{detectedFunds} funds detected</p>}
             <p className="text-sm text-gray-400 mb-6">Redirecting to dashboard...</p>
-            <button onClick={() => router.push('/dashboard')} className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700">
+            <button onClick={() => router.push('/dashboard-v2')} className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700">
               Go to Dashboard →
             </button>
           </div>
