@@ -191,12 +191,8 @@ export default function ProfilePage() {
   }, []);
 
   async function checkUser() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      router.push("/");
-      return;
-    }
-    setUser(session.user);
+    // DEMO MODE: Skip auth check, show data directly
+    setUser({ email: localStorage.getItem("folioiq_email") || "demo@folioiq.com" });
     setHasData(true); // Demo mode - show data
     setPortfolio({
       ...DEMO_DATA,

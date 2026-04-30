@@ -9,16 +9,7 @@ export default function LandingPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Auto-redirect if email already saved
-  useEffect(() => {
-    const saved = localStorage.getItem("folioiq_email");
-    if (saved && saved.includes("@")) {
-      console.log("Auto-redirecting to profile...");
-      window.location.href = "/profile";
-    }
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
+const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.includes("@")) {
       alert("Please enter a valid email address");
