@@ -186,7 +186,7 @@ export default function UploadPage() {
           setProgress(prev => prev >= 85 ? 85 : prev + Math.random() * 12);
         }, 400);
 
-        const response = await fetch("/api/upload", {
+        const response = await fetch("/api/upload-handler", {
           method: "POST",
           body: formData,
         });
