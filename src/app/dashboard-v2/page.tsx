@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -22,7 +22,7 @@ export default function Dashboard() {
           <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-600">FolioIQ Money Coach</p>
           <h1 className="mt-4 text-4xl font-black tracking-tight">Upload once. Know what to fix.</h1>
           <p className="mt-4 text-base leading-7 text-slate-500">Upload your mutual fund portfolio and FolioIQ will show what to fix, keep and explore.</p>
-          <Link href="/upload" className="mt-8 inline-flex rounded-full bg-[#111827] px-8 py-4 text-sm font-black text-white">Upload portfolio</Link>
+          <Link href="/profile" className="mt-8 inline-flex rounded-full bg-[#111827] px-8 py-4 text-sm font-black text-white">Upload portfolio</Link>
         </div>
       </main>
     )
@@ -39,7 +39,7 @@ export default function Dashboard() {
               <div className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-600">Money Coach</div>
             </div>
           </div>
-          <Link href="/upload" className="rounded-full bg-[#111827] px-5 py-2.5 text-sm font-black text-white">Upload</Link>
+          <Link href="/profile" className="rounded-full bg-[#111827] px-5 py-2.5 text-sm font-black text-white">Upload</Link>
         </header>
 
         <section className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">

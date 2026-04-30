@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,7 @@ export default function HomePage() {
     if (email.includes("@")) {
       localStorage.setItem("folioiq_email", email);
       setSubmitted(true);
-      setTimeout(() => router.push("/upload"), 1000);
+      setTimeout(() => router.push("/profile"), 1000);
     }
   };
 
@@ -65,7 +65,7 @@ export default function HomePage() {
                   <button onClick={handleStart} className="bg-emerald-500 px-6 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-emerald-600">
                     Check your portfolio <ArrowRight className="w-5 h-5" />
                   </button>
-                  <button onClick={() => router.push("/upload")} className="border border-slate-600 px-6 py-3 rounded-lg hover:bg-slate-800">
+                  <button onClick={() => router.push("/profile")} className="border border-slate-600 px-6 py-3 rounded-lg hover:bg-slate-800">
                     Upload CAS
                   </button>
                 </div>
@@ -172,3 +172,4 @@ export default function HomePage() {
     </div>
   );
 }
+

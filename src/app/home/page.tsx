@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -40,7 +40,7 @@ export default function HomePage() {
           </Link>
           <nav className="hidden items-center gap-7 text-sm font-semibold text-black/65 md:flex">
             <Link href="/explore">Mutual Funds</Link>
-            <Link href="/upload">Upload</Link>
+            <Link href="/profile">Upload</Link>
             <Link href="/dashboard-v2">Dashboard</Link>
           </nav>
           <button onClick={() => setShowLogin(true)} className="rounded-full border border-[#009b63] px-5 py-2.5 text-sm font-black text-[#008b5a]">Login</button>

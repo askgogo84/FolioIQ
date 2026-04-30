@@ -63,7 +63,7 @@ export default function UploadPage() {
       }
 
       setStage("success");
-      setTimeout(() => router.push('/dashboard'), 1500);
+      setTimeout(() => router.push('/profile'), 1500);
 
     } catch (err: any) {
       setError(err.message || "Upload failed");
@@ -133,7 +133,7 @@ export default function UploadPage() {
             <p className="text-gray-500 mb-2">{fileName}</p>
             <p className="text-sm text-emerald-600 mb-4">{detectedFunds} funds detected</p>
             <p className="text-sm text-gray-400 mb-4">Redirecting to dashboard...</p>
-            <button onClick={() => router.push('/dashboard')} className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700">
+            <button onClick={() => router.push('/profile')} className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700">
               Go to Dashboard →
             </button>
           </div>
