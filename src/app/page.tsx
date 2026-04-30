@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,7 @@ export default function HomePage() {
 
   const handleStart = () => setShowForm(true);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (email.includes("@")) {
       localStorage.setItem("folioiq_email", email);
@@ -81,7 +81,7 @@ export default function HomePage() {
                 <form onSubmit={handleSubmit} className="max-w-md">
                   <p className="text-sm text-slate-400 mb-3">Enter your email to get started</p>
                   <div className="flex gap-2">
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" 
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com"
                       className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:border-emerald-500" required />
                     <button type="submit" className="bg-emerald-500 px-6 py-3 rounded-lg font-medium hover:bg-emerald-600">Continue</button>
                   </div>
@@ -89,11 +89,11 @@ export default function HomePage() {
               )}
 
               <div className="flex gap-8 mt-12">
-                <div><p className="text-2xl font-bold">5 sec</p><p className="text-sm text-slate-500\">PORTFOLIO SCAN</p></div>
+                <div><p className="text-2xl font-bold">5 sec</p><p className="text-sm text-slate-500">PORTFOLIO SCAN</p></div>
                 <div className="w-px bg-slate-700" />
-                <div><p className="text-2xl font-bold">AI</p><p className="text-sm text-slate-500\">POWERED CHECKS</p></div>
+                <div><p className="text-2xl font-bold">AI</p><p className="text-sm text-slate-500">POWERED CHECKS</p></div>
                 <div className="w-px bg-slate-700" />
-                <div><p className="text-2xl font-bold">Simple</p><p className="text-sm text-slate-500\">ACTION PLAN</p></div>
+                <div><p className="text-2xl font-bold">Simple</p><p className="text-sm text-slate-500">ACTION PLAN</p></div>
               </div>
             </div>
 
@@ -114,7 +114,7 @@ export default function HomePage() {
                   </div>
                   <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm">
                     <p className="font-medium">Tax Saver ELSS Limit Not Utilized</p>
-                    <p className="text-xs text-gray-500">Save ₹31,200 in taxes annually</p>
+                    <p className="text-xs text-gray-500">Save 31,200 in taxes annually</p>
                   </div>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
                     <p className="font-medium">Axis Long Term Underperforming</p>
@@ -154,7 +154,7 @@ export default function HomePage() {
           <button onClick={handleStart} className="bg-emerald-500 px-8 py-4 rounded-lg font-medium text-lg hover:bg-emerald-600">
             Get Started Free
           </button>
-          <p className="text-sm text-slate-500 mt-4">No credit card required • Takes 5 seconds</p>
+          <p className="text-sm text-slate-500 mt-4">No credit card required - Takes 5 seconds</p>
         </div>
       </section>
 
@@ -164,11 +164,11 @@ export default function HomePage() {
             <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
               <span className="font-bold text-sm">F</span>
             </div>
-n            <span className="font-bold">FolioIQ</span>
-n          </div>
-          <p className="text-sm text-slate-500">© 2026 FolioIQ. All rights reserved.</p>
+            <span className="font-bold">FolioIQ</span>
+          </div>
+          <p className="text-sm text-slate-500">2026 FolioIQ. All rights reserved.</p>
         </div>
       </footer>
     </div>
-n  );
+  );
 }
