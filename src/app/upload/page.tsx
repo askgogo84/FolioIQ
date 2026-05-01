@@ -1,295 +1,349 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { Upload, ArrowLeft, FileSpreadsheet, AlertCircle, CheckCircle, FileText, Image } from "lucide-react";
-import * as XLSX from "xlsx";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Upload, FileText, X, CheckCircle2, AlertTriangle, Sparkles,
+  ArrowRight, Shield, TrendingUp, PieChart, Target, Zap,
+  AlertOctagon, Lightbulb, ChevronDown, ChevronUp, Star,
+  Brain, BarChart3, Wallet, Percent, Clock, Award
+} from "lucide-react";
 
 export default function UploadPage() {
-  const router = useRouter();
+  const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState("");
+  const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
+  const [dragActive, setDragActive] = useState(false);
+  const [expandedInsight, setExpandedInsight] = useState<number | null>(null);
 
-  const detectCategory = (fundName: string): string => {
-    const name = fundName.toLowerCase();
-    if (name.includes("elss") || name.includes("tax saver")) return "ELSS";
-    if (name.includes("small cap")) return "Small Cap";
-    if (name.includes("mid cap")) return "Mid Cap";
-    if (name.includes("large & midcap") || name.includes("large and midcap")) return "Large & Mid Cap";
-    if (name.includes("large cap")) return "Large Cap";
-    if (name.includes("flexi cap")) return "Flexi Cap";
-    if (name.includes("multi cap")) return "Multi Cap";
-    if (name.includes("balanced") || name.includes("hybrid")) return "Hybrid";
-    if (name.includes("debt") || name.includes("liquid") || name.includes("arbitrage")) return "Debt";
-    if (name.includes("gold")) return "Gold";
-    if (name.includes("infrastructure") || name.includes("technology")) return "Sectoral";
-    return "Equity";
-  };
-
-  const parsePortfolio = useCallback((data: any[][]) => {
-    const funds: any[] = [];
-    let totalInvested = 0;
-    let totalValue = 0;
-
-    let i = 0;
-    while (i < data.length) {
-      const row = data[i];
-      if (!row || row.length === 0) { i++; continue; }
-
-      const firstCell = String(row[0] || "").trim();
-
-      // Check if this row is a fund name (not a number, not empty, short row or specific pattern)
-      if (firstCell && !firstCell.match(/^\d+$/) && !firstCell.includes("Sub Total") && !firstCell.includes("Grand Total") && !firstCell.includes("Return") && !firstCell.includes("Note") && !firstCell.includes("Scheme Wise") && !firstCell.includes("Goverdhan") && !firstCell.includes("Address") && !firstCell.includes("City") && !firstCell.includes("Pincode") && !firstCell.includes("Phone") && !firstCell.includes("E-Mail") && !firstCell.includes("Mobile") && !firstCell.includes("Sr. No.") && row.length < 8) {
-        
-        const fundName = firstCell;
-        let fundInvested = 0;
-        let fundValue = 0;
-        let fundReturns = 0;
-
-        // Look ahead for Sub Total and Return rows
-        let j = i + 1;
-        while (j < data.length && j < i + 50) {
-          const checkRow = data[j];
-          if (!checkRow || checkRow.length === 0) { j++; continue; }
-          
-          const checkFirst = String(checkRow[0] || "").trim();
-          
-          // Found Sub Total row
-          if (checkFirst.includes("Sub Total")) {
-            fundInvested = parseFloat(String(checkRow[5] || "0").replace(/[₹,]/g, ""));
-            fundValue = parseFloat(String(checkRow[10] || checkRow[9] || "0").replace(/[₹,]/g, ""));
-          }
-          
-          // Found Return row
-          if (checkFirst.includes("Return")) {
-            const retMatch = checkRow.join(" ").match(/Return\s*:\s*([-\d.]+)%/);
-            if (retMatch) fundReturns = parseFloat(retMatch[1]);
-            break; // End of this fund section
-          }
-          
-          // Found next fund name or Grand Total - stop looking
-          if ((checkFirst && !checkFirst.match(/^\d+$/) && !checkFirst.includes("Sub Total") && !checkFirst.includes("Return") && checkRow.length < 8) || checkFirst.includes("Grand Total")) {
-            break;
-          }
-          
-          j++;
-        }
-
-        if (fundInvested > 0) {
-          funds.push({
-            name: fundName.replace(" - Gr", "").replace(" - Regular Gr", "").replace(" - Reg Gr", ""),
-            category: detectCategory(fundName),
-            invested: fundInvested,
-            value: fundValue,
-            returns: fundReturns,
-          });
-        }
-
-        i = j; // Skip to end of this fund section
-        continue;
-      }
-
-      // Grand Total row
-      if (firstCell.includes("Grand Total")) {
-        totalInvested = parseFloat(String(row[5] || "0").replace(/[₹,]/g, ""));
-        totalValue = parseFloat(String(row[10] || row[9] || "0").replace(/[₹,]/g, ""));
-      }
-
-      i++;
-    }
-
-    // Fallback: if no Grand Total found, sum up all funds
-    if (totalInvested === 0 && funds.length > 0) {
-      totalInvested = funds.reduce((s, f) => s + f.invested, 0);
-      totalValue = funds.reduce((s, f) => s + f.value, 0);
-    }
-
-    return {
-      funds,
-      summary: {
-        currentValue: totalValue,
-        totalInvested: totalInvested,
-        totalReturns: totalInvested > 0 ? (((totalValue - totalInvested) / totalInvested) * 100).toFixed(2) : "0",
-        fundCount: funds.length,
-      }
-    };
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
+    else if (e.type === "dragleave") setDragActive(false);
   }, []);
 
-  const handleFile = useCallback(async (file: File) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files?.[0]) setFile(e.dataTransfer.files[0]);
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) setFile(e.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
     setUploading(true);
     setError("");
-    setProgress("Reading file...");
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("email", localStorage.getItem("folioiq_email") || "user@example.com");
 
     try {
-      const isImage = file.type.startsWith("image/");
-      const isPdf = file.type === "application/pdf";
-      const isExcel = file.name.endsWith(".xls") || file.name.endsWith(".xlsx") || file.name.endsWith(".csv");
+      const res = await fetch("/api/upload-portfolio", {
+        method: "POST",
+        body: formData,
+      });
 
-      if (isImage) {
-        // For images/screenshots, just store and show demo data
-        setProgress("Processing screenshot...");
-        localStorage.setItem("folioiq_portfolio", JSON.stringify({
-          fileName: file.name,
-          uploadDate: new Date().toISOString(),
-          isImage: true,
-          funds: [],
-          summary: {
-            currentValue: 5532843,
-            totalInvested: 3911171,
-            totalReturns: "41.46",
-            fundCount: 0,
-          },
-        }));
-        setTimeout(() => router.push("/profile"), 500);
-        return;
+      const data = await res.json();
+      if (data.success) {
+        setResult(data);
+      } else {
+        setError(data.error || "Upload failed");
       }
-
-      if (isPdf) {
-        // For PDFs, store and show demo data (PDF parsing needs server-side)
-        setProgress("Processing PDF...");
-        localStorage.setItem("folioiq_portfolio", JSON.stringify({
-          fileName: file.name,
-          uploadDate: new Date().toISOString(),
-          isPdf: true,
-          funds: [],
-          summary: {
-            currentValue: 5532843,
-            totalInvested: 3911171,
-            totalReturns: "41.46",
-            fundCount: 0,
-          },
-        }));
-        setTimeout(() => router.push("/profile"), 500);
-        return;
-      }
-
-      if (!isExcel) {
-        setError("Please upload an XLS, XLSX, CSV, PDF, or image file.");
-        setUploading(false);
-        return;
-      }
-
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-
-      setProgress("Parsing portfolio data...");
-      const portfolio = parsePortfolio(jsonData);
-
-      if (portfolio.funds.length === 0) {
-        setError("Could not parse portfolio data. The file format may be unsupported. Try PDF or screenshot upload instead.");
-        setUploading(false);
-        return;
-      }
-
-      setProgress(`Found ${portfolio.funds.length} funds...`);
-
-      localStorage.setItem("folioiq_portfolio", JSON.stringify({
-        fileName: file.name,
-        uploadDate: new Date().toISOString(),
-        funds: portfolio.funds,
-        summary: portfolio.summary,
-      }));
-
-      setProgress("Done! Redirecting...");
-      setTimeout(() => router.push("/profile"), 500);
-
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError("Failed to parse file. Try uploading a PDF or screenshot instead.");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
       setUploading(false);
     }
-  }, [parsePortfolio, router]);
+  };
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
+  const getRiskColor = (risk: string) => {
+    if (risk === "Low") return "text-emerald-600 bg-emerald-50";
+    if (risk === "Moderate") return "text-blue-600 bg-blue-50";
+    if (risk === "High") return "text-amber-600 bg-amber-50";
+    return "text-red-600 bg-red-50";
+  };
+
+  const getHealthColor = (score: number) => {
+    if (score >= 80) return "text-emerald-600";
+    if (score >= 60) return "text-blue-600";
+    if (score >= 40) return "text-amber-600";
+    return "text-red-600";
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <nav className="bg-slate-900/80 border-b border-slate-800 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <button onClick={() => router.push("/profile")} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Back to Profile</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
-                <Upload className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">FolioIQ</span>
-            </div>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="max-w-[1000px] mx-auto px-4 py-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Upload Portfolio</h1>
+            <p className="text-slate-500">Upload your CAS statement for AI-powered analysis</p>
           </div>
-        </div>
-      </nav>
 
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Upload Portfolio</h1>
-          <p className="text-slate-400">Upload your CAS statement, valuation report, or screenshot to analyze your portfolio</p>
-        </div>
-
-        {error && (
-          <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-red-300">Upload Failed</p>
-              <p className="text-sm text-red-400/70">{error}</p>
+          {/* Upload Area */}
+          {!result && (
+            <div
+              onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all mb-8 ${
+                dragActive ? "border-emerald-500 bg-emerald-50" : "border-slate-300 bg-white"
+              }`}
+            >
+              {!file ? (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                    <Upload className="w-8 h-8 text-emerald-600" />
+                  </div>
+                  <p className="text-lg font-medium text-slate-900 mb-2">Drag & drop your CAS statement</p>
+                  <p className="text-sm text-slate-500 mb-4">PDF from CAMS/KFintech or Excel file</p>
+                  <input type="file" accept=".pdf,.xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" id="file-upload" />
+                  <label htmlFor="file-upload" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium cursor-pointer hover:bg-emerald-700 transition-colors">
+                    <FileText className="w-5 h-5" /> Select File
+                  </label>
+                  <p className="text-xs text-slate-400 mt-4">Supported: PDF (CAS), Excel, CSV</p>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center gap-3">
+                    <FileText className="w-8 h-8 text-emerald-600" />
+                    <div className="text-left">
+                      <p className="font-medium text-slate-900">{file.name}</p>
+                      <p className="text-sm text-slate-500">{(file.size / 1024).toFixed(1)} KB</p>
+                    </div>
+                    <button onClick={() => setFile(null)} className="p-2 hover:bg-slate-100 rounded-lg">
+                      <X className="w-5 h-5 text-slate-400" />
+                    </button>
+                  </div>
+                  <button onClick={handleUpload} disabled={uploading} className="inline-flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+                    {uploading ? (
+                      <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Analyzing...</>
+                    ) : (
+                      <><Sparkles className="w-5 h-5" /> AI Analysis</>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        )}
-
-        <div 
-          onDrop={onDrop}
-          onDragOver={(e) => e.preventDefault()}
-          className="bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-700/50 p-12 text-center hover:border-emerald-500/50 transition-colors"
-        >
-          {uploading ? (
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-lg font-medium text-white">{progress}</p>
-              <p className="text-sm text-slate-400">Please wait while we analyze your portfolio</p>
-            </div>
-          ) : (
-            <>
-              <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <FileSpreadsheet className="w-8 h-8 text-emerald-400" />
-              </div>
-              <p className="text-lg font-medium mb-2">Drag & drop your file here</p>
-              <p className="text-sm text-slate-400 mb-6">XLS, XLSX, CSV, PDF, or Screenshot</p>
-              <input type="file" accept=".xls,.xlsx,.csv,.pdf,image/*" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} className="hidden" id="file-input" />
-              <label htmlFor="file-input" className="inline-flex items-center gap-2 bg-emerald-500 px-6 py-3 rounded-lg font-medium hover:bg-emerald-600 cursor-pointer">
-                <Upload className="w-4 h-4" />
-                Select File
-              </label>
-              <p className="text-xs text-slate-500 mt-4">Supported: XLS, XLSX, CSV, PDF, PNG, JPG (Max 10MB)</p>
-            </>
           )}
-        </div>
 
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
-          <div className="bg-slate-900/30 rounded-xl p-5 border border-slate-800/30 text-center">
-            <FileSpreadsheet className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-            <p className="text-sm font-medium">Excel / CAS</p>
-            <p className="text-xs text-slate-500">Best for full analysis</p>
-          </div>
-          <div className="bg-slate-900/30 rounded-xl p-5 border border-slate-800/30 text-center">
-            <FileText className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-            <p className="text-sm font-medium">PDF Report</p>
-            <p className="text-xs text-slate-500">Broker statements</p>
-          </div>
-          <div className="bg-slate-900/30 rounded-xl p-5 border border-slate-800/30 text-center">
-            <Image className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-            <p className="text-sm font-medium">Screenshot</p>
-            <p className="text-xs text-slate-500">Quick portfolio snap</p>
-          </div>
-        </div>
+          {/* Error */}
+          {error && (
+            <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3">
+              <AlertTriangle className="w-6 h-6 text-red-500" />
+              <p className="text-red-700">{error}</p>
+            </div>
+          )}
+
+          {/* Analysis Results */}
+          <AnimatePresence>
+            {result?.analysis && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+
+                {/* Success Banner */}
+                <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-4">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+                  <div>
+                    <p className="font-semibold text-emerald-800 text-lg">Portfolio Analyzed!</p>
+                    <p className="text-emerald-600">AI has analyzed {result.holdings?.length || 0} funds and generated insights</p>
+                  </div>
+                </div>
+
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Wallet className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs text-slate-500">Total Value</span>
+                    </div>
+                    <p className="text-xl font-bold text-slate-900">₹{(result.analysis.summary.totalCurrent / 100000).toFixed(2)}L</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs text-slate-500">Returns</span>
+                    </div>
+                    <p className={`text-xl font-bold ${result.analysis.summary.returnsPercent > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      {result.analysis.summary.returnsPercent > 0 ? "+" : ""}{result.analysis.summary.returnsPercent.toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <PieChart className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs text-slate-500">Funds</span>
+                    </div>
+                    <p className="text-xl font-bold text-slate-900">{result.analysis.summary.fundCount}</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Award className="w-4 h-4 text-amber-600" />
+                      <span className="text-xs text-slate-500">Health Score</span>
+                    </div>
+                    <p className={`text-xl font-bold ${getHealthColor(result.analysis.summary.healthScore)}`}>
+                      {result.analysis.summary.healthScore}/100
+                    </p>
+                  </div>
+                </div>
+
+                {/* AI Insights */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-slate-100">
+                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-emerald-600" /> AI Insights
+                    </h2>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {result.analysis.insights.map((insight: any, idx: number) => (
+                      <div key={idx} className="p-4 hover:bg-slate-50 transition-colors">
+                        <button onClick={() => setExpandedInsight(expandedInsight === idx ? null : idx)} className="w-full flex items-start gap-3 text-left">
+                          <div className={`p-2 rounded-lg shrink-0 ${
+                            insight.type === "critical" ? "bg-red-100" : 
+                            insight.type === "warning" ? "bg-amber-100" : "bg-blue-100"
+                          }`}>
+                            {insight.type === "critical" ? <AlertOctagon className="w-5 h-5 text-red-600" /> :
+                             insight.type === "warning" ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
+                             <Lightbulb className="w-5 h-5 text-blue-600" />}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium text-slate-900">{insight.title}</p>
+                              {expandedInsight === idx ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                            </div>
+                            <AnimatePresence>
+                              {expandedInsight === idx && (
+                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                  <p className="text-sm text-slate-500 mt-2">{insight.description}</p>
+                                  <button className="mt-3 text-sm font-medium text-emerald-600 hover:text-emerald-700">
+                                    {insight.action} →
+                                  </button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                            {expandedInsight !== idx && <p className="text-sm text-slate-500 mt-1 line-clamp-1">{insight.description}</p>}
+                          </div>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Holdings Table */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-slate-100">
+                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-emerald-600" /> Your Holdings
+                    </h2>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          <th className="text-left py-3 px-6 text-xs font-medium text-slate-500 uppercase">Fund</th>
+                          <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Value</th>
+                          <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Returns</th>
+                          <th className="text-center py-3 px-6 text-xs font-medium text-slate-500 uppercase">Risk</th>
+                          <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Allocation</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {result.holdings?.map((fund: any, idx: number) => (
+                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                            <td className="py-3 px-6">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold text-xs">
+                                  {fund.name[0]}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm text-slate-900">{fund.name}</p>
+                                  <p className="text-xs text-slate-500">{fund.category}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-6 text-right">
+                              <p className="font-semibold text-sm text-slate-900">₹{fund.current.toLocaleString("en-IN")}</p>
+                            </td>
+                            <td className="py-3 px-6 text-right">
+                              <span className={`text-sm font-semibold ${fund.returns > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                                {fund.returns > 0 ? "+" : ""}{fund.returns.toFixed(1)}%
+                              </span>
+                            </td>
+                            <td className="py-3 px-6 text-center">
+                              <span className={`text-xs font-medium px-2 py-1 rounded-full ${getRiskColor(fund.risk)}`}>
+                                {fund.risk}
+                              </span>
+                            </td>
+                            <td className="py-3 px-6">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${fund.allocation}%` }} />
+                                </div>
+                                <span className="text-xs text-slate-500 w-10">{fund.allocation}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                {result.analysis.recommendations?.length > 0 && (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-4">
+                      <Target className="w-5 h-5 text-emerald-600" /> AI Recommendations
+                    </h2>
+                    <div className="space-y-3">
+                      {result.analysis.recommendations.map((rec: string, idx: number) => (
+                        <div key={idx} className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                          <Zap className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                          <p className="text-sm text-slate-700">{rec}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-4">
+                  <button onClick={() => window.location.href = "/profile"} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition-colors">
+                    <ArrowRight className="w-5 h-5" /> View Full Dashboard
+                  </button>
+                  <button onClick={() => { setResult(null); setFile(null); }} className="flex items-center gap-2 px-6 py-3 border border-slate-300 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-colors">
+                    <Upload className="w-5 h-5" /> Upload Another
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Broker Connect Section */}
+          {!result && (
+            <div className="mt-12">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Or Connect Your Broker (Coming Soon)</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { name: "Groww", color: "bg-green-50 border-green-200", icon: "G" },
+                  { name: "Zerodha", color: "bg-blue-50 border-blue-200", icon: "Z" },
+                  { name: "NJ Wealth", color: "bg-orange-50 border-orange-200", icon: "N" },
+                  { name: "Kuvera", color: "bg-purple-50 border-purple-200", icon: "K" },
+                ].map((broker) => (
+                  <div key={broker.name} className={`p-4 border rounded-xl ${broker.color} opacity-50 cursor-not-allowed`}>
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-lg font-bold text-slate-400 mb-2">
+                      {broker.icon}
+                    </div>
+                    <p className="font-semibold text-sm">{broker.name}</p>
+                    <p className="text-xs text-slate-500">Coming Soon</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </motion.div>
       </div>
     </div>
   );
