@@ -1,162 +1,222 @@
-﻿"use client"
+﻿"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Brain, Shield, TrendingUp, BarChart3, Zap, Award,
+  ArrowRight, X, ChevronRight, Sparkles
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-const EMAIL_KEY = "folioiq_email"
+const features = [
+  {
+    icon: Brain, title: "AI Analysis",
+    description: "Get personalized recommendations based on your portfolio",
+    color: "from-emerald-500/20 to-teal-500/20", iconColor: "text-emerald-400",
+    details: ["Portfolio health scoring using ML models","Personalized fund recommendations","Risk-adjusted return predictions","Smart rebalancing suggestions"],
+    action: "Analyze Portfolio", link: "/dashboard"
+  },
+  {
+    icon: Shield, title: "Risk Assessment",
+    description: "Understand your risk exposure across categories",
+    color: "from-blue-500/20 to-indigo-500/20", iconColor: "text-blue-400",
+    details: ["Category-wise risk breakdown","Concentration risk detection","Market volatility impact analysis","Downside protection scoring"],
+    action: "Check Risk", link: "/risk"
+  },
+  {
+    icon: TrendingUp, title: "Tax Optimization",
+    description: "Maximize tax savings with smart harvesting",
+    color: "from-amber-500/20 to-orange-500/20", iconColor: "text-amber-400",
+    details: ["ELSS limit utilization tracker","Tax-loss harvesting alerts","Section 80C optimization","Capital gains tax planning"],
+    action: "Optimize Taxes", link: "/dashboard"
+  },
+  {
+    icon: BarChart3, title: "Visual Analytics",
+    description: "Beautiful charts for portfolio breakdown",
+    color: "from-purple-500/20 to-pink-500/20", iconColor: "text-purple-400",
+    details: ["Interactive allocation charts","Performance trend analysis","Category comparison views","Historical NAV tracking"],
+    action: "View Analytics", link: "/dashboard"
+  },
+  {
+    icon: Zap, title: "Instant Insights",
+    description: "5-second portfolio health check",
+    color: "from-cyan-500/20 to-sky-500/20", iconColor: "text-cyan-400",
+    details: ["One-click portfolio scan","Instant red flag detection","Quick action recommendations","Real-time market alerts"],
+    action: "Get Insights", link: "/dashboard"
+  },
+  {
+    icon: Award, title: "Expert Grading",
+    description: "Portfolio score with actionable fixes",
+    color: "from-rose-500/20 to-red-500/20", iconColor: "text-rose-400",
+    details: ["Overall portfolio grade (A-F)","Category-wise performance ratings","Fund quality assessment","Improvement action plan"],
+    action: "Get Graded", link: "/dashboard"
+  }
+];
+const insights = [
+  { title: "Small Cap Overexposure", subtitle: "High risk in market downturns", severity: "warning" },
+  { title: "Tax Saver ELSS Limit Not Utilized", subtitle: "Save Rs.1.5L in taxes annually", severity: "info" },
+  { title: "Axis Long Term Underperforming", subtitle: "Potential 8-12% better returns", severity: "critical" }
+];
+
+function FeatureModal({ feature, isOpen, onClose }: { feature: typeof features[0]; isOpen: boolean; onClose: () => void }) {
+  const router = useRouter();
+  if (!isOpen || !feature) return null;
+  const Icon = feature.icon;
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+          <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="bg-slate-900 border border-slate-700/50 rounded-2xl p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${feature.color}`}>
+                <Icon className={`w-6 h-6 ${feature.iconColor}`} />
+              </div>
+              <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-800 transition-colors">
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">{feature.title}</h3>
+            <p className="text-slate-400 mb-6">{feature.description}</p>
+            <div className="space-y-3 mb-8">
+              {feature.details.map((detail, idx) => (
+                <motion.div key={idx} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }}
+                  className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                  <span className="text-sm text-slate-300">{detail}</span>
+                </motion.div>
+              ))}
+            </div>
+            <button onClick={() => { onClose(); router.push(feature.link); }}
+              className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2 group">
+              {feature.action} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 export default function HomePage() {
-  const [email, setEmail] = useState("")
-  const [showLogin, setShowLogin] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [selectedFeature, setSelectedFeature] = useState<typeof features[0] | null>(null);
+  const [email, setEmail] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    const existing = localStorage.getItem(EMAIL_KEY)
-    if (existing) {
-      setEmail(existing)
-      setSaved(true)
-    }
-  }, [])
+  useEffect(() => { setIsVisible(true); }, []);
 
-  function goNext() {
-    if (email.trim()) {
-      localStorage.setItem(EMAIL_KEY, email.trim())
-      setSaved(true)
-    }
-    window.location.href = "/explore"
-  }
-
-  function skip() {
-    window.location.href = "/explore"
-  }
+  const handleGetStarted = () => {
+    if (email) localStorage.setItem("userEmail", email);
+    router.push("/dashboard");
+  };
 
   return (
-    <main className="min-h-screen bg-white text-[#161616]">
-      <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-sm font-black text-white">F</div>
-            <div className="text-lg font-black">FolioIQ</div>
-          </Link>
-          <nav className="hidden items-center gap-7 text-sm font-semibold text-black/65 md:flex">
-            <Link href="/explore">Mutual Funds</Link>
-            <Link href="/profile">Upload</Link>
-            <Link href="/dashboard-v2">Dashboard</Link>
-          </nav>
-          <button onClick={() => setShowLogin(true)} className="rounded-full border border-[#009b63] px-5 py-2.5 text-sm font-black text-[#008b5a]">Login</button>
-        </div>
-      </header>
-
-      <section className="mx-auto grid min-h-[calc(100vh-74px)] max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-[1.05fr_.95fr]">
-        <div>
-          <div className="mb-5 inline-flex rounded-full bg-[#e9fff5] px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-[#008b5a]">
-            Mutual Fund Portfolio Analysis
-          </div>
-          <h1 className="text-5xl font-black leading-[1.02] tracking-tight md:text-7xl">
-            Make better mutual fund decisions.
-          </h1>
-          <p className="mt-6 max-w-2xl text-xl leading-8 text-black/60">
-            Upload your portfolio and FolioIQ tells you what to fix, what to keep and what to add next.
-          </p>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <button onClick={() => setShowLogin(true)} className="rounded-full bg-[#009b63] px-8 py-4 text-sm font-black text-white shadow-xl shadow-[#009b63]/20">
-              Check your portfolio
-            </button>
-            <Link href="/explore" className="rounded-full border border-black/10 bg-white px-8 py-4 text-sm font-black text-black">
-              Skip and explore
-            </Link>
-          </div>
-
-          <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
-            <Proof number="5 sec" label="action plan" />
-            <Proof number="Cost" label="leakage check" />
-            <Proof number="Simple" label="plain English" />
-          </div>
-        </div>
-
-        <div className="relative mx-auto w-full max-w-md">
-          <div className="absolute -inset-8 rounded-[3rem] bg-gradient-to-br from-[#e9fff5] via-white to-[#f4efe3] blur-2xl" />
-          <div className="relative rounded-[2.5rem] border border-black/10 bg-white p-5 shadow-[0_30px_90px_rgba(0,0,0,0.12)]">
-            <div className="rounded-[2rem] bg-[#111827] p-5 text-white">
-              <div className="text-xs font-black uppercase tracking-[0.22em] text-white/45">Portfolio Score</div>
-              <div className="mt-4 text-6xl font-black">74</div>
-              <div className="mt-2 text-sm text-white/60">Decent, but needs cleanup.</div>
-            </div>
-            <div className="mt-4 grid gap-3">
-              <Insight label="Fix Now" text="Regular plan cost drag detected" />
-              <Insight label="Keep" text="Core flexi-cap exposure looks fine" />
-              <Insight label="Explore" text="Missing debt cushion" />
-            </div>
+    <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
+      <section className="relative pt-20 pb-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : -30 }} transition={{ duration: 0.6 }}>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium mb-6">
+                <Sparkles className="w-4 h-4" /> AI-Powered Portfolio Intelligence
+              </div>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                Make better <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">mutual fund</span> decisions.
+              </h1>
+              <p className="text-lg text-slate-400 mb-8 max-w-lg">
+                Upload your portfolio and FolioIQ tells you what to fix, what to keep, and what to add next.
+              </p>
+              <div className="flex flex-wrap gap-8 mb-10">
+                <div><div className="text-2xl font-bold text-white">5 sec</div><div className="text-sm text-slate-500">Portfolio Scan</div></div>
+                <div><div className="text-2xl font-bold text-white">AI</div><div className="text-sm text-slate-500">Powered Checks</div></div>
+                <div><div className="text-2xl font-bold text-white">Simple</div><div className="text-sm text-slate-500">Action Plan</div></div>
+              </div>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : 30 }} transition={{ duration: 0.6, delay: 0.2 }} className="relative">
+              <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <div className="text-4xl font-bold text-white">80<span className="text-lg text-slate-500">/100</span></div>
+                    <div className="w-full h-2 bg-slate-800 rounded-full mt-2 overflow-hidden">
+                      <div className="h-full w-4/5 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3 mb-6">
+                  {insights.map((insight, idx) => (
+                    <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + idx * 0.1 }}
+                      className={`p-3 rounded-lg border ${
+                        insight.severity === "critical" ? "bg-red-500/10 border-red-500/20" :
+                        insight.severity === "warning" ? "bg-amber-500/10 border-amber-500/20" :
+                        "bg-emerald-500/10 border-emerald-500/20"
+                      }`}>
+                      <div className={`text-sm font-medium ${
+                        insight.severity === "critical" ? "text-red-300" :
+                        insight.severity === "warning" ? "text-amber-300" : "text-emerald-300"
+                      }`}>{insight.title}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{insight.subtitle}</div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  <label className="text-sm text-slate-400">Enter your email to get started</label>
+                  <input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleGetStarted()}
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all" />
+                  <button onClick={handleGetStarted}
+                    className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2 group">
+                    Get Started <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
-
-      {showLogin && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm">
-          <div className="relative grid w-full max-w-3xl overflow-hidden rounded-[2rem] bg-white shadow-[0_40px_140px_rgba(0,0,0,0.28)] md:grid-cols-[.9fr_1.1fr]">
-            <button onClick={() => setShowLogin(false)} className="absolute right-5 top-4 z-10 text-2xl leading-none text-black/40 hover:text-black">x</button>
-
-            <div className="hidden bg-[#17233f] p-8 text-white md:block">
-              <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-white text-xl font-black text-[#17233f]">F</div>
-              <div className="text-4xl font-black leading-tight">One place for smarter fund decisions.</div>
-              <p className="mt-4 text-sm leading-6 text-white/65">Track, fix and improve your mutual fund portfolio without confusing tables.</p>
-              <div className="mt-10 rounded-3xl bg-white/10 p-5">
-                <div className="text-xs font-black uppercase tracking-[0.2em] text-white/45">Example insight</div>
-                <div className="mt-2 text-2xl font-black">Cost leakage</div>
-                <div className="mt-1 text-sm text-white/65">Find hidden cost drag before investing more.</div>
-              </div>
-            </div>
-
-            <div className="p-7 md:p-10">
-              <div className="text-center md:text-left">
-                <div className="text-3xl font-black">Welcome to FolioIQ</div>
-                <p className="mt-2 text-sm leading-6 text-black/55">Enter your email to save your analysis. You can also skip and try the product instantly.</p>
-              </div>
-
-              <div className="mt-8">
-                <label className="text-xs font-black uppercase tracking-[0.18em] text-black/35">Email ID</label>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  type="email"
-                  className="mt-2 min-h-14 w-full rounded-2xl border border-black/10 bg-[#f8fafc] px-4 text-sm outline-none focus:border-[#009b63]"
-                />
-                <button onClick={goNext} className="mt-5 w-full rounded-2xl bg-[#009b63] px-6 py-4 text-sm font-black text-white">
-                  Continue
-                </button>
-                <button onClick={skip} className="mt-4 w-full text-sm font-bold text-black/50 underline underline-offset-4">
-                  Skip for now
-                </button>
-                {saved && <div className="mt-4 text-center text-xs font-bold text-[#009b63]">Email saved locally.</div>}
-              </div>
-
-              <div className="mt-8 rounded-2xl bg-[#f8fafc] p-4 text-xs leading-5 text-black/50">
-                FolioIQ helps you understand portfolio quality and next actions.
-              </div>
-            </div>
+      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Why FolioIQ?</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">Everything you need to make smarter mutual fund decisions, powered by AI</p>
+          </motion.div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, idx) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div key={idx} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.1 }}
+                  whileHover={{ y: -4, scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setSelectedFeature(feature)}
+                  className="group relative bg-slate-900/50 border border-slate-800 hover:border-slate-600 rounded-2xl p-6 cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/5">
+                  <div className={`p-3 rounded-xl bg-gradient-to-br ${feature.color} w-fit mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className={`w-6 h-6 ${feature.iconColor}`} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-emerald-400 transition-colors">{feature.title}</h3>
+                  <p className="text-sm text-slate-400 mb-4">{feature.description}</p>
+                  <div className="flex items-center gap-1 text-sm text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Learn more <ChevronRight className="w-4 h-4" />
+                  </div>
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                </motion.div>
+              );
+            })}
           </div>
         </div>
-      )}
-    </main>
-  )
-}
-
-function Proof({ number, label }: { number: string; label: string }) {
-  return (
-    <div className="rounded-2xl border border-black/10 bg-[#fafafa] p-4">
-      <div className="text-lg font-black">{number}</div>
-      <div className="text-xs font-bold uppercase tracking-[0.14em] text-black/35">{label}</div>
+      </section>
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-3xl p-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to optimize your portfolio?</h2>
+            <p className="text-slate-400 mb-8 max-w-xl mx-auto">Join thousands of investors who use FolioIQ to make smarter mutual fund decisions.</p>
+            <Link href="/dashboard" className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-all group">
+              Get Started Free <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+      <FeatureModal feature={selectedFeature!} isOpen={!!selectedFeature} onClose={() => setSelectedFeature(null)} />
     </div>
-  )
-}
-
-function Insight({ label, text }: { label: string; text: string }) {
-  return (
-    <div className="rounded-2xl border border-black/10 bg-[#fbfbfb] p-4">
-      <div className="text-xs font-black uppercase tracking-[0.2em] text-black/35">{label}</div>
-      <div className="mt-1 text-sm font-black">{text}</div>
-    </div>
-  )
+  );
 }

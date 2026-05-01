@@ -1,0 +1,859 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Brain, Shield, TrendingUp, BarChart3, Zap, Award,
+  ArrowRight, X, ChevronRight, Sparkles, MessageCircle,
+  Bot, User, Send, Loader2, AlertTriangle, CheckCircle2,
+  Info, PieChart, Target, Lightbulb, TrendingDown,
+  Wallet, Receipt, Calculator, Percent, ArrowUpRight,
+  ArrowDownRight, Minus, RefreshCw, Download, Share2,
+  Bell, Search, Filter, ChevronDown, Star, Clock,
+  Calendar, DollarSign, Activity, Layers, Compass
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+// ============================================
+// TYPES & INTERFACES
+// ============================================
+interface PortfolioData {
+  totalValue: number;
+  totalInvested: number;
+  totalReturns: number;
+  xirr: number;
+  monthlySIP: number;
+  activeSIPs: number;
+  healthScore: number;
+  fundsAtRisk: number;
+  fundsCount: number;
+}
+
+interface Fund {
+  name: string;
+  category: string;
+  invested: number;
+  currentValue: number;
+  returns: number;
+  xirr: number;
+  rating: string;
+  risk: string;
+  sipAmount: number;
+  allocation: number;
+}
+
+interface AIInsight {
+  id: string;
+  type: "warning" | "info" | "critical" | "success";
+  title: string;
+  description: string;
+  action: string;
+  impact: string;
+  icon: any;
+}
+
+interface Recommendation {
+  id: string;
+  type: "switch" | "add" | "reduce" | "rebalance";
+  fromFund?: string;
+  toFund?: string;
+  category?: string;
+  reason: string;
+  potentialReturn: string;
+  riskLevel: string;
+  confidence: number;
+}
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+}
+
+interface Prediction {
+  period: string;
+  projectedValue: number;
+  projectedReturns: number;
+  confidence: number;
+  scenario: "optimistic" | "base" | "pessimistic";
+}
+
+// ============================================
+// MOCK DATA - In production, this comes from API/Supabase
+// ============================================
+const portfolioData: PortfolioData = {
+  totalValue: 553300,
+  totalInvested: 391100,
+  totalReturns: 41.46,
+  xirr: 13.7,
+  monthlySIP: 28500,
+  activeSIPs: 6,
+  healthScore: 80,
+  fundsAtRisk: 2,
+  fundsCount: 12
+};
+
+const funds: Fund[] = [
+  { name: "Axis Long Term Equity", category: "ELSS", invested: 120000, currentValue: 145000, returns: 20.8, xirr: 12.5, rating: "B", risk: "High", sipAmount: 10000, allocation: 26.2 },
+  { name: "SBI Bluechip Fund", category: "Large Cap", invested: 80000, currentValue: 95000, returns: 18.7, xirr: 11.2, rating: "A", risk: "Moderate", sipAmount: 5000, allocation: 17.2 },
+  { name: "Mirae Asset Emerging", category: "Mid Cap", invested: 60000, currentValue: 78000, returns: 30.0, xirr: 18.3, rating: "A+", risk: "High", sipAmount: 5000, allocation: 14.1 },
+  { name: "Nippon India Small Cap", category: "Small Cap", invested: 50000, currentValue: 52000, returns: 4.0, xirr: 2.5, rating: "C", risk: "Very High", sipAmount: 3000, allocation: 9.4 },
+  { name: "HDFC Balanced Advantage", category: "Balanced", invested: 45000, currentValue: 51000, returns: 13.3, xirr: 8.7, rating: "A", risk: "Moderate", sipAmount: 3000, allocation: 9.2 },
+  { name: "ICICI Pru Liquid", category: "Liquid", invested: 36100, currentValue: 37300, returns: 3.3, xirr: 2.2, rating: "A+", risk: "Low", sipAmount: 0, allocation: 6.7 }
+];
+
+const aiInsights: AIInsight[] = [
+  {
+    id: "1", type: "critical",
+    title: "Small Cap Overexposure",
+    description: "Your small cap allocation is 28% of equity, recommended max is 15%. High volatility risk in market downturns.",
+    action: "Rebalance to Large/Mid Cap",
+    impact: "-15% risk reduction",
+    icon: AlertTriangle
+  },
+  {
+    id: "2", type: "info",
+    title: "ELSS Limit Not Utilized",
+    description: "You have invested only Rs.1.2L in ELSS. Max limit is Rs.1.5L under Section 80C. Missing Rs.30K tax savings.",
+    action: "Increase ELSS SIP by Rs.2.5K",
+    impact: "+Rs.30K annual tax savings",
+    icon: Receipt
+  },
+  {
+    id: "3", type: "warning",
+    title: "Axis Long Term Underperforming",
+    description: "3-year XIRR is 12.5% vs category average 15.2%. Consider switching to Quant ELSS or Canara Robeco.",
+    action: "View Alternatives",
+    impact: "+8-12% potential returns",
+    icon: TrendingDown
+  },
+  {
+    id: "4", type: "success",
+    title: "SIP Discipline Strong",
+    description: "You have maintained 6 active SIPs for 18+ months. Consistent investing is building wealth steadily.",
+    action: "Continue Strategy",
+    impact: "Wealth compounding on track",
+    icon: CheckCircle2
+  }
+];
+
+const recommendations: Recommendation[] = [
+  {
+    id: "r1", type: "switch",
+    fromFund: "Axis Long Term Equity",
+    toFund: "Quant ELSS Fund",
+    reason: "Quant ELSS has outperformed Axis by 4.2% CAGR over 5 years with lower volatility.",
+    potentialReturn: "+4.2% CAGR",
+    riskLevel: "Moderate",
+    confidence: 87
+  },
+  {
+    id: "r2", type: "add",
+    category: "International Equity",
+    reason: "Zero international exposure. Adding 10% can reduce portfolio correlation with Indian markets.",
+    potentialReturn: "+12% diversification benefit",
+    riskLevel: "Moderate-High",
+    confidence: 92
+  },
+  {
+    id: "r3", type: "reduce",
+    category: "Small Cap",
+    reason: "Current 28% allocation exceeds recommended 15%. Reduce to lower volatility and improve Sharpe ratio.",
+    potentialReturn: "-15% volatility",
+    riskLevel: "Low",
+    confidence: 95
+  }
+];
+
+const predictions: Prediction[] = [
+  { period: "1 Year", projectedValue: 628000, projectedReturns: 13.5, confidence: 78, scenario: "base" },
+  { period: "3 Years", projectedValue: 785000, projectedReturns: 41.8, confidence: 65, scenario: "base" },
+  { period: "5 Years", projectedValue: 1020000, projectedReturns: 84.3, confidence: 52, scenario: "base" },
+  { period: "1 Year", projectedValue: 685000, projectedReturns: 23.8, confidence: 45, scenario: "optimistic" },
+  { period: "1 Year", projectedValue: 575000, projectedReturns: 3.9, confidence: 45, scenario: "pessimistic" }
+];
+
+// ============================================
+// HELPER COMPONENTS
+// ============================================
+
+function ScoreRing({ score, size = 120 }: { score: number; size?: number }) {
+  const circumference = 2 * Math.PI * ((size - 12) / 2);
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+  const color = score >= 80 ? "#10b981" : score >= 60 ? "#f59e0b" : "#ef4444";
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={(size - 12) / 2} fill="none" stroke="#1e293b" strokeWidth="8" />
+        <circle cx={size / 2} cy={size / 2} r={(size - 12) / 2} fill="none" stroke={color} strokeWidth="8"
+          strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round"
+          className="transition-all duration-1000" />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-bold text-white">{score}</span>
+        <span className="text-xs text-slate-400">/100</span>
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ title, value, subtitle, trend, icon: Icon, color }: any) {
+  return (
+    <motion.div whileHover={{ y: -2 }} className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-all">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm text-slate-400">{title}</span>
+        <div className={`p-2 rounded-lg ${color}`}>
+          <Icon className="w-4 h-4" />
+        </div>
+      </div>
+      <div className="text-2xl font-bold text-white mb-1">{value}</div>
+      <div className="flex items-center gap-2">
+        {trend && (
+          <span className={`text-xs flex items-center gap-1 ${trend > 0 ? "text-emerald-400" : trend < 0 ? "text-red-400" : "text-slate-400"}`}>
+            {trend > 0 ? <ArrowUpRight className="w-3 h-3" /> : trend < 0 ? <ArrowDownRight className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+            {Math.abs(trend)}%
+          </span>
+        )}
+        <span className="text-xs text-slate-500">{subtitle}</span>
+      </div>
+    </motion.div>
+  );
+}
+
+// ============================================
+// AI CHAT COMPONENT
+// ============================================
+
+function AIChatPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: "assistant", content: "Hello! I am your FolioIQ AI assistant. Ask me anything about your portfolio, market trends, or investment strategies.", timestamp: new Date() }
+  ]);
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  useEffect(scrollToBottom, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    const userMsg: ChatMessage = { role: "user", content: input, timestamp: new Date() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput("");
+    setIsTyping(true);
+
+    // Simulate AI response
+    setTimeout(() => {
+      const responses: Record<string, string> = {
+        "risk": "Based on your portfolio analysis, your risk score is 6.2/10 (Moderate-High). Main concerns: 28% small cap exposure and concentration in 3 funds. Recommendation: Reduce small cap to 15% and add a balanced advantage fund.",
+        "tax": "You can save an additional Rs.30,000 in taxes! Current ELSS: Rs.1.2L (Section 80C limit: Rs.1.5L). Increase your Axis Long Term SIP by Rs.2,500/month. Also consider NPS for additional Rs.50K deduction under 80CCD(1B).",
+        "return": "Your portfolio XIRR is 13.7%, which is good but below optimal. Top performers: Mirae Asset Emerging (18.3%) and SBI Bluechip (11.2%). Underperformer: Nippon Small Cap (2.5%). Switching Axis to Quant ELSS could improve overall XIRR by ~1.5%.",
+        "rebalance": "Suggested rebalancing: (1) Reduce Nippon Small Cap from 9.4% to 5%, (2) Increase SBI Bluechip from 17.2% to 22%, (3) Add 10% international equity via Motilal Oswal NASDAQ 100. This improves Sharpe ratio from 0.8 to 1.1.",
+        "default": "I analyzed your portfolio: Health Score 80/100. Key strengths: Consistent SIP discipline, diversified across categories. Areas to improve: Small cap overexposure, underperforming ELSS, missing international allocation. Would you like specific recommendations for any of these?"
+      };
+      const lowerInput = input.toLowerCase();
+      let response = responses.default;
+      if (lowerInput.includes("risk")) response = responses.risk;
+      else if (lowerInput.includes("tax")) response = responses.tax;
+      else if (lowerInput.includes("return") || lowerInput.includes("performance")) response = responses.return;
+      else if (lowerInput.includes("rebalance") || lowerInput.includes("switch")) response = responses.rebalance;
+
+      const aiMsg: ChatMessage = { role: "assistant", content: response, timestamp: new Date() };
+      setMessages(prev => [...prev, aiMsg]);
+      setIsTyping(false);
+    }, 1500);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div initial={{ opacity: 0, x: 400 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 400 }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          className="fixed right-0 top-0 h-full w-full sm:w-[420px] bg-slate-900 border-l border-slate-800 shadow-2xl z-50 flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/20 rounded-lg">
+                <Bot className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white">FolioIQ AI</h3>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs text-emerald-400">Online</span>
+                </div>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+              <X className="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((msg, idx) => (
+              <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                <div className={`p-2 rounded-lg flex-shrink-0 ${msg.role === "user" ? "bg-emerald-500/20" : "bg-slate-800"`}>
+                  {msg.role === "user" ? <User className="w-4 h-4 text-emerald-400" /> : <Bot className="w-4 h-4 text-emerald-400" />}
+                </div>
+                <div className={`max-w-[80%] p-3 rounded-xl text-sm ${msg.role === "user" ? "bg-emerald-500/10 text-white" : "bg-slate-800/80 text-slate-300"}`}>
+                  {msg.content}
+                </div>
+              </motion.div>
+            ))}
+            {isTyping && (
+              <div className="flex gap-3">
+                <div className="p-2 bg-slate-800 rounded-lg">
+                  <Bot className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="bg-slate-800/80 p-3 rounded-xl flex items-center gap-1">
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="p-4 border-t border-slate-800">
+            <div className="flex gap-2 mb-3">
+              {["Risk Analysis", "Tax Tips", "Rebalance"].map((suggestion) => (
+                <button key={suggestion} onClick={() => { setInput(suggestion); }}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-full text-xs text-slate-400 hover:text-white transition-colors">
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input value={input} onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder="Ask about your portfolio..."
+                className="flex-1 px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 text-sm" />
+              <button onClick={handleSend} disabled={isTyping || !input.trim()}
+                className="p-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-700 rounded-xl transition-colors">
+                <Send className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ============================================
+// MAIN DASHBOARD COMPONENT
+// ============================================
+
+export default function DashboardPage() {
+  const [activeTab, setActiveTab] = useState("overview");
+  const [chatOpen, setChatOpen] = useState(false);
+  const [selectedPrediction, setSelectedPrediction] = useState("base");
+  const router = useRouter();
+
+  const tabs = [
+    { id: "overview", label: "Overview", icon: PieChart },
+    { id: "recommendations", label: "AI Recommendations", icon: Lightbulb },
+    { id: "predictions", label: "Predictions", icon: Target },
+    { id: "risk", label: "Risk Analysis", icon: Shield }
+  ];
+
+  const formatCurrency = (val: number) => `Rs.${(val / 100000).toFixed(2)}L`;
+  const formatPercent = (val: number) => `${val > 0 ? "+" : ""}${val.toFixed(2)}%`;
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                <span className="font-bold text-white text-sm">F</span>
+              </div>
+              <span className="font-semibold text-white">FolioIQ</span>
+              <span className="text-xs text-slate-500 hidden sm:inline">| AI-Powered Portfolio Intelligence</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setChatOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm transition-all">
+                <Bot className="w-4 h-4" /> AI Assistant
+              </button>
+              <button className="p-2 hover:bg-slate-800 rounded-xl transition-colors relative">
+                <Bell className="w-5 h-5 text-slate-400" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                  activeTab === tab.id
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}>
+                <Icon className="w-4 h-4" /> {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* OVERVIEW TAB */}
+        {activeTab === "overview" && (
+          <div className="space-y-8">
+            {/* Health Score & Key Metrics */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                className="lg:col-span-1 bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-white">Portfolio Health</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    portfolioData.healthScore >= 80 ? "bg-emerald-500/10 text-emerald-400" :
+                    portfolioData.healthScore >= 60 ? "bg-amber-500/10 text-amber-400" : "bg-red-500/10 text-red-400"
+                  }`}>
+                    {portfolioData.healthScore >= 80 ? "Healthy" : portfolioData.healthScore >= 60 ? "Fair" : "At Risk"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-6">
+                  <ScoreRing score={portfolioData.healthScore} />
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span className="text-slate-300">{portfolioData.fundsCount} funds tracked</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                      <span className="text-slate-300">{portfolioData.fundsAtRisk} need attention</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Activity className="w-4 h-4 text-emerald-400" />
+                      <span className="text-slate-300">XIRR: {portfolioData.xirr}%</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              <div className="lg:col-span-2 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <MetricCard title="Current Value" value={formatCurrency(portfolioData.totalValue)} subtitle="+41.46% all time"
+                  trend={41.46} icon={Wallet} color="bg-emerald-500/10 text-emerald-400" />
+                <MetricCard title="Total Invested" value={formatCurrency(portfolioData.totalInvested)} subtitle={`Across ${portfolioData.fundsCount} funds`}
+                  icon={PieChart} color="bg-blue-500/10 text-blue-400" />
+                <MetricCard title="Total Returns" value={formatPercent(portfolioData.totalReturns)} subtitle={`XIRR: ${portfolioData.xirr}%`}
+                  trend={13.7} icon={TrendingUp} color="bg-emerald-500/10 text-emerald-400" />
+                <MetricCard title="Monthly SIP" value={`Rs.${(portfolioData.monthlySIP / 1000).toFixed(1)}K`} subtitle={`${portfolioData.activeSIPs} active SIPs`}
+                  icon={Calendar} color="bg-amber-500/10 text-amber-400" />
+              </div>
+            </div>
+
+            {/* AI Insights */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-emerald-400" /> AI Insights
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {aiInsights.map((insight, idx) => {
+                  const Icon = insight.icon;
+                  return (
+                    <motion.div key={insight.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }}
+                      className={`p-5 rounded-xl border ${
+                        insight.type === "critical" ? "bg-red-500/5 border-red-500/20" :
+                        insight.type === "warning" ? "bg-amber-500/5 border-amber-500/20" :
+                        insight.type === "success" ? "bg-emerald-500/5 border-emerald-500/20" :
+                        "bg-blue-500/5 border-blue-500/20"
+                      }`}>
+                      <div className="flex items-start gap-4">
+                        <div className={`p-2 rounded-lg flex-shrink-0 ${
+                          insight.type === "critical" ? "bg-red-500/10" :
+                          insight.type === "warning" ? "bg-amber-500/10" :
+                          insight.type === "success" ? "bg-emerald-500/10" : "bg-blue-500/10"
+                        }`}>
+                          <Icon className={`w-5 h-5 ${
+                            insight.type === "critical" ? "text-red-400" :
+                            insight.type === "warning" ? "text-amber-400" :
+                            insight.type === "success" ? "text-emerald-400" : "text-blue-400"
+                          }`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-white mb-1">{insight.title}</h4>
+                          <p className="text-sm text-slate-400 mb-3">{insight.description}</p>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs font-medium ${
+                              insight.type === "critical" ? "text-red-400" :
+                              insight.type === "warning" ? "text-amber-400" :
+                              insight.type === "success" ? "text-emerald-400" : "text-blue-400"
+                            }`}>{insight.impact}</span>
+                            <button className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1">
+                              {insight.action} <ChevronRight className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Holdings Table */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
+              <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                <h3 className="font-semibold text-white flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-emerald-400" /> Holdings
+                </h3>
+                <div className="flex gap-2">
+                  <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+                    <Search className="w-4 h-4 text-slate-400" />
+                  </button>
+                  <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+                    <Filter className="w-4 h-4 text-slate-400" />
+                  </button>
+                  <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
+                    <Download className="w-4 h-4 text-slate-400" />
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-800">
+                      <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase">Fund</th>
+                      <th className="text-left px-6 py-3 text-xs font-medium text-slate-500 uppercase">Category</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase">Invested</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase">Value</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase">Returns</th>
+                      <th className="text-right px-6 py-3 text-xs font-medium text-slate-500 uppercase">XIRR</th>
+                      <th className="text-center px-6 py-3 text-xs font-medium text-slate-500 uppercase">Rating</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {funds.map((fund, idx) => (
+                      <motion.tr key={idx} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.05 }}
+                        className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-white text-sm">{fund.name}</div>
+                          <div className="text-xs text-slate-500">SIP: Rs.{(fund.sipAmount / 1000).toFixed(0)}K</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-2.5 py-1 bg-slate-800 rounded-full text-xs text-slate-400">{fund.category}</span>
+                        </td>
+                        <td className="px-6 py-4 text-right text-sm text-slate-300">{formatCurrency(fund.invested)}</td>
+                        <td className="px-6 py-4 text-right text-sm text-white font-medium">{formatCurrency(fund.currentValue)}</td>
+                        <td className="px-6 py-4 text-right">
+                          <span className={`text-sm font-medium ${fund.returns > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            {fund.returns > 0 ? "+" : ""}{fund.returns.toFixed(1)}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right text-sm text-slate-300">{fund.xirr.toFixed(1)}%</td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+                            fund.rating.startsWith("A") ? "bg-emerald-500/10 text-emerald-400" :
+                            fund.rating === "B" ? "bg-amber-500/10 text-amber-400" :
+                            "bg-red-500/10 text-red-400"
+                          }`}>
+                            <Star className="w-3 h-3" /> {fund.rating}
+                          </span>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI RECOMMENDATIONS TAB */}
+        {activeTab === "recommendations" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Lightbulb className="w-6 h-6 text-emerald-400" /> AI Recommendations
+                </h2>
+                <p className="text-slate-400 mt-1">Personalized suggestions based on your portfolio analysis</p>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-xl">
+                <Brain className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm text-emerald-400 font-medium">AI Confidence: 91%</span>
+              </div>
+            </div>
+
+            {recommendations.map((rec, idx) => (
+              <motion.div key={rec.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
+                className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition-all">
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-xl flex-shrink-0 ${
+                    rec.type === "switch" ? "bg-amber-500/10" :
+                    rec.type === "add" ? "bg-emerald-500/10" : "bg-blue-500/10"
+                  }`}>
+                    {rec.type === "switch" ? <RefreshCw className="w-6 h-6 text-amber-400" /> :
+                     rec.type === "add" ? <PlusIcon /> : <MinusIcon />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                        rec.type === "switch" ? "bg-amber-500/10 text-amber-400" :
+                        rec.type === "add" ? "bg-emerald-500/10 text-emerald-400" :
+                        "bg-blue-500/10 text-blue-400"
+                      }`}>
+                        {rec.type === "switch" ? "Switch Fund" : rec.type === "add" ? "Add New" : "Reduce Exposure"}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${rec.confidence}%` }} />
+                        </div>
+                        <span className="text-xs text-slate-500">{rec.confidence}% confidence</span>
+                      </div>
+                    </div>
+
+                    {rec.type === "switch" && rec.fromFund && rec.toFund && (
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-slate-300">{rec.fromFund}</div>
+                          <div className="text-xs text-red-400">Current</div>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-slate-500" />
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-emerald-400">{rec.toFund}</div>
+                          <div className="text-xs text-emerald-400">Recommended</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-sm text-slate-400 mb-4">{rec.reason}</p>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <TrendingUp className="w-4 h-4 text-emerald-400" />
+                          <span className="text-sm text-emerald-400 font-medium">{rec.potentialReturn}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Shield className="w-4 h-4 text-slate-400" />
+                          <span className="text-sm text-slate-400">Risk: {rec.riskLevel}</span>
+                        </div>
+                      </div>
+                      <button className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-medium transition-all flex items-center gap-2">
+                        Apply <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* PREDICTIONS TAB */}
+        {activeTab === "predictions" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Target className="w-6 h-6 text-emerald-400" /> Predictive Analytics
+                </h2>
+                <p className="text-slate-400 mt-1">AI-powered future value projections based on historical patterns</p>
+              </div>
+              <div className="flex gap-2">
+                {(["pessimistic", "base", "optimistic"] as const).map((scenario) => (
+                  <button key={scenario} onClick={() => setSelectedPrediction(scenario)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all ${
+                      selectedPrediction === scenario
+                        ? scenario === "optimistic" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                          scenario === "base" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
+                          "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                        : "text-slate-400 hover:bg-slate-800/50"
+                    }`}>
+                    {scenario}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {predictions.filter(p => p.scenario === selectedPrediction).map((pred, idx) => (
+                <motion.div key={idx} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.1 }}
+                  className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm text-slate-400">{pred.period}</span>
+                    <span className="px-2.5 py-1 bg-emerald-500/10 rounded-full text-xs text-emerald-400">{pred.confidence}% confidence</span>
+                  </div>
+                  <div className="text-3xl font-bold text-white mb-1">{formatCurrency(pred.projectedValue)}</div>
+                  <div className="text-sm text-emerald-400 mb-4">+{pred.projectedReturns.toFixed(1)}% projected</div>
+                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${pred.confidence}%` }} transition={{ duration: 1, delay: 0.5 }}
+                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Comparison Chart */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+              <h3 className="font-semibold text-white mb-6">Scenario Comparison</h3>
+              <div className="space-y-4">
+                {["pessimistic", "base", "optimistic"].map((scenario) => {
+                  const pred = predictions.find(p => p.period === "1 Year" && p.scenario === scenario);
+                  if (!pred) return null;
+                  const maxVal = 800000;
+                  const width = (pred.projectedValue / maxVal) * 100;
+                  return (
+                    <div key={scenario} className="flex items-center gap-4">
+                      <span className="w-24 text-sm text-slate-400 capitalize">{scenario}</span>
+                      <div className="flex-1 h-8 bg-slate-800 rounded-lg overflow-hidden relative">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${width}%` }} transition={{ duration: 1 }}
+                          className={`h-full rounded-lg ${
+                            scenario === "optimistic" ? "bg-emerald-500/30" :
+                            scenario === "base" ? "bg-blue-500/30" : "bg-amber-500/30"
+                          }`} />
+                        <span className="absolute inset-0 flex items-center px-3 text-sm font-medium text-white">
+                          {formatCurrency(pred.projectedValue)}
+                        </span>
+                      </div>
+                      <span className={`text-sm font-medium ${
+                        scenario === "optimistic" ? "text-emerald-400" :
+                        scenario === "base" ? "text-blue-400" : "text-amber-400"
+                      }`}>+{pred.projectedReturns.toFixed(1)}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* RISK ANALYSIS TAB */}
+        {activeTab === "risk" && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Shield className="w-6 h-6 text-emerald-400" /> Risk Analysis
+              </h2>
+              <p className="text-slate-400 mt-1">Comprehensive risk assessment across your portfolio</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Risk Score */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+                <h3 className="font-semibold text-white mb-4">Overall Risk Score</h3>
+                <div className="flex items-center gap-6">
+                  <ScoreRing score={62} size={140} />
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-sm text-slate-400">Risk Level</div>
+                      <div className="text-lg font-semibold text-amber-400">Moderate-High</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-400">Sharpe Ratio</div>
+                      <div className="text-lg font-semibold text-white">0.82</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-400">Max Drawdown</div>
+                      <div className="text-lg font-semibold text-red-400">-18.5%</div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Category Risk */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+                <h3 className="font-semibold text-white mb-4">Category Risk Breakdown</h3>
+                <div className="space-y-4">
+                  {[
+                    { category: "Small Cap", allocation: 28, risk: "Very High", score: 9.2, color: "bg-red-500" },
+                    { category: "Mid Cap", allocation: 14, risk: "High", score: 7.8, color: "bg-amber-500" },
+                    { category: "Large Cap", allocation: 17, risk: "Moderate", score: 5.5, color: "bg-blue-500" },
+                    { category: "ELSS", allocation: 26, risk: "High", score: 7.2, color: "bg-amber-500" },
+                    { category: "Balanced", allocation: 9, risk: "Moderate", score: 4.8, color: "bg-emerald-500" },
+                    { category: "Liquid", allocation: 6, risk: "Low", score: 2.1, color: "bg-emerald-500" }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-4">
+                      <div className="w-24 text-sm text-slate-300">{item.category}</div>
+                      <div className="flex-1 h-6 bg-slate-800 rounded-lg overflow-hidden relative">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.score / 10) * 100}%` }} transition={{ duration: 0.8, delay: idx * 0.1 }}
+                          className={`h-full ${item.color} rounded-lg`} />
+                        <span className="absolute inset-0 flex items-center px-2 text-xs text-white">{item.allocation}%</span>
+                      </div>
+                      <span className={`text-xs w-20 text-right ${
+                        item.risk === "Very High" ? "text-red-400" :
+                        item.risk === "High" ? "text-amber-400" :
+                        item.risk === "Moderate" ? "text-blue-400" : "text-emerald-400"
+                      }`}>{item.risk}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Risk Alerts */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+              <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-400" /> Risk Alerts
+              </h3>
+              <div className="space-y-3">
+                {[
+                  { level: "High", text: "Small cap concentration at 28% exceeds recommended 15% limit", action: "Rebalance Now" },
+                  { level: "Medium", text: "Only 17% in large cap - consider increasing for stability", action: "View Suggestions" },
+                  { level: "Low", text: "Good liquidity buffer with 6% in liquid funds", action: "Maintain" }
+                ].map((alert, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                        alert.level === "High" ? "bg-red-500/10 text-red-400" :
+                        alert.level === "Medium" ? "bg-amber-500/10 text-amber-400" :
+                        "bg-emerald-500/10 text-emerald-400"
+                      }`}>{alert.level}</span>
+                      <span className="text-sm text-slate-300">{alert.text}</span>
+                    </div>
+                    <button className="text-sm text-emerald-400 hover:text-emerald-300 font-medium">{alert.action}</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* AI Chat Panel */}
+      <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+
+      {/* Floating AI Button (when chat closed) */}
+      {!chatOpen && (
+        <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }}
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-6 right-6 p-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-lg shadow-emerald-500/20 z-40 transition-all hover:scale-110">
+          <MessageCircle className="w-6 h-6" />
+        </motion.button>
+      )}
+    </div>
+  );
+}
+
+// Helper icons
+function PlusIcon() {
+  return (
+    <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    </svg>
+  );
+}
+
+function MinusIcon() {
+  return (
+    <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+    </svg>
+  );
+}
