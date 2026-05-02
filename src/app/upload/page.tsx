@@ -6,7 +6,7 @@ import {
   Upload, FileText, X, CheckCircle2, AlertTriangle, Sparkles,
   ArrowRight, Shield, TrendingUp, PieChart, Target, Zap,
   AlertOctagon, Lightbulb, ChevronDown, ChevronUp, Star,
-  Brain, BarChart3, Wallet, Percent, Clock, Award
+  Brain, BarChart3, Wallet, Percent, Clock, Award, Loader2
 } from "lucide-react";
 
 export default function UploadPage() {
@@ -70,15 +70,28 @@ export default function UploadPage() {
     return "text-red-600 bg-red-50";
   };
 
-  const getHealthColor = (score: number) => {
-    if (score >= 80) return "text-emerald-600";
-    if (score >= 60) return "text-blue-600";
-    if (score >= 40) return "text-amber-600";
-    return "text-red-600";
+  const formatCurrency = (n: number) => {
+    if (n >= 100000) return "₹" + (n / 100000).toFixed(2) + "L";
+    return "₹" + n.toLocaleString("en-IN");
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-[1400px] mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-bold text-lg text-slate-900">FolioIQ</span>
+          </div>
+          <button onClick={() => window.location.href = "/profile"} className="text-sm text-slate-600 hover:text-emerald-600">
+            ← Back to Profile
+          </button>
+        </div>
+      </header>
+
       <div className="max-w-[1000px] mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="mb-8">
@@ -121,7 +134,7 @@ export default function UploadPage() {
                   </div>
                   <button onClick={handleUpload} disabled={uploading} className="inline-flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                     {uploading ? (
-                      <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Analyzing...</>
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Analyzing...</>
                     ) : (
                       <><Sparkles className="w-5 h-5" /> AI Analysis</>
                     )}
@@ -160,7 +173,7 @@ export default function UploadPage() {
                       <Wallet className="w-4 h-4 text-emerald-600" />
                       <span className="text-xs text-slate-500">Total Value</span>
                     </div>
-                    <p className="text-xl font-bold text-slate-900">₹{(result.analysis.summary.totalCurrent / 100000).toFixed(2)}L</p>
+                    <p className="text-xl font-bold text-slate-900">{formatCurrency(result.analysis.summary.totalCurrent)}</p>
                   </div>
                   <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                     <div className="flex items-center gap-2 mb-2">
@@ -183,113 +196,117 @@ export default function UploadPage() {
                       <Award className="w-4 h-4 text-amber-600" />
                       <span className="text-xs text-slate-500">Health Score</span>
                     </div>
-                    <p className={`text-xl font-bold ${getHealthColor(result.analysis.summary.healthScore)}`}>
+                    <p className={`text-xl font-bold ${result.analysis.summary.healthScore >= 80 ? "text-emerald-600" : result.analysis.summary.healthScore >= 60 ? "text-blue-600" : "text-amber-600"}`}>
                       {result.analysis.summary.healthScore}/100
                     </p>
                   </div>
                 </div>
 
                 {/* AI Insights */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100">
-                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                      <Brain className="w-5 h-5 text-emerald-600" /> AI Insights
-                    </h2>
-                  </div>
-                  <div className="divide-y divide-slate-100">
-                    {result.analysis.insights.map((insight: any, idx: number) => (
-                      <div key={idx} className="p-4 hover:bg-slate-50 transition-colors">
-                        <button onClick={() => setExpandedInsight(expandedInsight === idx ? null : idx)} className="w-full flex items-start gap-3 text-left">
-                          <div className={`p-2 rounded-lg shrink-0 ${
-                            insight.type === "critical" ? "bg-red-100" : 
-                            insight.type === "warning" ? "bg-amber-100" : "bg-blue-100"
-                          }`}>
-                            {insight.type === "critical" ? <AlertOctagon className="w-5 h-5 text-red-600" /> :
-                             insight.type === "warning" ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
-                             <Lightbulb className="w-5 h-5 text-blue-600" />}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium text-slate-900">{insight.title}</p>
-                              {expandedInsight === idx ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                {result.analysis.insights?.length > 0 && (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-slate-100">
+                      <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                        <Brain className="w-5 h-5 text-emerald-600" /> AI Insights
+                      </h2>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {result.analysis.insights.map((insight: any, idx: number) => (
+                        <div key={idx} className="p-4 hover:bg-slate-50 transition-colors">
+                          <button onClick={() => setExpandedInsight(expandedInsight === idx ? null : idx)} className="w-full flex items-start gap-3 text-left">
+                            <div className={`p-2 rounded-lg shrink-0 ${
+                              insight.type === "critical" ? "bg-red-100" : 
+                              insight.type === "warning" ? "bg-amber-100" : "bg-blue-100"
+                            }`}>
+                              {insight.type === "critical" ? <AlertOctagon className="w-5 h-5 text-red-600" /> :
+                               insight.type === "warning" ? <AlertTriangle className="w-5 h-5 text-amber-600" /> :
+                               <Lightbulb className="w-5 h-5 text-blue-600" />}
                             </div>
-                            <AnimatePresence>
-                              {expandedInsight === idx && (
-                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                  <p className="text-sm text-slate-500 mt-2">{insight.description}</p>
-                                  <button className="mt-3 text-sm font-medium text-emerald-600 hover:text-emerald-700">
-                                    {insight.action} →
-                                  </button>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                            {expandedInsight !== idx && <p className="text-sm text-slate-500 mt-1 line-clamp-1">{insight.description}</p>}
-                          </div>
-                        </button>
-                      </div>
-                    ))}
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <p className="font-medium text-slate-900">{insight.title}</p>
+                                {expandedInsight === idx ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                              </div>
+                              <AnimatePresence>
+                                {expandedInsight === idx && (
+                                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                    <p className="text-sm text-slate-500 mt-2">{insight.description}</p>
+                                    <button className="mt-3 text-sm font-medium text-emerald-600 hover:text-emerald-700">
+                                      {insight.action} →
+                                    </button>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                              {expandedInsight !== idx && <p className="text-sm text-slate-500 mt-1 line-clamp-1">{insight.description}</p>}
+                            </div>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Holdings Table */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100">
-                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5 text-emerald-600" /> Your Holdings
-                    </h2>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-slate-100">
-                          <th className="text-left py-3 px-6 text-xs font-medium text-slate-500 uppercase">Fund</th>
-                          <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Value</th>
-                          <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Returns</th>
-                          <th className="text-center py-3 px-6 text-xs font-medium text-slate-500 uppercase">Risk</th>
-                          <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Allocation</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.holdings?.map((fund: any, idx: number) => (
-                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                            <td className="py-3 px-6">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold text-xs">
-                                  {fund.name[0]}
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm text-slate-900">{fund.name}</p>
-                                  <p className="text-xs text-slate-500">{fund.category}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-6 text-right">
-                              <p className="font-semibold text-sm text-slate-900">₹{fund.current.toLocaleString("en-IN")}</p>
-                            </td>
-                            <td className="py-3 px-6 text-right">
-                              <span className={`text-sm font-semibold ${fund.returns > 0 ? "text-emerald-600" : "text-red-500"}`}>
-                                {fund.returns > 0 ? "+" : ""}{fund.returns.toFixed(1)}%
-                              </span>
-                            </td>
-                            <td className="py-3 px-6 text-center">
-                              <span className={`text-xs font-medium px-2 py-1 rounded-full ${getRiskColor(fund.risk)}`}>
-                                {fund.risk}
-                              </span>
-                            </td>
-                            <td className="py-3 px-6">
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${fund.allocation}%` }} />
-                                </div>
-                                <span className="text-xs text-slate-500 w-10">{fund.allocation}%</span>
-                              </div>
-                            </td>
+                {result.holdings?.length > 0 && (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-slate-100">
+                      <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-emerald-600" /> Your Holdings ({result.holdings.length} Funds)
+                      </h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-slate-100">
+                            <th className="text-left py-3 px-6 text-xs font-medium text-slate-500 uppercase">Fund</th>
+                            <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Value</th>
+                            <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Returns</th>
+                            <th className="text-center py-3 px-6 text-xs font-medium text-slate-500 uppercase">Risk</th>
+                            <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Allocation</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {result.holdings.map((fund: any, idx: number) => (
+                            <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                              <td className="py-3 px-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold text-xs">
+                                    {fund.name[0]}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-sm text-slate-900">{fund.name}</p>
+                                    <p className="text-xs text-slate-500">{fund.category}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3 px-6 text-right">
+                                <p className="font-semibold text-sm text-slate-900">{formatCurrency(fund.current)}</p>
+                              </td>
+                              <td className="py-3 px-6 text-right">
+                                <span className={`text-sm font-semibold ${fund.returns > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                                  {fund.returns > 0 ? "+" : ""}{fund.returns.toFixed(1)}%
+                                </span>
+                              </td>
+                              <td className="py-3 px-6 text-center">
+                                <span className={`text-xs font-medium px-2 py-1 rounded-full ${getRiskColor(fund.risk)}`}>
+                                  {fund.risk}
+                                </span>
+                              </td>
+                              <td className="py-3 px-6">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${fund.allocation}%` }} />
+                                  </div>
+                                  <span className="text-xs text-slate-500 w-10">{fund.allocation.toFixed(1)}%</span>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Recommendations */}
                 {result.analysis.recommendations?.length > 0 && (
