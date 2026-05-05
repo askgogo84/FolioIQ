@@ -1,65 +1,366 @@
-﻿"use client"
+﻿"use client";
 
-import { useMemo, useState } from "react"
-import Link from "next/link"
+import { useState } from "react";
+import { MessageSquare,  Brain, Search, Home, LayoutDashboard, Upload, User, Sparkles, X, TrendingUp, Shield, DollarSign, BarChart3, ArrowRight, Star } from "lucide-react";
+import Link from "next/link";
 
-const funds = [
-  ["HDFC Flexi Cap Fund", "Flexi Cap", "20.37%", "hdfc-flexi-cap-fund"],
-  ["Parag Parikh Flexi Cap Fund", "Flexi Cap", "18.15%", "parag-parikh-flexi-cap-fund"],
-  ["Motilal Oswal Midcap Fund", "Mid Cap", "22.89%", "motilal-oswal-midcap-fund"],
-  ["Nippon India Small Cap Fund", "Small Cap", "25.10%", "nippon-india-small-cap-fund"],
-  ["ICICI Prudential Bluechip Fund", "Large Cap", "16.42%", "icici-prudential-bluechip-fund"],
-  ["SBI Contra Fund", "Contra", "19.40%", "sbi-contra-fund"],
-  ["Axis ELSS Tax Saver Fund", "ELSS", "14.85%", "axis-elss-tax-saver-fund"],
-]
+interface Fund {
+  name: string;
+  category: string;
+  returns1Y: string;
+  returns3Y: string;
+  risk: string;
+  aum: string;
+  rating: number;
+  expense: string;
+  fundManager: string;
+  description: string;
+  topHoldings: string[];
+  minInvestment: string;
+  sipAvailable: boolean;
+}
 
-const categories = [
-  ["Large Cap Mutual Funds", "Stability from India's largest companies", "/category/large-cap"],
-  ["Mid Cap Mutual Funds", "Growth from emerging leaders", "/category/mid-cap"],
-  ["Small Cap Mutual Funds", "Higher growth with higher volatility", "/category/small-cap"],
-  ["Flexi Cap Mutual Funds", "Flexible allocation across market caps", "/category/flexi-cap"],
-]
-
-const collections = ["Best SIP Funds", "High Return Funds", "ELSS Tax Saver", "Index Funds", "Debt Funds", "Low Risk Funds"]
+const funds: Fund[] = [
+  {
+    name: "Axis Bluechip Fund",
+    category: "Equity: Large Cap",
+    returns1Y: "15.2%",
+    returns3Y: "12.8%",
+    risk: "Moderate",
+    aum: "₹2,450 Cr",
+    rating: 5,
+    expense: "1.2%",
+    fundManager: "Shreyash Devalkar",
+    description: "A top-performing large-cap fund focusing on bluechip companies with consistent track record.",
+    topHoldings: ["Reliance Industries", "HDFC Bank", "ICICI Bank", "Infosys", "TCS"],
+    minInvestment: "₹500",
+    sipAvailable: true
+  },
+  {
+    name: "SBI Small Cap Fund",
+    category: "Equity: Small Cap",
+    returns1Y: "22.1%",
+    returns3Y: "18.5%",
+    risk: "High",
+    aum: "₹1,890 Cr",
+    rating: 4,
+    expense: "1.5%",
+    fundManager: "R. Srinivasan",
+    description: "High-growth potential fund investing in emerging small-cap companies.",
+    topHoldings: ["Elgi Equipments", "JK Cement", "Timken India", "V-Guard Industries", "NAVIN FLUORINE"],
+    minInvestment: "₹500",
+    sipAvailable: true
+  },
+  {
+    name: "HDFC Corporate Bond",
+    category: "Debt: Corporate Bond",
+    returns1Y: "8.5%",
+    returns3Y: "7.2%",
+    risk: "Low",
+    aum: "₹3,120 Cr",
+    rating: 4,
+    expense: "0.8%",
+    fundManager: "Anil Bamboli",
+    description: "Stable returns through investment in high-quality corporate bonds.",
+    topHoldings: ["HDFC Ltd", "LIC Housing Finance", "Power Finance Corp", "REC Ltd", "NHAI"],
+    minInvestment: "₹100",
+    sipAvailable: true
+  },
+  {
+    name: "ICICI Pru Balanced Advantage",
+    category: "Hybrid: Balanced Advantage",
+    returns1Y: "12.8%",
+    returns3Y: "10.5%",
+    risk: "Moderate",
+    aum: "₹1,560 Cr",
+    rating: 4,
+    expense: "1.1%",
+    fundManager: "Sankaran Naren",
+    description: "Dynamic allocation between equity and debt based on market conditions.",
+    topHoldings: ["ICICI Bank", "Reliance Industries", "HDFC Bank", "Infosys", "TCS"],
+    minInvestment: "₹100",
+    sipAvailable: true
+  },
+  {
+    name: "Tata ELSS Tax Saver",
+    category: "Equity: ELSS",
+    returns1Y: "14.3%",
+    returns3Y: "11.2%",
+    risk: "Moderate",
+    aum: "₹980 Cr",
+    rating: 3,
+    expense: "1.3%",
+    fundManager: "Tejas Desai",
+    description: "Tax-saving fund with 3-year lock-in period and equity exposure.",
+    topHoldings: ["Tata Motors", "HDFC Bank", "Reliance Industries", "Infosys", "ICICI Bank"],
+    minInvestment: "₹500",
+    sipAvailable: true
+  },
+  {
+    name: "Nifty 50 Index Fund",
+    category: "Index: Large Cap",
+    returns1Y: "13.1%",
+    returns3Y: "11.8%",
+    risk: "Moderate",
+    aum: "₹4,200 Cr",
+    rating: 4,
+    expense: "0.2%",
+    fundManager: "Index Tracking",
+    description: "Low-cost passive fund tracking Nifty 50 index with minimal tracking error.",
+    topHoldings: ["Reliance Industries", "HDFC Bank", "ICICI Bank", "Infosys", "TCS"],
+    minInvestment: "₹100",
+    sipAvailable: true
+  }
+];
 
 export default function ExplorePage() {
-  const [query, setQuery] = useState("")
-  const filteredFunds = useMemo(() => funds.filter(([name, category]) => `${name} ${category}`.toLowerCase().includes(query.toLowerCase())), [query])
+  const [selectedFund, setSelectedFund] = useState<Fund | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredFunds = funds.filter(fund => 
+    fund.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    fund.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const navItems = [
+    { name: "Home", href: "/", icon: Home },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Upload", href: "/upload", icon: Upload },
+    { name: "Explore", href: "/explore", icon: Search, active: true },
+    { name: "AI Insights", href: "/intelligence", icon: Brain },{ name: "Profile", href: "/profile", icon: User },
+  ];
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] text-[#171a20]">
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <Link href="/" className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-sm font-black text-white">F</div><div className="font-black">FolioIQ</div></Link>
-          <nav className="hidden gap-6 text-sm font-bold text-slate-500 md:flex"><Link href="/explore" className="text-emerald-600">Mutual Funds</Link><Link href="/calculators/sip">Calculators</Link><Link href="/profile">Upload</Link><Link href="/dashboard-v2">Dashboard</Link></nav>
-          <Link href="/profile" className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-black text-white">Upload</Link>
+    <div className="min-h-screen bg-slate-50">
+      {/* Navigation Bar */}
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-slate-900">FolioIQ</span>
+              </Link>
+            </div>
+            <div className="flex items-center space-x-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    item.active
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
-      </header>
+      </nav>
 
-      <section className="mx-auto max-w-6xl px-5 py-10 text-center md:py-16">
-        <h1 className="text-5xl font-black leading-tight tracking-tight md:text-7xl">Mutual Fund Portfolio Analysis</h1>
-        <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-500">Explore mutual funds, upload your portfolio, and get decision-first insights on what to fix, keep and add next.</p>
-        <div className="mx-auto mt-7 max-w-2xl rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search mutual funds, categories, AMC..." className="h-12 w-full rounded-xl px-4 text-sm font-semibold outline-none" />
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-slate-900 mb-3">Explore Funds</h1>
+          <p className="text-slate-600">Discover top-performing mutual funds across categories</p>
         </div>
-        <div className="mt-7 flex justify-center gap-3"><Link href="/profile" className="rounded-full bg-emerald-600 px-7 py-3 text-sm font-black text-white shadow-xl shadow-emerald-600/20">Check your portfolio</Link><Link href="/dashboard-v2" className="rounded-full border border-slate-200 bg-white px-7 py-3 text-sm font-black">View dashboard</Link></div>
 
-        <div className="mx-auto mt-12 max-w-3xl rounded-[2rem] bg-[#243963] p-8 text-white shadow-[0_24px_80px_rgba(36,57,99,0.22)]"><div className="text-xs font-black uppercase tracking-[0.22em] text-white/50">Mutual Fund Portfolio</div><div className="mt-3 text-5xl font-black">0</div><p className="mt-3 text-white/75">No mutual fund investments found yet.</p><Link href="/profile" className="mt-6 inline-flex rounded-full bg-blue-500 px-6 py-3 text-sm font-black text-white">Auto track my mutual funds</Link></div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-5 py-8">
-        <h2 className="mb-6 text-center text-4xl font-black">1. Equity Mutual Funds</h2>
-        <div className="grid gap-6 md:grid-cols-[1fr_.9fr]">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 font-black">Top Mutual Funds</div><div className="space-y-3">{filteredFunds.map(([name, category, ret, slug]) => <div key={name} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0"><Link href={`/mutual-funds/${slug}`}><div className="font-black">{name}</div><div className="text-sm text-slate-500">{category}</div></Link><div className="text-right"><div className="font-black text-emerald-600">{ret}</div><Link href={`/mutual-funds/${slug}`} className="mt-1 inline-flex rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-black text-white">View</Link></div></div>)}</div></div>
-          <div className="grid gap-4 md:grid-cols-2">{categories.map(([title, text, href]) => <Link href={href} key={title} className="rounded-2xl bg-white p-5 shadow-sm"><div className="font-black">{title}</div><p className="mt-2 text-sm leading-6 text-slate-500">{text}</p><div className="mt-4 text-sm font-black text-blue-600">View all â†’</div></Link>)}</div>
+        {/* Search Bar */}
+        <div className="max-w-2xl mx-auto mb-10">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search funds by name or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
         </div>
-      </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-8"><h2 className="text-3xl font-black">Collections</h2><div className="mt-5 flex flex-wrap gap-3">{collections.map((c) => <span key={c} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black shadow-sm">{c}</span>)}</div></section>
+        {/* Quick Navigation */}
+        <div className="flex gap-3 mb-8 justify-center">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+          </Link>
+          <Link href="/upload" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+            <Upload className="w-4 h-4" />
+            Upload
+          </Link>
+          <Link href="/profile" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+            <User className="w-4 h-4" />
+            Profile
+          </Link>
+        </div>
 
-      <section className="mx-auto max-w-6xl px-5 py-8"><h2 className="text-3xl font-black">Calculators</h2><div className="mt-5 grid gap-4 md:grid-cols-2"><Link href="/calculators/sip" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="text-2xl">ðŸ§®</div><div className="mt-2 text-xl font-black">SIP Calculator</div><p className="mt-2 text-sm text-slate-500">Estimate future wealth from monthly SIPs.</p></Link><Link href="/calculators/lumpsum" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="text-2xl">ðŸ’°</div><div className="mt-2 text-xl font-black">Lumpsum Calculator</div><p className="mt-2 text-sm text-slate-500">Estimate growth on one-time investments.</p></Link></div></section>
+        {/* Funds Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredFunds.map((fund) => (
+            <div key={fund.name} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-slate-900">{fund.name}</h3>
+                    <p className="text-sm text-slate-500">{fund.category}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    {Array.from({ length: fund.rating }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                    ))}
+                  </div>
+                </div>
 
-      <section className="mx-auto max-w-6xl px-5 py-8"><div className="rounded-[2rem] bg-slate-950 p-8 text-white md:p-10"><div className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300">FolioIQ Edge</div><h2 className="mt-3 max-w-2xl text-4xl font-black">Already invested elsewhere?</h2><p className="mt-4 max-w-2xl text-sm leading-6 text-white/65">Upload your statement and see your health score, leakage, overlap, missing categories and next action.</p><Link href="/profile" className="mt-7 inline-flex rounded-full bg-white px-7 py-3 text-sm font-black text-slate-950">Upload portfolio</Link></div></section>
-    </main>
-  )
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">1Y Returns</p>
+                    <p className="text-lg font-bold text-green-600">{fund.returns1Y}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Risk</p>
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                      fund.risk === "Low" ? "bg-green-100 text-green-700" :
+                      fund.risk === "Moderate" ? "bg-yellow-100 text-yellow-700" :
+                      "bg-red-100 text-red-700"
+                    }`}>
+                      {fund.risk}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">AUM</p>
+                    <p className="text-sm font-semibold text-slate-900">{fund.aum}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Expense</p>
+                    <p className="text-sm font-semibold text-slate-900">{fund.expense}</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedFund(fund)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  View Details
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Fund Details Modal */}
+      {selectedFund && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">{selectedFund.name}</h2>
+                <p className="text-sm text-slate-500">{selectedFund.category}</p>
+              </div>
+              <button
+                onClick={() => setSelectedFund(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Key Metrics */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-green-50 rounded-xl p-4 text-center">
+                  <TrendingUp className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-green-600">{selectedFund.returns1Y}</p>
+                  <p className="text-xs text-slate-600">1Y Returns</p>
+                </div>
+                <div className="bg-blue-50 rounded-xl p-4 text-center">
+                  <BarChart3 className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-blue-600">{selectedFund.returns3Y}</p>
+                  <p className="text-xs text-slate-600">3Y Returns</p>
+                </div>
+                <div className="bg-purple-50 rounded-xl p-4 text-center">
+                  <DollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-purple-600">{selectedFund.aum}</p>
+                  <p className="text-xs text-slate-600">AUM</p>
+                </div>
+              </div>
+
+              {/* Details */}
+              <div className="space-y-4">
+                <div className="flex justify-between py-3 border-b border-slate-100">
+                  <span className="text-slate-600">Fund Manager</span>
+                  <span className="font-medium text-slate-900">{selectedFund.fundManager}</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-slate-100">
+                  <span className="text-slate-600">Expense Ratio</span>
+                  <span className="font-medium text-slate-900">{selectedFund.expense}</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-slate-100">
+                  <span className="text-slate-600">Risk Level</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    selectedFund.risk === "Low" ? "bg-green-100 text-green-700" :
+                    selectedFund.risk === "Moderate" ? "bg-yellow-100 text-yellow-700" :
+                    "bg-red-100 text-red-700"
+                  }`}>{selectedFund.risk}</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-slate-100">
+                  <span className="text-slate-600">Min Investment</span>
+                  <span className="font-medium text-slate-900">{selectedFund.minInvestment}</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-slate-100">
+                  <span className="text-slate-600">SIP Available</span>
+                  <span className="font-medium text-green-600">{selectedFund.sipAvailable ? "Yes" : "No"}</span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <h4 className="font-semibold text-slate-900 mb-2">About Fund</h4>
+                <p className="text-sm text-slate-600">{selectedFund.description}</p>
+              </div>
+
+              {/* Top Holdings */}
+              <div>
+                <h4 className="font-semibold text-slate-900 mb-2">Top Holdings</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedFund.topHoldings.map((holding) => (
+                    <span key={holding} className="px-3 py-1 bg-slate-100 rounded-full text-sm text-slate-700">
+                      {holding}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                  Add to Watchlist
+                </button>
+                <button className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
+                  Start SIP
+                </button>
+                <button 
+                  onClick={() => setSelectedFund(null)}
+                  className="px-4 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
+
+
+
+

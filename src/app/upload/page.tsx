@@ -1,231 +1,180 @@
-"use client";
+﻿"use client";
 
-import { useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Upload, FileText, X, CheckCircle2, AlertTriangle, Sparkles, ArrowRight, TrendingUp, Loader2 } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Upload, File, X, CheckCircle, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
+import Link from "next/link";
 
 export default function UploadPage() {
-  const [file, setFile] = useState<File | null>(null);
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState("");
+  const [uploadStatus, setUploadStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
-    else if (e.type === "dragleave") setDragActive(false);
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files?.[0]) setFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+      setUploadStatus(null);
+    }
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setFile(e.target.files[0]);
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFiles(prev => [...prev, ...Array.from(e.target.files)]);
+      setUploadStatus(null);
+    }
+  };
+
+  const handleClick = () => fileInputRef.current?.click();
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (files.length === 0) {
+      setUploadStatus({ type: 'error', message: 'Please select a file first.' });
+      return;
+    }
     setUploading(true);
-    setError("");
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("email", localStorage.getItem("folioiq_email") || "user@example.com");
+    setUploadStatus(null);
 
     try {
-      const res = await fetch("/api/upload-portfolio", { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.success) setResult(data);
-      else setError(data.error || "Upload failed");
-    } catch (err: any) {
-      setError(err.message);
+      const formData = new FormData();
+      formData.append('file', files[0]);
+
+      const response = await fetch('/api/upload', { method: 'POST', body: formData });
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setUploadStatus({ type: 'success', message: result.message || 'Portfolio uploaded!' });
+        setFiles([]);
+        setTimeout(() => router.push('/dashboard'), 2000);
+      } else {
+        setUploadStatus({ type: 'error', message: result.error || 'Upload failed.' });
+      }
+    } catch (error) {
+      setUploadStatus({ type: 'error', message: 'Network error. Try again.' });
     } finally {
       setUploading(false);
     }
   };
 
-  const formatCurrency = (n: number) => n >= 100000 ? "₹" + (n / 100000).toFixed(2) + "L" : "₹" + n.toLocaleString("en-IN");
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-[1400px] mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-lg text-slate-900">FolioIQ</span>
-          </div>
-          <button onClick={() => window.location.href = "/profile"} className="text-sm text-slate-600 hover:text-emerald-600">← Back to Profile</button>
+    <div className="min-h-screen bg-slate-50">
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <Link href="/dashboard" className="flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Back to Dashboard</span>
+          </Link>
         </div>
-      </header>
+      </div>
 
-      <div className="max-w-[1000px] mx-auto px-4 py-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Upload Portfolio</h1>
-            <p className="text-slate-500">Upload your CAS statement for AI-powered analysis</p>
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-slate-900 mb-3">Upload Portfolio</h1>
+          <p className="text-slate-500">Upload your CAS statement for AI-powered analysis</p>
+        </div>
+
+        {/* Drop Zone with Click */}
+        <div 
+          className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${
+            dragActive ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 bg-white hover:border-slate-400'
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={handleClick}
+        >
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Upload className="h-8 w-8 text-blue-500" />
           </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Drop your files here</h3>
+          <p className="text-slate-500 mb-1">or click anywhere in this box to browse</p>
+          <p className="text-xs text-slate-400">PDF, CSV, Excel (Max 10MB)</p>
+          
+          <input ref={fileInputRef} type="file" className="hidden" accept=".pdf,.csv,.xlsx,.xls" onChange={handleFileSelect} multiple />
+          
+          <button onClick={(e) => { e.stopPropagation(); handleClick(); }}
+            className="mt-4 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+            Browse Files
+          </button>
+        </div>
 
-          {!result && (
-            <div onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all mb-8 ${dragActive ? "border-emerald-500 bg-emerald-50" : "border-slate-300 bg-white"}`}>
-              {!file ? (
-                <>
-                  <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-                    <Upload className="w-8 h-8 text-emerald-600" />
-                  </div>
-                  <p className="text-lg font-medium text-slate-900 mb-2">Drag & drop your CAS statement</p>
-                  <p className="text-sm text-slate-500 mb-4">PDF from CAMS/KFintech or Excel file</p>
-                  <input type="file" accept=".pdf,.xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" id="file-upload" />
-                  <label htmlFor="file-upload" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium cursor-pointer hover:bg-emerald-700 transition-colors">
-                    <FileText className="w-5 h-5" /> Select File
-                  </label>
-                  <p className="text-xs text-slate-400 mt-4">Supported: PDF (CAS), Excel, CSV</p>
-                </>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center gap-3">
-                    <FileText className="w-8 h-8 text-emerald-600" />
-                    <div className="text-left">
-                      <p className="font-medium text-slate-900">{file.name}</p>
-                      <p className="text-sm text-slate-500">{(file.size / 1024).toFixed(1)} KB</p>
-                    </div>
-                    <button onClick={() => setFile(null)} className="p-2 hover:bg-slate-100 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
-                  </div>
-                  <button onClick={handleUpload} disabled={uploading} className="inline-flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors">
-                    {uploading ? <><Loader2 className="w-5 h-5 animate-spin" /> Analyzing...</> : <><Sparkles className="w-5 h-5" /> AI Analysis</>}
-                  </button>
-                </div>
-              )}
+        {/* Selected Files */}
+        {files.length > 0 && (
+          <div className="mt-8 bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100">
+              <h3 className="font-semibold text-slate-900">Selected Files ({files.length})</h3>
             </div>
-          )}
-
-          {error && (
-            <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3">
-              <AlertTriangle className="w-6 h-6 text-red-500" />
-              <p className="text-red-700">{error}</p>
-            </div>
-          )}
-
-          {result?.analysis && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-4">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600" />
-                <div>
-                  <p className="font-semibold text-emerald-800 text-lg">Portfolio Analyzed!</p>
-                  <p className="text-emerald-600">AI analyzed {result.holdings?.length || 0} funds</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-xs text-slate-500 mb-1">Total Value</p>
-                  <p className="text-xl font-bold text-slate-900">{formatCurrency(result.analysis.summary.totalCurrent)}</p>
-                </div>
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-xs text-slate-500 mb-1">Returns</p>
-                  <p className={`text-xl font-bold ${result.analysis.summary.returnsPercent > 0 ? "text-emerald-600" : "text-red-500"}`}>
-                    {result.analysis.summary.returnsPercent > 0 ? "+" : ""}{result.analysis.summary.returnsPercent.toFixed(1)}%
-                  </p>
-                </div>
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-xs text-slate-500 mb-1">Funds</p>
-                  <p className="text-xl font-bold text-slate-900">{result.analysis.summary.fundCount}</p>
-                </div>
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                  <p className="text-xs text-slate-500 mb-1">Health Score</p>
-                  <p className="text-xl font-bold text-emerald-600">{result.analysis.summary.healthScore}/100</p>
-                </div>
-              </div>
-
-              {result.analysis.insights?.length > 0 && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100">
-                    <h2 className="text-lg font-semibold text-slate-900">AI Insights</h2>
+            {files.map((file, index) => (
+              <div key={index} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <File className="h-5 w-5 text-blue-500" />
                   </div>
-                  <div className="divide-y divide-slate-100">
-                    {result.analysis.insights.map((insight: any, idx: number) => (
-                      <div key={idx} className="p-4 hover:bg-slate-50">
-                        <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-lg shrink-0 ${insight.type === "critical" ? "bg-red-100" : insight.type === "warning" ? "bg-amber-100" : "bg-blue-100"}`}>
-                            {insight.type === "critical" ? <AlertTriangle className="w-5 h-5 text-red-600" /> : insight.type === "warning" ? <AlertTriangle className="w-5 h-5 text-amber-600" /> : <Sparkles className="w-5 h-5 text-blue-600" />}
-                          </div>
-                          <div>
-                            <p className="font-medium text-slate-900">{insight.title}</p>
-                            <p className="text-sm text-slate-500 mt-1">{insight.description}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                  <div>
+                    <p className="font-medium text-slate-900">{file.name}</p>
+                    <p className="text-sm text-slate-400">{formatFileSize(file.size)}</p>
                   </div>
                 </div>
-              )}
-
-              {result.holdings?.length > 0 && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100">
-                    <h2 className="text-lg font-semibold text-slate-900">Your Holdings ({result.holdings.length} Funds)</h2>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-slate-100">
-                          <th className="text-left py-3 px-6 text-xs font-medium text-slate-500 uppercase">Fund</th>
-                          <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Value</th>
-                          <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Returns</th>
-                          <th className="text-center py-3 px-6 text-xs font-medium text-slate-500 uppercase">Risk</th>
-                          <th className="text-right py-3 px-6 text-xs font-medium text-slate-500 uppercase">Allocation</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.holdings.map((fund: any, idx: number) => (
-                          <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50">
-                            <td className="py-3 px-6">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold text-xs">{fund.name[0]}</div>
-                                <div>
-                                  <p className="font-medium text-sm text-slate-900">{fund.name}</p>
-                                  <p className="text-xs text-slate-500">{fund.category}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-6 text-right"><p className="font-semibold text-sm text-slate-900">{formatCurrency(fund.current)}</p></td>
-                            <td className="py-3 px-6 text-right"><span className={`text-sm font-semibold ${fund.returns > 0 ? "text-emerald-600" : "text-red-500"}`}>{fund.returns > 0 ? "+" : ""}{fund.returns.toFixed(1)}%</span></td>
-                            <td className="py-3 px-6 text-center"><span className={`text-xs font-medium px-2 py-1 rounded-full ${fund.risk === "Low" ? "text-emerald-600 bg-emerald-50" : fund.risk === "Moderate" ? "text-blue-600 bg-blue-50" : fund.risk === "High" ? "text-amber-600 bg-amber-50" : "text-red-600 bg-red-50"}`}>{fund.risk}</span></td>
-                            <td className="py-3 px-6">
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 rounded-full" style={{ width: `${fund.allocation}%` }} /></div>
-                                <span className="text-xs text-slate-500 w-10">{fund.allocation.toFixed(1)}%</span>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-4">
-                <button onClick={() => window.location.href = "/profile"} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition-colors">
-                  <ArrowRight className="w-5 h-5" /> View Full Dashboard
-                </button>
-                <button onClick={() => { setResult(null); setFile(null); }} className="flex items-center gap-2 px-6 py-3 border border-slate-300 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-colors">
-                  <Upload className="w-5 h-5" /> Upload Another
+                <button onClick={() => removeFile(index)} className="p-2 hover:bg-red-50 rounded-lg">
+                  <X className="h-4 w-4 text-slate-400 hover:text-red-500" />
                 </button>
               </div>
-            </motion.div>
-          )}
-        </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* Upload Button */}
+        {files.length > 0 && (
+          <div className="mt-6 flex justify-center">
+            <button onClick={handleUpload} disabled={uploading}
+              className={`px-8 py-3 rounded-lg font-medium text-white flex items-center gap-2 ${
+                uploading ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
+              }`}>
+              {uploading ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading...</>
+                : <><Upload className="h-4 w-4" /> Upload & Analyze</>}
+            </button>
+          </div>
+        )}
+
+        {/* Status */}
+        {uploadStatus && (
+          <div className={`mt-6 p-4 rounded-lg flex items-center gap-3 ${
+            uploadStatus.type === 'success' ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'
+          }`}>
+            {uploadStatus.type === 'success' ? <CheckCircle className="h-5 w-5 text-emerald-500" />
+              : <AlertCircle className="h-5 w-5 text-red-500" />}
+            <p className={uploadStatus.type === 'success' ? 'text-emerald-700' : 'text-red-700'}>{uploadStatus.message}</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-// Cache bust: 20260502101705
