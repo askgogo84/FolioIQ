@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 
 const AMC_NAMES = ['HDFC','ICICI','SBI','Axis','Mirae','Nippon','Parag','Canara','Invesco','Kotak','PGIM','Aditya','UTI','DSP','Franklin','IDFC','Tata','L&T','Motilal','Bandhan','Edelweiss','Quant','Sundaram','Baroda','Bank of India','Union','HSBC','JM','BOI','Groww','Zerodha','NJ','KFin','CAMS'];
 
@@ -188,6 +189,7 @@ function calculateMetrics(funds: any[], grandTotalInvested?: number, grandTotalV
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
+    const adminSupabase = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Please sign in first' }, { status: 401 });
 
@@ -387,7 +389,7 @@ export async function POST(request: NextRequest) {
       comparison,
     };
 
-    const { error: dbError } = await supabase.from('portfolios').upsert(portfolioData, { onConflict: 'user_id' });
+    const { error: dbError } = await adminSupabase.from('portfolios').upsert(portfolioData, { onConflict: 'user_id' });
     if (dbError) {
       console.error('DB Error:', dbError);
       return NextResponse.json({ error: 'Failed to save: ' + dbError.message }, { status: 500 });
