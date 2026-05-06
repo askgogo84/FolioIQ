@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
 
   // Protected routes - redirect to login if not authenticated
   if (!isPublic && !user) {
-    const loginUrl = new URL('/auth/login', request.url)
+    const loginUrl = new URL('/auth', request.url)
     // redirectTo not needed
     return NextResponse.redirect(loginUrl)
   }

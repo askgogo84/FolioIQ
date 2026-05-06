@@ -92,7 +92,7 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { router.push("/auth/login"); return; }
+        if (!user) { router.push("/auth"); return; }
         setUser(user);
 
         // ── READ FROM portfolios table (JSON blob, working table) ──
@@ -138,7 +138,7 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/auth/login");
+    router.push("/auth");
   };
 
   if (loading) {
