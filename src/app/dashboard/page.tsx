@@ -95,11 +95,29 @@ export default function DashboardPage() {
         if (!user) { router.push("/auth/login"); return; }
         setUser(user);
 
-        // ── READ FROM portfolio_holdings via server API (bypasses RLS issues) ──
-        const res = await fetch('/api/portfolio/holdings');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.holdings) setHoldings(json.holdings);
+        // ── READ FROM portfolios table (JSON blob, working table) ──
+        const { data: portfolioData, error: dbError } = await supabase
+          .from('portfolios')
+          .select('data')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!dbError && portfolioData?.data?.funds) {
+          // Map portfolios.data.funds to the shape the dashboard expects
+          const mapped = portfolioData.data.funds.map((f: any) => ({
+            scheme_code: String(Math.random()),
+            scheme_name: f.name || '',
+            category: f.category || 'Equity Scheme',
+            amc: '',
+            units: f.units || 0,
+            avg_nav: f.invested && f.units ? f.invested / f.units : 0,
+            current_nav: f.value && f.units ? f.value / f.units : 0,
+            purchase_date: f.purchaseDate || new Date(Date.now() - 2*365*86400000).toISOString().split('T')[0],
+            sip_amount: f.sip || 0,
+            invested_amount: f.invested || 0,
+            current_value: f.value || 0,
+          }));
+          setHoldings(mapped);
         }
       } catch (err) {
         console.error("Dashboard error:", err);

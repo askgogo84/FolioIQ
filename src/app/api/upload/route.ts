@@ -216,10 +216,101 @@ export async function POST(request: NextRequest) {
         funds = result.funds; grandTotalInvested = result.grandTotalInvested; grandTotalValue = result.grandTotalValue;
         parserUsed = 'nj-csv';
       } else if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
-        text = new TextDecoder().decode(bytes);
-        const result = parseNJWealthReport(text);
-        funds = result.funds; grandTotalInvested = result.grandTotalInvested; grandTotalValue = result.grandTotalValue;
-        parserUsed = 'nj-xls';
+        // Proper binary XLS/XLSX parsing using XLSX library
+        try {
+          const XLSX = await import('xlsx');
+          const wb = XLSX.read(Buffer.from(bytes), { type: 'buffer', cellDates: true });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const rows: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as string[][];
+          
+          // NJ Wealth XLS format: fund name row → transaction rows → Sub Total row
+          let currentFundName = '';
+          let firstDate = '';
+          
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i].map((c: unknown) => String(c ?? '').trim());
+            const col0 = row[0] || '';
+            
+            // Skip metadata rows
+            const skipWords = ['Sr. No.', 'Sub Total', 'Grand Total', 'Return :', 'Note :', 'Folio', 'Anti Money', 'Address', 'City', 'Phone', 'Mobile', 'E-Mail', 'Your Company'];
+            if (skipWords.some(w => col0.startsWith(w))) {
+              if (col0 === 'Grand Total') {
+                const nums = row.filter((c: string) => c && /^[\d,.]+$/.test(c.replace(/,/g,''))).map((c: string) => parseFloat(c.replace(/,/g,'')));
+                if (nums.length >= 2) { grandTotalInvested = nums[0]; grandTotalValue = nums[nums.length - 1]; }
+              }
+              continue;
+            }
+            
+            // Detect fund name row: col0 has text, cols 1-5 are empty
+            const restEmpty = row.slice(1, 6).every((c: string) => !c || c === '0' || c === '-');
+            const isFundName = col0.length > 5 && !/^\d/.test(col0) && restEmpty && !col0.includes('|');
+            
+            if (isFundName) {
+              currentFundName = col0.replace(/\s*-\s*Gr$/, '').replace(/\s*- Growth$/, '').trim();
+              firstDate = '';
+              continue;
+            }
+            
+            // Detect first transaction date
+            if (/^\d+$/.test(col0) && currentFundName && !firstDate && row[4]) {
+              const dateStr = String(row[4]);
+              const m = dateStr.match(/(\d{2})-(\d{2})-(\d{4})/);
+              if (m) firstDate = m[3] + '-' + m[2] + '-' + m[1];
+            }
+            
+            // Sub Total row: col5=invested, col8=units, col10=currentValue
+            if (col0 === 'Sub Total' && currentFundName) {
+              const invested = parseFloat(String(row[5] || '0').replace(/,/g, '')) || 0;
+              const units = parseFloat(String(row[8] || '0').replace(/,/g, '')) || 0;
+              const curValue = parseFloat(String(row[10] || row[9] || '0').replace(/,/g, '')) || 0;
+              
+              // Get return % from next row
+              let retPct = 0, gain = 0;
+              if (i + 1 < rows.length) {
+                const nextRow = rows[i + 1].map((c: unknown) => String(c ?? ''));
+                const nextText = nextRow.join(' ');
+                const retMatch = nextText.match(/Weighted Avg\. Abs\. Return\s*:\s*([\d\-.]+)%/);
+                const gainMatch = nextText.match(/Gain \/ \(Loss\)\s*:\s*Rs\.\s*([\d,.\-]+)/);
+                if (retMatch) retPct = parseFloat(retMatch[1]);
+                if (gainMatch) gain = parseFloat(gainMatch[1].replace(/,/g, ''));
+              }
+              
+              if (invested > 0 && currentFundName) {
+                funds.push({
+                  name: sanitizeText(currentFundName),
+                  invested,
+                  value: curValue || units * (invested / (units || 1)),
+                  returns: gain,
+                  returnsPercent: retPct,
+                  category: detectCategory(currentFundName),
+                  risk: detectRisk(currentFundName),
+                  rating: 4,
+                  sip: 0,
+                  units,
+                  purchaseDate: firstDate,
+                });
+              }
+              currentFundName = '';
+              firstDate = '';
+            }
+          }
+          
+          if (funds.length > 0) {
+            parserUsed = 'nj-xls-binary';
+          } else {
+            // Fallback: try as text
+            text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+            const result = parseNJWealthReport(text);
+            funds = result.funds; grandTotalInvested = result.grandTotalInvested || 0; grandTotalValue = result.grandTotalValue || 0;
+            parserUsed = 'nj-xls-text-fallback';
+          }
+        } catch (xlsErr) {
+          console.error('XLS parse error:', xlsErr);
+          text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+          const result = parseNJWealthReport(text);
+          funds = result.funds; grandTotalInvested = result.grandTotalInvested || 0; grandTotalValue = result.grandTotalValue || 0;
+          parserUsed = 'nj-xls-text-fallback';
+        }
       } else if (file.name.toLowerCase().endsWith('.pdf')) {
         text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
         const result = parseNJWealthReport(text);
