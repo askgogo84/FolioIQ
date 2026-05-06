@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 
 // ─── NJ WEALTH SCHEME VALUATION XLS PARSER ──────────────────
 // Correctly handles the exact format:
@@ -161,6 +162,7 @@ async function matchToAMFI(name: string): Promise<{ schemeCode: string; schemeNa
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
+    const adminSupabase = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -257,7 +259,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Upsert to Supabase portfolio_holdings
-        const { error } = await supabase.from('portfolio_holdings').upsert({
+        const { error } = await adminSupabase.from('portfolio_holdings').upsert({
           user_id: user.id,
           scheme_code: amfi.schemeCode,
           scheme_name: amfi.schemeName,

@@ -95,14 +95,12 @@ export default function DashboardPage() {
         if (!user) { router.push("/auth/login"); return; }
         setUser(user);
 
-        // ── READ FROM portfolio_holdings (individual fund rows) ──
-        const { data, error } = await supabase
-          .from("portfolio_holdings")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("invested_amount", { ascending: false });
-
-        if (!error && data) setHoldings(data);
+        // ── READ FROM portfolio_holdings via server API (bypasses RLS issues) ──
+        const res = await fetch('/api/portfolio/holdings');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.holdings) setHoldings(json.holdings);
+        }
       } catch (err) {
         console.error("Dashboard error:", err);
       } finally {
