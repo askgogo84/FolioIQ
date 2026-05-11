@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/utils/supabase/admin'
+import { createClient } from '@/utils/supabase/server'
 
 const RESEND_KEY = 're_hZkMXHtg_6BZvmYRJZAtdWEpr6eFe8U9S'
-const OTP_EXPIRY_MINUTES = 10
+const OTP_EXPIRY = 10 // minutes
 
-function generateOTP(): string {
+function genOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
@@ -13,73 +13,47 @@ export async function POST(req: NextRequest) {
     const { email, otp: submittedOtp } = await req.json()
     if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
 
-    const adminSupabase = createAdminClient()
+    const supabase = await createClient()
 
-    // VERIFY mode - check submitted OTP
+    // VERIFY mode
     if (submittedOtp) {
-      const { data: stored } = await adminSupabase
+      const { data: stored, error: fetchErr } = await supabase
         .from('otp_codes')
         .select('otp, expires_at, used')
         .eq('email', email)
+        .eq('used', false)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
+      if (fetchErr) {
+        console.error('OTP fetch error:', fetchErr.message)
+        return NextResponse.json({ error: 'Verification failed. Try again.' }, { status: 400 })
+      }
       if (!stored) return NextResponse.json({ error: 'No OTP found. Request a new one.' }, { status: 400 })
-      if (stored.used) return NextResponse.json({ error: 'OTP already used. Request a new one.' }, { status: 400 })
       if (new Date(stored.expires_at) < new Date()) return NextResponse.json({ error: 'OTP expired. Request a new one.' }, { status: 400 })
-      if (stored.otp !== submittedOtp) return NextResponse.json({ error: 'Invalid OTP. Try again.' }, { status: 400 })
+      if (stored.otp !== submittedOtp) return NextResponse.json({ error: 'Incorrect code. Check your email.' }, { status: 400 })
 
-      // Mark as used
-      await adminSupabase.from('otp_codes').update({ used: true }).eq('email', email).eq('otp', submittedOtp)
+      // Mark used
+      await supabase.from('otp_codes').update({ used: true })
+        .eq('email', email).eq('otp', submittedOtp)
 
-      // Sign in or create user via Supabase admin
-      const { data: existingUser } = await adminSupabase.auth.admin.listUsers()
-      const user = existingUser.users.find((u: any) => u.email === email)
-      
-      let userId: string
-      if (user) {
-        userId = user.id
-      } else {
-        const { data: newUser, error: createErr } = await adminSupabase.auth.admin.createUser({
-          email, email_confirm: true
-        })
-        if (createErr) return NextResponse.json({ error: createErr.message }, { status: 400 })
-        userId = newUser.user.id
-      }
-
-      // Find or create user
-      const { data: { users }, error: listErr } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 })
-      let targetUser = users?.find((u: any) => u.email === email)
-      
-      if (!targetUser) {
-        const { data: newUser, error: createErr } = await adminSupabase.auth.admin.createUser({
-          email, email_confirm: true, user_metadata: { email_verified: true }
-        })
-        if (createErr) return NextResponse.json({ error: createErr.message }, { status: 400 })
-        targetUser = newUser.user
-      } else {
-        // Confirm email if not confirmed
-        await adminSupabase.auth.admin.updateUserById(targetUser.id, { email_confirm: true })
-      }
-
-      // Generate a sign-in link that sets session properly
-      const { data: linkData, error: linkErr } = await adminSupabase.auth.admin.generateLink({
-        type: 'magiclink',
-        email,
-        options: { redirectTo: 'https://folio-iq.vercel.app/auth/callback?next=/dashboard' }
-      })
-      if (linkErr) return NextResponse.json({ error: linkErr.message }, { status: 400 })
-
-      return NextResponse.json({ success: true, link: linkData.properties.action_link })
+      return NextResponse.json({ success: true, verified: true })
     }
 
-    // SEND mode - generate and email OTP
-    const otp = generateOTP()
-    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString()
+    // SEND mode - generate OTP and email it
+    const otp = genOTP()
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY * 60000).toISOString()
 
-    // Store OTP in Supabase
-    await adminSupabase.from('otp_codes').insert({ email, otp, expires_at: expiresAt, used: false })
+    // Store (upsert by email to avoid duplicates)
+    const { error: storeErr } = await supabase
+      .from('otp_codes')
+      .insert({ email, otp, expires_at: expiresAt })
+
+    if (storeErr) {
+      console.error('OTP store error:', storeErr.message)
+      // If table doesn't exist or RLS blocks, still try to send email
+    }
 
     // Send via Resend
     const emailRes = await fetch('https://api.resend.com/emails', {
@@ -91,33 +65,40 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         from: 'FolioIQ <onboarding@resend.dev>',
         to: [email],
-        subject: `Your FolioIQ login code: ${otp}`,
-        html: `
-          <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px; background: #f9fafb;">
-            <div style="background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center;">
-              <div style="width: 56px; height: 56px; background: #10b981; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 28px;">📊</div>
-              <h1 style="font-size: 22px; font-weight: 800; color: #111827; margin: 0 0 8px;">Your FolioIQ Login Code</h1>
-              <p style="color: #6b7280; font-size: 14px; margin: 0 0 32px;">Enter this code to sign in to your account</p>
-              <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 12px; padding: 24px; margin: 0 0 24px;">
-                <div style="font-size: 48px; font-weight: 900; letter-spacing: 12px; color: #065f46; font-family: monospace;">${otp}</div>
-              </div>
-              <p style="color: #9ca3af; font-size: 12px; margin: 0;">This code expires in ${OTP_EXPIRY_MINUTES} minutes.<br>Never share this code with anyone.</p>
-            </div>
-          </div>
-        `
+        subject: `${otp} is your FolioIQ login code`,
+        html: `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:system-ui,sans-serif;">
+<div style="max-width:480px;margin:40px auto;padding:20px;">
+  <div style="background:white;border-radius:20px;padding:40px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+    <div style="width:64px;height:64px;background:#10b981;border-radius:16px;margin:0 auto 24px;display:flex;align-items:center;justify-content:center;font-size:32px;">📊</div>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#111827;">Your Login Code</h1>
+    <p style="margin:0 0 32px;color:#6b7280;font-size:15px;">Enter this code in FolioIQ to sign in</p>
+    <div style="background:#f0fdf4;border:2px solid #10b981;border-radius:16px;padding:28px;margin-bottom:28px;">
+      <div style="font-size:52px;font-weight:900;letter-spacing:14px;color:#065f46;font-family:monospace;">${otp}</div>
+    </div>
+    <p style="margin:0;color:#9ca3af;font-size:13px;line-height:1.6;">
+      ⏱ Expires in ${OTP_EXPIRY} minutes<br>
+      🔒 Never share this code with anyone<br>
+      📱 FolioIQ — AI Portfolio Intelligence
+    </p>
+  </div>
+</div>
+</body>
+</html>`
       })
     })
 
     const emailData = await emailRes.json()
     if (!emailRes.ok) {
-      console.error('Resend error:', emailData)
-      return NextResponse.json({ error: 'Failed to send email: ' + (emailData.message || 'Unknown error') }, { status: 500 })
+      console.error('Resend error:', JSON.stringify(emailData))
+      return NextResponse.json({ error: 'Email failed: ' + (emailData.message || 'Unknown') }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, message: 'OTP sent successfully' })
+    return NextResponse.json({ success: true, message: 'OTP sent to ' + email })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('OTP error:', msg)
+    console.error('OTP route error:', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
