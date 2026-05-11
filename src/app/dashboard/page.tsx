@@ -87,6 +87,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [allPortfolios, setAllPortfolios] = useState<any[]>([]);
+  const [selectedPortfolio, setSelectedPortfolio] = useState<string>('');
+  const [portfolioData, setPortfolioDataFull] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -95,29 +98,34 @@ export default function DashboardPage() {
         if (!user) { router.push("/auth"); return; }
         setUser(user);
 
-        // ── READ FROM portfolios table (JSON blob, working table) ──
-        const { data: portfolioData, error: dbError } = await supabase
+        // ── READ ALL PORTFOLIOS for this user ──
+        const { data: portfoliosData, error: dbError } = await supabase
           .from('portfolios')
-          .select('data')
+          .select('portfolio_name, owner_name, data, uploaded_at')
           .eq('user_id', user.id)
-          .single();
+          .order('uploaded_at', { ascending: false });
 
-        if (!dbError && portfolioData?.data?.funds) {
-          // Map portfolios.data.funds to the shape the dashboard expects
-          const mapped = portfolioData.data.funds.map((f: any) => ({
-            scheme_code: String(Math.random()),
-            scheme_name: f.name || '',
-            category: f.category || 'Equity Scheme',
-            amc: '',
-            units: f.units || 0,
-            avg_nav: f.invested && f.units ? f.invested / f.units : 0,
-            current_nav: f.value && f.units ? f.value / f.units : 0,
-            purchase_date: f.purchaseDate || new Date(Date.now() - 2*365*86400000).toISOString().split('T')[0],
-            sip_amount: f.sip || 0,
-            invested_amount: f.invested || 0,
-            current_value: f.value || 0,
-          }));
-          setHoldings(mapped);
+        if (!dbError && portfoliosData && portfoliosData.length > 0) {
+          setAllPortfolios(portfoliosData);
+          const first = portfoliosData[0];
+          setSelectedPortfolio(first.portfolio_name || 'My Portfolio');
+          setPortfolioDataFull(first.data);
+          if (first.data?.funds) {
+            const mapped = first.data.funds.map((f: any) => ({
+              scheme_code: String(Math.random()),
+              scheme_name: f.name || '',
+              category: f.category || 'Equity Scheme',
+              amc: '',
+              units: f.units || 0,
+              avg_nav: f.invested && f.units ? f.invested / f.units : 0,
+              current_nav: f.value && f.units ? f.value / f.units : 0,
+              purchase_date: f.purchaseDate || new Date(Date.now() - 2*365*86400000).toISOString().split('T')[0],
+              sip_amount: f.sip || 0,
+              invested_amount: f.invested || 0,
+              current_value: f.value || 0,
+            }));
+            setHoldings(mapped);
+          }
         }
       } catch (err) {
         console.error("Dashboard error:", err);
@@ -286,7 +294,23 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.email?.split("@")[0] || "Investor"}</h1>
-                <p className="text-gray-500 mt-1">Your portfolio at a glance</p>
+                <div className="flex items-center gap-2 mt-1">
+                  {allPortfolios.length > 1 ? (
+                    <select
+                      value={selectedPortfolio}
+                      onChange={e => switchPortfolio(e.target.value)}
+                      className="text-sm border border-gray-200 rounded-lg px-2 py-1 text-gray-700 focus:outline-none focus:border-emerald-500 bg-white"
+                    >
+                      {allPortfolios.map(p => (
+                        <option key={p.portfolio_name} value={p.portfolio_name}>
+                          {p.portfolio_name}{p.owner_name ? ` (${p.owner_name})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-gray-500 text-sm">{selectedPortfolio || 'Your portfolio at a glance'}</p>
+                  )}
+                </div>
               </div>
               <Link href="/upload" className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium">
                 <Upload className="w-4 h-4" /> Update CAS

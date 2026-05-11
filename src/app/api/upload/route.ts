@@ -315,10 +315,67 @@ export async function POST(request: NextRequest) {
         }
       } else if (file.name.toLowerCase().endsWith('.pdf')) {
         text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-        const result = parseNJWealthReport(text);
-        funds = result.funds; grandTotalInvested = result.grandTotalInvested; grandTotalValue = result.grandTotalValue;
-        parserUsed = 'nj-pdf';
-        if (funds.length === 0) { funds = parseGenericTable(text); parserUsed = 'generic-pdf'; }
+        // Try NJ Wealth Scheme Valuation first
+        const schemeResult = parseNJWealthReport(text);
+        if (schemeResult.funds.length > 0) {
+          funds = schemeResult.funds; grandTotalInvested = schemeResult.grandTotalInvested; grandTotalValue = schemeResult.grandTotalValue;
+          parserUsed = 'nj-scheme-pdf';
+        } else {
+          // Try NJ SIP Valuation Report (Divyashree format)
+          // Format: Sr.No | Investor | Scheme | Folio | StartDate | EndDate | Freq | Installments | SIP Amount | Total Invested | Units | NAV | Current Value
+          const sipFunds: any[] = [];
+          let sipTotalInvested = 0, sipTotalValue = 0;
+          const lines = text.split('\n');
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            // Match SIP rows - look for pattern: number, name, scheme, folio, date...
+            // Key signal: line has both a scheme name and monetary values
+            const monthlyMatch = line.match(/Monthly\s+\d+\s+[\d,]+\s+([\d,]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)/);
+            if (monthlyMatch) {
+              // Find scheme name - look backwards for it
+              let schemeName = '';
+              for (let back = i; back >= Math.max(0, i-5); back--) {
+                const backLine = lines[back];
+                const knownFunds = ['HDFC','ICICI','SBI','Axis','Mirae','Nippon','Parag','Canara','Invesco','Kotak','PGIM','Motilal','Tata','UTI','DSP','Franklin','Sundaram','Quant'];
+                if (knownFunds.some(f => backLine.includes(f))) {
+                  schemeName = backLine.replace(/^[\d\s*]+/, '').trim();
+                  break;
+                }
+              }
+              if (schemeName) {
+                const invested = parseFloat(monthlyMatch[1].replace(/,/g,'')) || 0;
+                const units = parseFloat(monthlyMatch[2].replace(/,/g,'')) || 0;
+                const nav = parseFloat(monthlyMatch[3].replace(/,/g,'')) || 0;
+                const curVal = parseFloat(monthlyMatch[4].replace(/,/g,'')) || 0;
+                const sipAmt = 0;
+                if (invested > 0 && curVal > 0) {
+                  sipFunds.push({
+                    name: sanitizeText(schemeName.replace(/\s*-\s*Gr$/, '').replace(/\s*Fund\s*-\s*Gr$/, ' Fund').trim()),
+                    invested, value: curVal, returns: curVal - invested,
+                    returnsPercent: invested > 0 ? ((curVal - invested) / invested * 100) : 0,
+                    category: detectCategory(schemeName), risk: detectRisk(schemeName),
+                    rating: 4, sip: sipAmt, units,
+                  });
+                  sipTotalInvested += invested;
+                  sipTotalValue += curVal;
+                }
+              }
+            }
+            // Also catch grand total
+            const totalMatch = line.match(/Total.*?([\d,]+)\s+([\d,.]+)\s+([\d,.]+)\s*$/);
+            if (totalMatch && line.toLowerCase().includes('total') && sipTotalInvested === 0) {
+              sipTotalInvested = parseFloat(totalMatch[1].replace(/,/g,'')) || 0;
+              sipTotalValue = parseFloat(totalMatch[3].replace(/,/g,'')) || 0;
+            }
+          }
+          
+          if (sipFunds.length > 0) {
+            funds = sipFunds; grandTotalInvested = sipTotalInvested; grandTotalValue = sipTotalValue;
+            parserUsed = 'nj-sip-pdf';
+          } else {
+            funds = parseGenericTable(text); parserUsed = 'generic-pdf';
+          }
+        }
       }
     } catch (parseErr) { console.error('Parse error:', parseErr); }
 
@@ -361,6 +418,8 @@ export async function POST(request: NextRequest) {
 
     const portfolioData = {
       user_id: user.id,
+      portfolio_name: portfolioName,
+      owner_name: ownerName,
       filename: sanitizeText(file.name),
       file_size: file.size,
       file_type: file.type || 'application/octet-stream',
@@ -389,7 +448,7 @@ export async function POST(request: NextRequest) {
       comparison,
     };
 
-    const { error: dbError } = await adminSupabase.from('portfolios').upsert(portfolioData, { onConflict: 'user_id' });
+    const { error: dbError } = await adminSupabase.from('portfolios').upsert(portfolioData, { onConflict: 'user_id,portfolio_name' });
     if (dbError) {
       console.error('DB Error:', dbError);
       return NextResponse.json({ error: 'Failed to save: ' + dbError.message }, { status: 500 });

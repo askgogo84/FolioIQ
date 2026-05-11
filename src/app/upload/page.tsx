@@ -12,6 +12,9 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [portfolioName, setPortfolioName] = useState('My Portfolio');
+  const [ownerName, setOwnerName] = useState('');
+  const [showPortfolioForm, setShowPortfolioForm] = useState(false);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -57,6 +60,8 @@ export default function UploadPage() {
     try {
       const formData = new FormData();
       formData.append('file', files[0]);
+      formData.append('portfolioName', portfolioName || 'My Portfolio');
+      formData.append('ownerName', ownerName || '');
 
       const response = await fetch('/api/upload', { method: 'POST', body: formData });
       const result = await response.json();
