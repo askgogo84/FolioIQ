@@ -33,15 +33,35 @@ function AuthForm() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${"https://folio-iq.vercel.app"}/auth/callback`,
           },
         });
-        if (error) throw error;
-        setSuccess("Account created! Check your email to verify.");
+        
+        // If email confirmation is disabled, sign in directly
+        if (!signUpError && signUpData.user && !signUpData.session) {
+          // Email confirmation required but email failed - try direct sign in
+          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (!signInError) { router.push(redirect); router.refresh(); return; }
+        }
+        
+        if (!signUpError && signUpData.session) {
+          // Email confirmation disabled - user is already signed in
+          router.push(redirect); router.refresh(); return;
+        }
+        
+        if (signUpError) {
+          // If email sending fails, still try to sign in (user might already exist)
+          if (signUpError.message?.includes('sending') || signUpError.message?.includes('email')) {
+            const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+            if (!signInErr) { router.push(redirect); router.refresh(); return; }
+          }
+          throw signUpError;
+        }
+        setSuccess("Account created! You can now sign in.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
