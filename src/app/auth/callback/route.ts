@@ -6,12 +6,11 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get("code");
   const token_hash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type");
-  const redirectTo = url.searchParams.get("redirect_to") || "/dashboard";
   const next = url.searchParams.get("next") || "/dashboard";
 
   const supabase = await createClient();
 
-  // Handle OTP token hash (from magic link email)
+  // Handle token_hash (magic link / OTP)
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({
       type: type as any,
@@ -20,16 +19,18 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(new URL(next, request.url));
     }
+    console.error("verifyOtp error:", error.message);
   }
 
-  // Handle OAuth code exchange
+  // Handle OAuth code
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       return NextResponse.redirect(new URL(next, request.url));
     }
+    console.error("exchangeCodeForSession error:", error.message);
   }
 
-  // Fallback
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  // Fallback — redirect to dashboard (session may be in cookie already)
+  return NextResponse.redirect(new URL(next, request.url));
 }

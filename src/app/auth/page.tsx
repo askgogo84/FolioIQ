@@ -21,6 +21,19 @@ function AuthForm() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Handle Supabase hash fragment (access_token in URL hash)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+      // Supabase returned session in URL hash - exchange it for a cookie session
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setStage("success");
+          setTimeout(() => { router.push(redirect); router.refresh(); }, 800);
+        }
+      });
+    }
+  }, []);
+
   useEffect(() => {
     if (resendTimer > 0) {
       timerRef.current = setTimeout(() => setResendTimer(t => t - 1), 1000);
