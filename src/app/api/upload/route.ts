@@ -448,15 +448,36 @@ export async function POST(request: NextRequest) {
       comparison,
     };
 
-    const { error: dbError } = await (async () => {
-      // Try with portfolio_name conflict first (if column exists)
-      const { error: e1 } = await adminSupabase.from('portfolios').upsert(portfolioData, { onConflict: 'user_id,portfolio_name' });
-      if (e1?.message?.includes('constraint')) {
-        // Column not yet added - fall back to user_id only (overwrites existing)
-        return await adminSupabase.from('portfolios').upsert(portfolioData, { onConflict: 'user_id' });
+    // Check if row exists first, then insert or update
+    let dbError = null;
+    const { data: existing } = await adminSupabase
+      .from('portfolios')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('portfolio_name', portfolioData.portfolio_name || 'My Portfolio')
+      .maybeSingle();
+    
+    if (existing?.id) {
+      // Update existing row
+      const { error: updateErr } = await adminSupabase
+        .from('portfolios')
+        .update({ ...portfolioData, updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+      dbError = updateErr;
+    } else {
+      // Try insert, fall back to update by user_id if insert fails
+      const { error: insertErr } = await adminSupabase
+        .from('portfolios')
+        .insert({ ...portfolioData, updated_at: new Date().toISOString() });
+      if (insertErr) {
+        // Last resort: update by user_id
+        const { error: updateErr } = await adminSupabase
+          .from('portfolios')
+          .update({ ...portfolioData, updated_at: new Date().toISOString() })
+          .eq('user_id', user.id);
+        dbError = updateErr;
       }
-      return { error: e1 };
-    })();
+    }
     if (dbError) {
       console.error('DB Error:', dbError);
       return NextResponse.json({ error: 'Failed to save: ' + dbError.message }, { status: 500 });
