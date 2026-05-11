@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     // VERIFY mode
     if (submittedOtp) {
-      const supabase = await createClient()
+      const supabase = createAdminClient()
       const { data: stored, error: fetchErr } = await supabase
         .from('otp_codes')
         .select('otp, expires_at, used')
