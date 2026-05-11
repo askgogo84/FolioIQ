@@ -24,13 +24,19 @@ function AuthForm() {
   // Handle Supabase hash fragment (access_token in URL hash)
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
-      // Supabase returned session in URL hash - exchange it for a cookie session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setStage("success");
-          setTimeout(() => { router.push(redirect); router.refresh(); }, 800);
-        }
-      });
+      setStage("success");
+      // Give Supabase JS time to process the hash and set the session
+      setTimeout(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            router.push(redirect);
+            router.refresh();
+          } else {
+            // Force refresh - session should be in cookie after hash processing
+            window.location.href = '/dashboard';
+          }
+        });
+      }, 1500);
     }
   }, []);
 

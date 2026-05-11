@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/utils/supabase/admin'
-import { createClient } from '@/utils/supabase/server'
 
 const RESEND_KEY = 're_hZkMXHtg_6BZvmYRJZAtdWEpr6eFe8U9S'
 const OTP_EXPIRY = 10
@@ -35,7 +34,7 @@ export async function POST(req: NextRequest) {
       if (stored.otp !== submittedOtp) return NextResponse.json({ error: 'Incorrect code. Try again.' }, { status: 400 })
 
       // Mark as used
-      await supabase.from('otp_codes').update({ used: true })
+      await createAdminClient().from('otp_codes').update({ used: true })
         .eq('email', email).eq('otp', submittedOtp)
 
       // Use admin to generate magic link that sets proper session cookie
@@ -64,8 +63,8 @@ export async function POST(req: NextRequest) {
     const otp = genOTP()
     const expiresAt = new Date(Date.now() + OTP_EXPIRY * 60000).toISOString()
 
-    const supabase = await createClient()
-    const { error: storeErr } = await supabase
+    // Use admin client to bypass RLS for otp_codes
+    const { error: storeErr } = await createAdminClient()
       .from('otp_codes')
       .insert({ email, otp, expires_at: expiresAt })
 
