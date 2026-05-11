@@ -389,18 +389,14 @@ export async function POST(request: NextRequest) {
       comparison,
     };
 
-    // Safe insert/update: check existence first to avoid constraint errors
+    // Delete old data first to avoid stale garbled records, then insert fresh
     let dbError = null;
-    const { data: existingRow } = await adminSupabase
-      .from('portfolios').select('id').eq('user_id', user.id).maybeSingle();
-    if (existingRow?.id) {
-      const { error: e } = await adminSupabase.from('portfolios')
-        .update({ ...portfolioData, updated_at: new Date().toISOString() }).eq('id', existingRow.id);
-      dbError = e;
-    } else {
-      const { error: e } = await adminSupabase.from('portfolios').insert(portfolioData);
-      dbError = e;
-    }
+    await adminSupabase.from('portfolios').delete().eq('user_id', user.id);
+    const { error: insertErr } = await adminSupabase.from('portfolios').insert({
+      ...portfolioData,
+      updated_at: new Date().toISOString()
+    });
+    dbError = insertErr;
     if (dbError) {
       console.error('DB Error:', dbError);
       return NextResponse.json({ error: 'Failed to save: ' + dbError.message }, { status: 500 });

@@ -103,8 +103,19 @@ export default function DashboardPage() {
           .single();
 
         if (!dbError && portfolioData?.data?.funds) {
+          // Filter out garbled fund names from old broken uploads
+          const goodFunds = (portfolioData.data.funds as any[]).filter((f: any) => {
+            const n = String(f.name || '');
+            return n.length > 5
+              && !/^\d{2}-\d{2}-\d{4}/.test(n)
+              && !/^\d+\.\d+/.test(n)
+              && !n.includes('No Of Unit')
+              && !n.includes('Return :')
+              && !n.includes('Current NAV')
+              && !n.includes('Sub Total');
+          });
           // Map portfolios.data.funds to the shape the dashboard expects
-          const mapped = portfolioData.data.funds.map((f: any) => ({
+          const mapped = goodFunds.map((f: any) => ({
             scheme_code: String(Math.random()),
             scheme_name: f.name || '',
             category: f.category || 'Equity Scheme',
