@@ -448,7 +448,15 @@ export async function POST(request: NextRequest) {
       comparison,
     };
 
-    const { error: dbError } = await adminSupabase.from('portfolios').upsert(portfolioData, { onConflict: 'user_id,portfolio_name' });
+    const { error: dbError } = await (async () => {
+      // Try with portfolio_name conflict first (if column exists)
+      const { error: e1 } = await adminSupabase.from('portfolios').upsert(portfolioData, { onConflict: 'user_id,portfolio_name' });
+      if (e1?.message?.includes('constraint')) {
+        // Column not yet added - fall back to user_id only (overwrites existing)
+        return await adminSupabase.from('portfolios').upsert(portfolioData, { onConflict: 'user_id' });
+      }
+      return { error: e1 };
+    })();
     if (dbError) {
       console.error('DB Error:', dbError);
       return NextResponse.json({ error: 'Failed to save: ' + dbError.message }, { status: 500 });
