@@ -1,152 +1,225 @@
-﻿"use client";
 
+"use client";
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { 
-  Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, 
-  CheckCircle, AlertCircle, UserPlus, LogIn
-} from "lucide-react";
-import Link from "next/link";
+import { Sparkles, Mail, ArrowRight, CheckCircle, AlertCircle, KeyRound, Loader2 } from "lucide-react";
 
 function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
-  const isSignupFromUrl = searchParams.get("signup") === "true";
-  
-  const [isSignUp, setIsSignUp] = useState(isSignupFromUrl);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
   const supabase = createClient();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [step, setStep] = useState<"email" | "otp">("email");
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  // Step 1: Send OTP to email
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim()) return;
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
-      if (isSignUp) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${"https://folio-iq.vercel.app"}/auth/callback`,
-          },
-        });
-        
-        // If email confirmation is disabled, sign in directly
-        if (!signUpError && signUpData.user && !signUpData.session) {
-          // Email confirmation required but email failed - try direct sign in
-          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-          if (!signInError) { router.push(redirect); router.refresh(); return; }
-        }
-        
-        if (!signUpError && signUpData.session) {
-          // Email confirmation disabled - user is already signed in
-          router.push(redirect); router.refresh(); return;
-        }
-        
-        if (signUpError) {
-          // If email sending fails, still try to sign in (user might already exist)
-          if (signUpError.message?.includes('sending') || signUpError.message?.includes('email')) {
-            const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-            if (!signInErr) { router.push(redirect); router.refresh(); return; }
-          }
-          throw signUpError;
-        }
-        setSuccess("Account created! You can now sign in.");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim().toLowerCase(),
+        options: {
+          shouldCreateUser: true, // auto-create account if new user
+          emailRedirectTo: `https://folio-iq.vercel.app/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+
+      setStep("otp");
+      // Countdown timer for resend
+      setResendTimer(60);
+      const timer = setInterval(() => {
+        setResendTimer(t => { if (t <= 1) { clearInterval(timer); return 0; } return t - 1; });
+      }, 1000);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: Verify OTP
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp.trim() || otp.length < 6) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: otp.trim(),
+        type: "email",
+      });
+
+      if (error) throw error;
+      if (data.session) {
         router.push(redirect);
         router.refresh();
       }
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(err.message?.includes("expired") 
+        ? "OTP has expired. Please request a new one."
+        : err.message?.includes("Invalid") 
+        ? "Incorrect OTP. Please check your email and try again."
+        : err.message || "Verification failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendTimer > 0) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim().toLowerCase(),
+        options: { shouldCreateUser: true },
+      });
+      if (error) throw error;
+      setResendTimer(60);
+      const timer = setInterval(() => {
+        setResendTimer(t => { if (t <= 1) { clearInterval(timer); return 0; } return t - 1; });
+      }, 1000);
+      setOtp("");
+    } catch (err: any) {
+      setError(err.message || "Failed to resend OTP.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 flex items-center justify-center p-4">
+      {/* Background pattern */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"/>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl"/>
+      </div>
+
+      <div className="relative w-full max-w-sm">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-block">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900">FolioIQ</h1>
-            <p className="text-slate-500 mt-1">AI-Powered Portfolio Intelligence</p>
-          </Link>
+          <div className="inline-flex w-16 h-16 bg-emerald-600 rounded-2xl items-center justify-center mb-4 shadow-xl shadow-emerald-900/50">
+            <Sparkles className="w-8 h-8 text-white"/>
+          </div>
+          <h1 className="text-2xl font-black text-white mb-1">FolioIQ</h1>
+          <p className="text-gray-400 text-sm">AI-Powered Portfolio Intelligence</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-8">
-          <div className="flex gap-2 mb-6 p-1 bg-slate-100 rounded-xl">
-            <button onClick={() => { setIsSignUp(false); setError(null); setSuccess(null); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${!isSignUp ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              <LogIn className="w-4 h-4" /> Sign In
-            </button>
-            <button onClick={() => { setIsSignUp(true); setError(null); setSuccess(null); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${isSignUp ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              <UserPlus className="w-4 h-4" /> Sign Up
-            </button>
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4">
+            {step === "email" ? (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">Welcome back</h2>
+                <p className="text-gray-500 text-sm">Enter your email to get a one-time login code. Works for new and existing accounts.</p>
+              </>
+            ) : (
+              <>
+                <button onClick={() => { setStep("email"); setError(null); setOtp(""); }}
+                  className="text-sm text-gray-500 hover:text-gray-700 mb-3 flex items-center gap-1">
+                  ← Change email
+                </button>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">Check your inbox</h2>
+                <p className="text-gray-500 text-sm">We sent a 6-digit code to <strong className="text-gray-700">{email}</strong></p>
+              </>
+            )}
           </div>
 
+          {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-4 text-sm text-red-700">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
+            <div className="mx-6 mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0"/>
+              <span>{error}</span>
             </div>
           )}
 
-          {success && (
-            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl mb-4 text-sm text-green-700">
-              <CheckCircle className="w-4 h-4 flex-shrink-0" />{success}
-            </div>
+          {/* Step 1: Email input */}
+          {step === "email" && (
+            <form onSubmit={handleSendOTP} className="px-6 pb-6">
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"/>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    autoFocus
+                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 transition-colors"
+                  />
+                </div>
+              </div>
+              <button type="submit" disabled={loading || !email.trim()}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-200">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Mail className="w-4 h-4"/>}
+                {loading ? "Sending code..." : "Send Login Code"}
+                {!loading && <ArrowRight className="w-4 h-4"/>}
+              </button>
+              <p className="text-center text-xs text-gray-400 mt-4">
+                New user? We'll create your account automatically.
+              </p>
+            </form>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          {/* Step 2: OTP input */}
+          {step === "otp" && (
+            <form onSubmit={handleVerifyOTP} className="px-6 pb-6">
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">6-Digit Code</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"/>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    value={otp}
+                    onChange={e => setOtp(e.target.value.replace(/\D/g, ""))}
+                    placeholder="123456"
+                    required
+                    autoFocus
+                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-emerald-500 transition-colors text-lg tracking-widest font-mono"
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-400">Didn't receive it? Check spam folder.</p>
+                  <button type="button" onClick={handleResend} disabled={resendTimer > 0 || loading}
+                    className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 disabled:text-gray-400 disabled:cursor-not-allowed">
+                    {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend code"}
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} 
-                  placeholder="••••••••" required minLength={6}
-                  className="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <button type="submit" disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50">
-              {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <>{isSignUp ? "Create Account" : "Sign In"}<ArrowRight className="w-5 h-5" /></>}
-            </button>
-          </form>
-
-          <p className="text-center text-xs text-slate-400 mt-6">By continuing, you agree to FolioIQ&apos;s Terms and Privacy Policy.</p>
+              <button type="submit" disabled={loading || otp.length < 6}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-200">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4"/>}
+                {loading ? "Verifying..." : "Verify & Sign In"}
+              </button>
+            </form>
+          )}
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-gray-500 mt-6">
+          By signing in, you agree to FolioIQ&apos;s Terms and Privacy Policy.<br/>
+          <span className="text-gray-400">Not SEBI registered. Not investment advice.</span>
+        </p>
       </div>
     </div>
   );
@@ -155,12 +228,11 @@ function AuthForm() {
 export default function AuthPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin"/>
       </div>
     }>
-      <AuthForm />
+      <AuthForm/>
     </Suspense>
   );
 }
-
