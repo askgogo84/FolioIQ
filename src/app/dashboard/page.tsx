@@ -100,8 +100,9 @@ export default function DashboardPage() {
           .from('portfolios')
           .select('data')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
+        console.log('[Dashboard] portfolioData:', portfolioData ? 'found' : 'null', 'error:', dbError?.message || 'none', 'funds:', portfolioData?.data?.funds?.length || 0);
         if (!dbError && portfolioData?.data?.funds) {
           // Filter out garbled fund names from old broken uploads
           const goodFunds = (portfolioData.data.funds as any[]).filter((f: any) => {

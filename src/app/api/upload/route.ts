@@ -389,16 +389,39 @@ export async function POST(request: NextRequest) {
       comparison,
     };
 
-    // Delete old data first to avoid stale garbled records, then insert fresh
+    // Robust save: try delete first, then insert, fall back to update
     let dbError = null;
+    
+    // Step 1: Delete old row (best effort - may fail if no service role)
     await adminSupabase.from('portfolios').delete().eq('user_id', user.id);
+    
+    // Step 2: Insert fresh
     const { error: insertErr } = await adminSupabase.from('portfolios').insert({
       ...portfolioData,
       updated_at: new Date().toISOString()
     });
-    dbError = insertErr;
+    
+    if (insertErr) {
+      console.log('Insert failed, trying update:', insertErr.message);
+      // Step 3: Fall back to update (handles constraint violations)
+      const { error: updateErr } = await adminSupabase
+        .from('portfolios')
+        .update({ ...portfolioData, data: portfolioData.data, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+      dbError = updateErr;
+      if (updateErr) {
+        console.error('Both insert and update failed:', updateErr.message);
+        // Step 4: Last resort - use upsert ignoring conflict  
+        const { error: upsertErr } = await adminSupabase.from('portfolios').upsert(
+          { ...portfolioData, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id', ignoreDuplicates: false }
+        );
+        dbError = upsertErr;
+      }
+    }
+    
+    console.log('Save result:', dbError ? 'ERROR: ' + dbError.message : 'SUCCESS, funds: ' + sanitizedFunds.length);
     if (dbError) {
-      console.error('DB Error:', dbError);
       return NextResponse.json({ error: 'Failed to save: ' + dbError.message }, { status: 500 });
     }
 
