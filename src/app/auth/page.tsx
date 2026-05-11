@@ -37,8 +37,8 @@ function AuthForm() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `https://folio-iq.vercel.app/auth/callback`,
           shouldCreateUser: true,
+          // No emailRedirectTo = Supabase sends 6-digit OTP code (not magic link)
         },
       });
       if (error) throw error;
