@@ -48,13 +48,30 @@ export async function POST(req: NextRequest) {
         userId = newUser.user.id
       }
 
-      // Create a session link for the user
-      const { data: sessionData, error: sessionErr } = await adminSupabase.auth.admin.generateLink({
-        type: 'magiclink', email
-      })
-      if (sessionErr) return NextResponse.json({ error: sessionErr.message }, { status: 400 })
+      // Find or create user
+      const { data: { users }, error: listErr } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 })
+      let targetUser = users?.find((u: any) => u.email === email)
+      
+      if (!targetUser) {
+        const { data: newUser, error: createErr } = await adminSupabase.auth.admin.createUser({
+          email, email_confirm: true, user_metadata: { email_verified: true }
+        })
+        if (createErr) return NextResponse.json({ error: createErr.message }, { status: 400 })
+        targetUser = newUser.user
+      } else {
+        // Confirm email if not confirmed
+        await adminSupabase.auth.admin.updateUserById(targetUser.id, { email_confirm: true })
+      }
 
-      return NextResponse.json({ success: true, link: sessionData.properties.action_link })
+      // Generate a sign-in link that sets session properly
+      const { data: linkData, error: linkErr } = await adminSupabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email,
+        options: { redirectTo: 'https://folio-iq.vercel.app/auth/callback?next=/dashboard' }
+      })
+      if (linkErr) return NextResponse.json({ error: linkErr.message }, { status: 400 })
+
+      return NextResponse.json({ success: true, link: linkData.properties.action_link })
     }
 
     // SEND mode - generate and email OTP
