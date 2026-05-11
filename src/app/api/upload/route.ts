@@ -233,15 +233,41 @@ export async function POST(request: NextRequest) {
             const row = rows[i].map((c: unknown) => String(c ?? '').trim());
             const col0 = row[0] || '';
             
-            // Skip metadata rows
-            const skipWords = ['Sr. No.', 'Sub Total', 'Grand Total', 'Return :', 'Note :', 'Folio', 'Anti Money', 'Address', 'City', 'Phone', 'Mobile', 'E-Mail', 'Your Company'];
-            if (skipWords.some(w => col0.startsWith(w))) {
-              if (col0 === 'Grand Total') {
-                const nums = row.filter((c: string) => c && /^[\d,.]+$/.test(c.replace(/,/g,''))).map((c: string) => parseFloat(c.replace(/,/g,'')));
-                if (nums.length >= 2) { grandTotalInvested = nums[0]; grandTotalValue = nums[nums.length - 1]; }
+            // Handle Sub Total row FIRST (before skipWords check)
+            if (col0 === 'Sub Total' && currentFundName) {
+              const invested = parseFloat(String(row[5] || '0').replace(/,/g, '')) || 0;
+              const units = parseFloat(String(row[8] || '0').replace(/,/g, '')) || 0;
+              const curValue = parseFloat(String(row[10] || row[9] || '0').replace(/,/g, '')) || 0;
+              let retPct = 0, gain = 0;
+              if (i + 1 < rows.length) {
+                const nextText = rows[i + 1].map((c: unknown) => String(c ?? '')).join(' ');
+                const retMatch = nextText.match(/Weighted Avg\.\s*Abs\.\s*Return\s*:\s*([\d\-.]+)%/);
+                const gainMatch = nextText.match(/Gain\s*\/\s*\(Loss\)\s*:\s*Rs\.\s*([\d,.\-]+)/);
+                if (retMatch) retPct = parseFloat(retMatch[1]);
+                if (gainMatch) gain = parseFloat(gainMatch[1].replace(/,/g, ''));
               }
+              if (invested > 0) {
+                funds.push({
+                  name: sanitizeText(currentFundName),
+                  invested, value: curValue, returns: gain, returnsPercent: retPct,
+                  category: detectCategory(currentFundName), risk: detectRisk(currentFundName),
+                  rating: 4, sip: 0, units, purchaseDate: firstDate,
+                });
+              }
+              currentFundName = ''; firstDate = '';
               continue;
             }
+            
+            // Handle Grand Total
+            if (col0 === 'Grand Total') {
+              const nums = row.filter((c: string) => c && /^[\d,.]+$/.test(c.replace(/,/g,''))).map((c: string) => parseFloat(c.replace(/,/g,'')));
+              if (nums.length >= 2) { grandTotalInvested = nums[0]; grandTotalValue = nums[nums.length - 1]; }
+              continue;
+            }
+            
+            // Skip other metadata rows
+            const skipWords = ['Sr. No.', 'Return :', 'Note :', 'Folio', 'Anti Money', 'Address', 'City', 'Phone', 'Mobile', 'E-Mail', 'Your Company', 'Scheme Wise'];
+            if (skipWords.some(w => col0.startsWith(w))) continue;
             
             // Detect fund name row: col0 has text, cols 1-5 are empty
             const restEmpty = row.slice(1, 6).every((c: string) => !c || c === '0' || c === '-');
@@ -260,41 +286,7 @@ export async function POST(request: NextRequest) {
               if (m) firstDate = m[3] + '-' + m[2] + '-' + m[1];
             }
             
-            // Sub Total row: col5=invested, col8=units, col10=currentValue
-            if (col0 === 'Sub Total' && currentFundName) {
-              const invested = parseFloat(String(row[5] || '0').replace(/,/g, '')) || 0;
-              const units = parseFloat(String(row[8] || '0').replace(/,/g, '')) || 0;
-              const curValue = parseFloat(String(row[10] || row[9] || '0').replace(/,/g, '')) || 0;
-              
-              // Get return % from next row
-              let retPct = 0, gain = 0;
-              if (i + 1 < rows.length) {
-                const nextRow = rows[i + 1].map((c: unknown) => String(c ?? ''));
-                const nextText = nextRow.join(' ');
-                const retMatch = nextText.match(/Weighted Avg\. Abs\. Return\s*:\s*([\d\-.]+)%/);
-                const gainMatch = nextText.match(/Gain \/ \(Loss\)\s*:\s*Rs\.\s*([\d,.\-]+)/);
-                if (retMatch) retPct = parseFloat(retMatch[1]);
-                if (gainMatch) gain = parseFloat(gainMatch[1].replace(/,/g, ''));
-              }
-              
-              if (invested > 0 && currentFundName) {
-                funds.push({
-                  name: sanitizeText(currentFundName),
-                  invested,
-                  value: curValue || units * (invested / (units || 1)),
-                  returns: gain,
-                  returnsPercent: retPct,
-                  category: detectCategory(currentFundName),
-                  risk: detectRisk(currentFundName),
-                  rating: 4,
-                  sip: 0,
-                  units,
-                  purchaseDate: firstDate,
-                });
-              }
-              currentFundName = '';
-              firstDate = '';
-            }
+// Sub Total handled above
           }
           
           if (funds.length > 0) {
