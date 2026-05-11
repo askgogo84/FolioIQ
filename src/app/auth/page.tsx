@@ -34,14 +34,14 @@ function AuthForm() {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: true,
-          // No emailRedirectTo = Supabase sends 6-digit OTP code (not magic link)
-        },
+      // Use our custom OTP API (Resend-powered, sends actual 6-digit code)
+      const res = await fetch('/api/auth-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
       setStage("otp");
       setResendTimer(60);
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
@@ -86,16 +86,24 @@ function AuthForm() {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token: code,
-        type: "email",
+      // Verify via our custom OTP API
+      const res = await fetch('/api/auth-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: code }),
       });
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Invalid OTP');
+      
+      // OTP verified - use the magic link to create session
+      if (data.link) {
+        window.location.href = data.link;
+        return;
+      }
       setStage("success");
       setTimeout(() => { router.push(redirect); router.refresh(); }, 1000);
     } catch (err: any) {
-      setError("Invalid or expired OTP. Please try again.");
+      setError(err.message || "Invalid or expired OTP. Please try again.");
       setOtp(["", "", "", "", "", ""]);
       otpRefs.current[0]?.focus();
     } finally {
