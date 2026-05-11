@@ -20,30 +20,23 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+  const path = request.nextUrl.pathname
 
-  // Public routes - no auth needed
-  const publicPaths = ['/auth']
-  const isPublic = request.nextUrl.pathname.startsWith('/auth')
+  // Public routes — always accessible without login
+  const publicRoutes = ['/', '/auth', '/upload']
+  const isPublic = publicRoutes.some(r => path === r || path.startsWith('/auth'))
 
-  // Root path - redirect based on auth status
-  if (request.nextUrl.pathname === '/') {
-    if (user) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    } else {
-      return NextResponse.redirect(new URL('/auth', request.url))
-    }
-  }
-
-  // Protected routes - redirect to login if not authenticated
-  if (!isPublic && !user) {
-    const loginUrl = new URL('/auth', request.url)
-    // redirectTo not needed
-    return NextResponse.redirect(loginUrl)
-  }
-
-  // Already logged in trying to access auth pages - redirect to dashboard
-  if (isPublic && user && request.nextUrl.pathname !== '/auth/callback') {
+  // If logged in and trying to access auth page → go to dashboard
+  if (path.startsWith('/auth') && path !== '/auth/callback' && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // Protected routes — must be logged in
+  const protectedRoutes = ['/dashboard', '/intelligence', '/rebalance', '/tax-harvesting', '/chat', '/goals', '/calculator', '/backtest', '/screener', '/explore', '/transactions', '/profile', '/reports', '/capital-gains']
+  const isProtected = protectedRoutes.some(r => path === r || path.startsWith(r))
+
+  if (isProtected && !user) {
+    return NextResponse.redirect(new URL('/auth', request.url))
   }
 
   return supabaseResponse
