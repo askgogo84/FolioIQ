@@ -83,7 +83,7 @@ function AuthForm() {
     setLoading(true); setError(null);
     try {
       if (useCustomOtp) {
-        // Verify with our custom API
+        // Verify with our custom API (service role key now available)
         const res = await fetch("/api/auth-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -92,15 +92,13 @@ function AuthForm() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Invalid code");
         
-        // Custom OTP verified — now create Supabase session via signInWithOtp
-        // This sends another email with token, but we immediately verify it
-        // Better: just tell user they are verified and redirect
-        // The session needs to be created — use Supabase verifyOtp as backup
         setStage("success");
-        // Since we can't create session without service role, redirect to a state where 
-        // the user can still access the app by setting a temporary auth flag
-        // For now: redirect to dashboard which will check Supabase session
-        setTimeout(() => { router.push(redirect); router.refresh(); }, 1000);
+        if (data.link) {
+          // Session link returned — navigate to it to set cookie via /auth/callback
+          setTimeout(() => { window.location.href = data.link; }, 600);
+        } else {
+          setTimeout(() => { router.push(redirect); router.refresh(); }, 1000);
+        }
       } else {
         // Supabase native OTP verification — creates session automatically
         const { error } = await supabase.auth.verifyOtp({ email, token: code, type: "email" });
