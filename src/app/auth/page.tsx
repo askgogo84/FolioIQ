@@ -61,7 +61,9 @@ function AuthForm() {
       });
       
       if (res.ok) {
-        setUseCustomOtp(true);
+        const sendData = await res.json().catch(()=>({}));
+        // If Supabase was used as fallback, don't use our custom OTP verify
+        setUseCustomOtp(sendData.method !== 'supabase');
         setStage("otp");
         setResendTimer(60);
         setTimeout(() => otpRefs.current[0]?.focus(), 100);
