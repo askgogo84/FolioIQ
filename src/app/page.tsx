@@ -4,84 +4,113 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
-const STATS = [
-  { value: "₹2.4Cr+", label: "Portfolios Analyzed" },
-  { value: "19", label: "Fund Types Supported" },
-  { value: "12.5%", label: "Avg XIRR Improved" },
-  { value: "₹28,400", label: "Avg Tax Saved/Year" },
-];
+// Inline SVG dashboard preview - no external images needed
+const DashboardPreview = () => (
+  <svg viewBox="0 0 560 340" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto drop-shadow-2xl">
+    {/* Window chrome */}
+    <rect width="560" height="340" rx="12" fill="#0f0f0f"/>
+    <rect x="0" y="0" width="560" height="36" rx="12" fill="#1a1a1a"/>
+    <rect x="0" y="24" width="560" height="12" fill="#1a1a1a"/>
+    <circle cx="16" cy="18" r="5" fill="#ef4444" opacity="0.8"/>
+    <circle cx="30" cy="18" r="5" fill="#f59e0b" opacity="0.8"/>
+    <circle cx="44" cy="18" r="5" fill="#22c55e" opacity="0.8"/>
+    <text x="56" y="22" fill="#444" fontSize="9" fontFamily="monospace">folio-iq.vercel.app/dashboard</text>
 
-const FEATURES = [
-  { icon: "🧠", title: "AI Portfolio Intelligence", desc: "Stop, Continue, or Increase signals for every fund. Plain-language explanations, not just ratings.", badge: "vs Wright Research", color: "from-violet-500 to-purple-600" },
-  { icon: "📊", title: "After-Tax Returns", desc: "See what you actually keep after LTCG, STCG & cess. Budget 2024 rules applied automatically.", badge: "Unique", color: "from-emerald-500 to-teal-600" },
-  { icon: "🎯", title: "Goal-Based Analysis", desc: "We never recommend selling your emergency fund for a mid-cap. Funds tagged to life goals.", badge: "vs Dezerv", color: "from-orange-500 to-amber-600" },
-  { icon: "🌾", title: "Tax Harvest Calculator", desc: "Book ₹1.25L LTCG gains tax-free every FY. Exact funds, units to sell, and same-day reinvest plan.", badge: "Save ₹15K+", color: "from-green-500 to-emerald-600" },
-  { icon: "⚖️", title: "Smart Rebalancing", desc: "Portfolio drifted from 60:40 to 80:20? Get a one-click rebalance plan with exact amounts.", badge: null, color: "from-blue-500 to-indigo-600" },
-  { icon: "💬", title: "AI Chat Advisor", desc: "Ask Should I stop my ICICI Tech SIP and get a specific answer with 2-3 alternative funds.", badge: "GPT-4 Powered", color: "from-pink-500 to-rose-600" },
-  { icon: "🔍", title: "Fund Screener", desc: "Filter 20,000+ AMFI funds by category, returns, risk, AUM. Find the right fund in 30 seconds.", badge: null, color: "from-cyan-500 to-blue-600" },
-  { icon: "📅", title: "SIP Calendar", desc: "All your upcoming SIP debits in one view. Never miss a mandate or overdraft warning again.", badge: null, color: "from-yellow-500 to-orange-600" },
-];
+    {/* Sidebar */}
+    <rect x="0" y="36" width="120" height="304" fill="#111"/>
+    <rect x="8" y="48" width="36" height="14" rx="4" fill="#1f1f1f"/>
+    <text x="50" y="59" fill="#888" fontSize="7" fontFamily="system-ui">FolioIQ</text>
+    {[72,90,108,130,148,166,188,206].map((y, i) => (
+      <rect key={i} x="8" y={y} width={i===0?104:88} height="12" rx="3" fill={i===0?"#16a34a":"#1a1a1a"}/>
+    ))}
 
-const HOW_IT_WORKS = [
-  { step: "1", title: "Upload Your Statement", desc: "NJ Wealth XLS, Kuvera PDF, Groww, Zerodha Coin, CAMS CAS. Any format works.", icon: "📤" },
-  { step: "2", title: "AI Parses Instantly", desc: "All funds, invested amounts, current values extracted in seconds. No manual entry.", icon: "⚡" },
-  { step: "3", title: "Get Your Intelligence Report", desc: "After-tax returns, health score, Stop/Continue/Increase signals, tax harvest opportunities.", icon: "📊" },
-  { step: "4", title: "Take Action", desc: "Specific fund alternatives, goal tagging, rebalance plan. All actionable, not just insights.", icon: "🎯" },
-];
+    {/* Main content */}
+    {/* Dark hero card */}
+    <rect x="128" y="44" width="424" height="100" rx="10" fill="#111827"/>
+    <text x="140" y="60" fill="#6b7280" fontSize="7" fontFamily="system-ui" fontWeight="600" letterSpacing="1">TOTAL PORTFOLIO VALUE</text>
+    <text x="140" y="84" fill="white" fontSize="26" fontFamily="system-ui" fontWeight="900">₹55.33 L</text>
+    <text x="140" y="98" fill="#16a34a" fontSize="9" fontFamily="system-ui">↑ ₹16.22L (+41.46%) all time</text>
+    <text x="140" y="112" fill="#4b5563" fontSize="8" fontFamily="system-ui">After-tax ≈ ₹14.19 L</text>
+    {/* Mini sparkline in hero */}
+    <polyline points="300,125 320,115 340,108 360,118 380,105 400,98 420,100 440,92 460,88 480,82 500,75 520,70 540,68" stroke="#16a34a" strokeWidth="1.5" fill="none" opacity="0.6"/>
+    <rect x="128" y="48" width="424" height="100" rx="10" fill="url(#hg)" opacity="0.15"/>
+    <defs>
+      <linearGradient id="hg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#10b981"/><stop offset="100%" stopColor="#3b82f6"/></linearGradient>
+      <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#16a34a" stopOpacity="0.3"/><stop offset="100%" stopColor="#16a34a" stopOpacity="0"/></linearGradient>
+    </defs>
+    {/* Today strip */}
+    <rect x="128" y="130" width="424" height="18" rx="0" fill="#052e16" opacity="0.8"/>
+    <text x="140" y="142" fill="#16a34a" fontSize="7.5" fontFamily="system-ui">📉 Portfolio declined ₹16,361 (−0.30%) today vs yesterday</text>
 
-const TESTIMONIALS = [
-  { quote: "Finally an app that shows what I actually keep after taxes. My XIRR was 15% but after-tax it is 11.2%. Eye-opening.", name: "Kiran S.", role: "Software Engineer, Bengaluru", avatar: "KS" },
-  { quote: "The AI flagged my ICICI Tech SIP as loss-making and suggested 3 alternatives with exact percentages to switch. Exactly what I needed.", name: "Priya M.", role: "CA, Mumbai", avatar: "PM" },
-  { quote: "Uploaded my NJ Wealth statement, got all 19 funds parsed in 10 seconds. No other app does this for XLS files.", name: "Goverdhan M.", role: "Business Owner, Bangalore", avatar: "GM" },
-];
+    {/* KPI row */}
+    {[
+      {x:128, label:"HEALTH SCORE", val:"94/100", sub:"Excellent"},
+      {x:238, label:"TOTAL RETURNS", val:"+₹16.22L", sub:"+41.46% all time"},
+      {x:348, label:"FUNDS GAINING", val:"17 / 19", sub:"2 need attention"},
+      {x:458, label:"TAX SAVABLE", val:"~₹16,250", sub:"LTCG before Mar 31"},
+    ].map((k,i)=>(
+      <g key={i}>
+        <rect x={k.x} y="152" width="102" height="52" rx="8" fill="#1a1a1a"/>
+        <text x={k.x+8} y="163" fill="#555" fontSize="6" fontFamily="system-ui" fontWeight="700" letterSpacing="0.5">{k.label}</text>
+        <text x={k.x+8} y="180" fill="white" fontSize="11" fontFamily="system-ui" fontWeight="900">{k.val}</text>
+        <text x={k.x+8} y="196" fill={i===1?"#16a34a":"#6b7280"} fontSize="7" fontFamily="system-ui">{k.sub}</text>
+      </g>
+    ))}
 
-const VS_TABLE = [
-  { feature: "After-tax returns (Budget 2024)", folio: true, wright: false, dezerv: false, kuvera: false },
-  { feature: "NJ Wealth XLS parser", folio: true, wright: false, dezerv: false, kuvera: false },
-  { feature: "Goal-tagged fund protection", folio: true, wright: false, dezerv: true, kuvera: false },
-  { feature: "Tax harvest calculator", folio: true, wright: false, dezerv: true, kuvera: true },
-  { feature: "2-3 specific fund alternatives", folio: true, wright: true, dezerv: true, kuvera: false },
-  { feature: "Multi-portfolio family support", folio: true, wright: false, dezerv: false, kuvera: true },
-  { feature: "AI chat with your portfolio data", folio: true, wright: false, dezerv: false, kuvera: false },
-  { feature: "Free forever", folio: true, wright: false, dezerv: true, kuvera: true },
-];
+    {/* Chart area */}
+    <rect x="128" y="210" width="280" height="90" rx="8" fill="#111"/>
+    <text x="138" y="224" fill="white" fontSize="8" fontFamily="system-ui" fontWeight="700">Portfolio vs Nifty 50</text>
+    {/* Chart bars suggestion */}
+    <polyline points="138,290 165,275 190,268 215,280 240,260 265,250 290,245 315,238 340,230 365,220 390,215" stroke="#16a34a" strokeWidth="1.5" fill="none"/>
+    <polyline points="138,290 165,280 190,276 215,283 240,268 265,262 290,260 315,256 340,252 365,246 390,242" stroke="#94a3b8" strokeWidth="1" strokeDasharray="3 2" fill="none"/>
+    {/* Fill under line */}
+    <polygon points="138,290 165,275 190,268 215,280 240,260 265,250 290,245 315,238 340,230 365,220 390,215 390,295 138,295" fill="url(#cg)"/>
 
-export default function HomePage() {
+    {/* Pie chart */}
+    <rect x="416" y="210" width="136" height="90" rx="8" fill="#111"/>
+    <text x="424" y="224" fill="white" fontSize="8" fontFamily="system-ui" fontWeight="700">Allocation</text>
+    <circle cx="460" cy="268" r="28" fill="none" stroke="#1f2937" strokeWidth="12"/>
+    <circle cx="460" cy="268" r="28" fill="none" stroke="#16a34a" strokeWidth="12" strokeDasharray="128 48" strokeDashoffset="-12" strokeLinecap="round"/>
+    <circle cx="460" cy="268" r="28" fill="none" stroke="#d97706" strokeWidth="12" strokeDasharray="40 136" strokeDashoffset="-140" strokeLinecap="round"/>
+    <circle cx="460" cy="268" r="28" fill="none" stroke="#ca8a04" strokeWidth="12" strokeDasharray="36 140" strokeDashoffset="-180" strokeLinecap="round"/>
+    {[{c:"#16a34a",l:"Equity 73%"},{c:"#d97706",l:"Hybrid 14%"},{c:"#ca8a04",l:"Gold 13%"}].map((d,i)=>(
+      <g key={i}>
+        <circle cx="496" cy={238+i*14} r="4" fill={d.c}/>
+        <text x="504" y={242+i*14} fill="#9ca3af" fontSize="7" fontFamily="system-ui">{d.l}</text>
+      </g>
+    ))}
+  </svg>
+);
+
+export default function Home() {
   const [user, setUser] = useState<any>(null);
-  const supabase = createClient();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-  }, []);
+  const sb = createClient();
+  useEffect(() => { sb.auth.getUser().then(({data}) => setUser(data.user)); }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" style={{fontFamily:"'Inter var',system-ui,sans-serif"}}>
+
       {/* NAV */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">F</span>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-gray-900 rounded-lg flex items-center justify-center">
+              <span className="text-white text-xs font-black">F</span>
             </div>
-            <span className="font-bold text-xl text-gray-900">FolioIQ</span>
-            <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">Beta</span>
+            <span className="font-black text-gray-900 tracking-tight">FolioIQ</span>
           </div>
-          <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-gray-600">
-            <a href="#features" className="hover:text-gray-900">Features</a>
-            <a href="#how" className="hover:text-gray-900">How it works</a>
-            <a href="#compare" className="hover:text-gray-900">vs Others</a>
+          <div className="hidden md:flex items-center gap-8 text-[13px] font-medium text-gray-500">
+            {[["Features","#features"],["How it works","#how"],["Screener","/screener"]].map(([l,h])=>(
+              <a key={h} href={h} className="hover:text-gray-900 transition-colors">{l}</a>
+            ))}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {user ? (
-              <Link href="/dashboard" className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700">
-                Dashboard →
-              </Link>
+              <Link href="/dashboard" className="px-4 py-2 bg-gray-900 text-white rounded-xl text-[13px] font-bold hover:bg-gray-800 transition-colors">Dashboard →</Link>
             ) : (
               <>
-                <Link href="/auth" className="px-4 py-2 text-gray-600 text-sm font-medium hover:text-gray-900">Sign in</Link>
-                <Link href="/auth?signup=true" className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700">
-                  Get Started Free
-                </Link>
+                <Link href="/auth" className="px-4 py-2 text-gray-600 rounded-xl text-[13px] font-semibold hover:bg-gray-100 transition-colors hidden sm:block">Sign in</Link>
+                <Link href="/auth" className="px-4 py-2 bg-gray-900 text-white rounded-xl text-[13px] font-bold hover:bg-gray-800 transition-colors">Get Started →</Link>
               </>
             )}
           </div>
@@ -89,119 +118,145 @@ export default function HomePage() {
       </nav>
 
       {/* HERO */}
-      <section className="pt-24 pb-12 sm:pb-20 px-4 sm:px-6 bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full text-sm font-semibold mb-6 border border-emerald-200">
-            <span>🇮🇳</span> India&#39;s only MF analyzer with after-tax returns
-          </div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-gray-900 mb-6 leading-tight tracking-tight">
-            Your portfolio<br />
-            <span className="text-emerald-600">tells the truth.</span><br />
-            <span className="text-gray-400">Do you know it?</span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Upload your NJ Wealth statement and get AI-powered Stop, Continue, Increase signals for every fund — with real after-tax returns and specific alternatives.
-          </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center mb-10 sm:mb-16">
-            <Link href={user ? "/dashboard" : "/auth?signup=true"}
-              className="px-8 py-4 bg-emerald-600 text-white rounded-xl text-lg font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all hover:scale-105">
-              {user ? "View Dashboard →" : "Analyse My Portfolio Free →"}
-            </Link>
-            <Link href="/upload"
-              className="px-8 py-4 border-2 border-gray-200 text-gray-700 rounded-xl text-lg font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all">
-              📤 Upload Statement
-            </Link>
+      <section className="pt-28 pb-16 sm:pb-20 px-4 sm:px-6 relative overflow-hidden">
+        {/* Gradient mesh background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 left-1/4 w-72 h-72 bg-emerald-100 rounded-full blur-3xl opacity-60"/>
+          <div className="absolute top-32 right-1/4 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-40"/>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-40 bg-gradient-to-t from-white to-transparent"/>
+        </div>
+
+        <div className="max-w-6xl mx-auto relative">
+          <div className="text-center mb-10 sm:mb-14">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-full text-[12px] font-bold mb-6 shadow-lg">
+              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"/>
+              India's smartest mutual fund portfolio analyzer
+            </div>
+
+            {/* Headline with gradient */}
+            <h1 className="text-[36px] sm:text-[52px] md:text-[68px] font-black text-gray-900 leading-[1.05] tracking-tight mb-5">
+              Your money,{" "}
+              <span className="relative inline-block">
+                <span className="bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">finally</span>
+                <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 200 8" fill="none">
+                  <path d="M0 6 Q100 0 200 6" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.5"/>
+                </svg>
+              </span>{" "}
+              working for you.
+            </h1>
+
+            <p className="text-[16px] sm:text-[18px] text-gray-500 max-w-2xl mx-auto leading-relaxed mb-8">
+              Upload your CAS statement → get instant AI signals, after-tax returns, tax harvest plan, and rebalancing advice. No jargon. Just clarity.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 justify-center mb-6">
+              <Link href="/auth" className="flex items-center gap-2 px-7 py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-[15px] hover:bg-gray-800 transition-all shadow-xl shadow-gray-900/20 hover:shadow-gray-900/30 hover:-translate-y-0.5 active:translate-y-0">
+                Analyze my portfolio free
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </Link>
+              <Link href="/screener" className="flex items-center gap-2 px-7 py-3.5 bg-white text-gray-700 rounded-2xl font-semibold text-[15px] border-2 border-gray-200 hover:border-gray-900 transition-all">
+                Browse funds
+              </Link>
+            </div>
+
+            <p className="text-[12px] text-gray-400">Free forever · No credit card · Works with NJ Wealth, Groww, Zerodha, ET Money</p>
           </div>
 
-          {/* Dashboard Preview */}
-          <div className="relative mx-auto max-w-4xl">
-            <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-              <div className="bg-gray-900 px-4 py-3 flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <div className="mx-auto px-4 py-1 bg-gray-700 rounded text-gray-300 text-xs">folio-iq.vercel.app/dashboard</div>
+          {/* Dashboard preview SVG */}
+          <div className="relative max-w-4xl mx-auto">
+            <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 via-blue-500/20 to-violet-500/20 rounded-3xl blur-2xl"/>
+            <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-2xl shadow-gray-900/20">
+              <DashboardPreview/>
+            </div>
+            {/* Floating badges */}
+            <div className="absolute -right-4 top-8 hidden sm:flex items-center gap-2 bg-white border border-gray-100 shadow-xl rounded-2xl px-4 py-3">
+              <span className="text-2xl">🎯</span>
+              <div>
+                <div className="text-[12px] font-black text-gray-900">94/100</div>
+                <div className="text-[10px] text-gray-500">Health Score</div>
               </div>
-              <div className="p-6 bg-gray-50">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                  {[
-                    { l: "Portfolio Value", v: "₹55.33L", c: "text-gray-900", sub: "+41.46% all time" },
-                    { l: "Invested", v: "₹39.11L", c: "text-gray-700", sub: "Across 19 funds" },
-                    { l: "After-Tax Returns", v: "+₹16.22L", c: "text-emerald-600", sub: "You keep ₹15.07L" },
-                    { l: "Monthly SIP", v: "₹91,000", c: "text-gray-900", sub: "14 active SIPs" },
-                  ].map((k) => (
-                    <div key={k.l} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                      <div className="text-xs text-gray-500 mb-1">{k.l}</div>
-                      <div className={"text-xl font-bold " + k.c}>{k.v}</div>
-                      <div className="text-xs text-emerald-600 mt-0.5">{k.sub}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {[
-                    { name: "Invesco India Gold ETF", ret: "+119.3%", signal: "🟢 Increase", bg: "bg-green-50 border-green-200" },
-                    { name: "ICICI Prudential Technology", ret: "-14.2%", signal: "🔴 Stop SIP", bg: "bg-red-50 border-red-200" },
-                    { name: "Parag Parikh Flexi Cap", ret: "+69.0%", signal: "🟡 Continue", bg: "bg-yellow-50 border-yellow-200" },
-                  ].map((f) => (
-                    <div key={f.name} className={"rounded-lg p-3 border " + f.bg}>
-                      <div className="text-xs font-semibold text-gray-900 mb-1 truncate">{f.name}</div>
-                      <div className="text-sm font-bold text-gray-900">{f.ret}</div>
-                      <div className="text-xs mt-1 font-medium">{f.signal}</div>
-                    </div>
-                  ))}
-                </div>
+            </div>
+            <div className="absolute -left-4 bottom-12 hidden sm:flex items-center gap-2 bg-white border border-gray-100 shadow-xl rounded-2xl px-4 py-3">
+              <span className="text-2xl">💰</span>
+              <div>
+                <div className="text-[12px] font-black text-emerald-600">Save ₹16,250</div>
+                <div className="text-[10px] text-gray-500">Tax harvest ready</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* STATS */}
-      <section className="py-10 sm:py-16 bg-emerald-600">
-        <div className="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-4xl font-black text-white mb-1">{s.value}</div>
-              <div className="text-emerald-200 text-sm font-medium">{s.label}</div>
+      {/* STATS BAR */}
+      <section className="py-8 sm:py-12 px-4 sm:px-6 border-y border-gray-100 bg-gray-50">
+        <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
+          {[
+            { v:"₹2.4Cr+", l:"Portfolios analyzed" },
+            { v:"41.46%", l:"Best portfolio return" },
+            { v:"₹28,400", l:"Avg tax saved/year" },
+            { v:"63+", l:"Funds in screener" },
+          ].map((s,i)=>(
+            <div key={i} className="text-center">
+              <div className="text-[24px] sm:text-[28px] font-black text-gray-900 leading-none">{s.v}</div>
+              <div className="text-[12px] text-gray-500 mt-1 font-medium">{s.l}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section id="how" className="py-12 sm:py-24 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-gray-900 mb-4">From upload to insight in 30 seconds</h2>
-            <p className="text-gray-500 text-lg">No manual entry. No spreadsheets. Just upload and get your intelligence report.</p>
+      {/* FEATURES */}
+      <section id="features" className="py-16 sm:py-24 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-50 text-violet-700 rounded-full text-[12px] font-bold mb-4 border border-violet-100">Everything you need</div>
+            <h2 className="text-[28px] sm:text-[36px] md:text-[44px] font-black text-gray-900 leading-tight mb-4">Built for the serious<br className="hidden sm:block"/> Indian investor</h2>
+            <p className="text-gray-500 text-[15px] max-w-xl mx-auto">Everything IndiaMoney, Kuvera, and Value Research have — with plain-language explanations most platforms don't dare give.</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {HOW_IT_WORKS.map((s) => (
-              <div key={s.step} className="text-center">
-                <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-emerald-100">{s.icon}</div>
-                <div className="text-sm font-bold text-emerald-600 mb-1">Step {s.step}</div>
-                <h3 className="font-bold text-gray-900 mb-2">{s.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{s.desc}</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {[
+              { icon:"🧠", title:"AI Buy/Hold/Sell Signals", desc:"Every fund in your portfolio gets a clear signal with the reason in plain English. No confusing star ratings.", col:"bg-violet-50 border-violet-100", iconBg:"bg-violet-100", tag:"vs Wright Research" },
+              { icon:"💰", title:"After-Tax Returns", desc:"See what you actually keep after LTCG, STCG & 4% cess. Budget 2024 rules applied automatically.", col:"bg-amber-50 border-amber-100", iconBg:"bg-amber-100", tag:"Unique in India" },
+              { icon:"🌾", title:"Tax Harvest Planner", desc:"Shows exactly which funds to redeem before March 31 to use your ₹1.25L annual LTCG exemption.", col:"bg-emerald-50 border-emerald-100", iconBg:"bg-emerald-100", tag:"Save ₹15,000+ /yr" },
+              { icon:"⚖️", title:"Smart Rebalancing", desc:"Detects allocation drift and gives you a step-by-step plan — buy X, sell Y — in rupee amounts.", col:"bg-blue-50 border-blue-100", iconBg:"bg-blue-100", tag:"vs Kuvera" },
+              { icon:"🎯", title:"Goal-Tagged Portfolios", desc:"Tag every fund to a life goal. FolioIQ protects your education and emergency funds from bad rebalance advice.", col:"bg-pink-50 border-pink-100", iconBg:"bg-pink-100", tag:"Novel feature" },
+              { icon:"🔍", title:"Fund Screener (63 funds)", desc:"Filter by category, AMC, risk, 1Y/3Y/5Y returns. Watchlist any fund. See Value Research data in one place.", col:"bg-slate-50 border-slate-200", iconBg:"bg-slate-100", tag:"vs Value Research" },
+            ].map((f,i)=>(
+              <div key={i} className={`p-5 sm:p-6 rounded-2xl border ${f.col} hover:shadow-md transition-all group`}>
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`w-11 h-11 ${f.iconBg} rounded-2xl flex items-center justify-center text-xl`}>{f.icon}</div>
+                  <span className="text-[10px] font-bold text-gray-400 bg-white border border-gray-100 px-2 py-1 rounded-full">{f.tag}</span>
+                </div>
+                <h3 className="text-[15px] font-black text-gray-900 mb-2">{f.title}</h3>
+                <p className="text-[13px] text-gray-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section id="features" className="py-12 sm:py-24 px-4 sm:px-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-gray-900 mb-4">Everything you need. Nothing you don&#39;t.</h2>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto">Built specifically for Indian mutual fund investors. Addresses every gap in Kuvera, Groww, and Wright Research.</p>
+      {/* HOW IT WORKS */}
+      <section id="how" className="py-16 sm:py-24 px-4 sm:px-6 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white rounded-full text-[12px] font-bold mb-4">3 steps</div>
+            <h2 className="text-[28px] sm:text-[36px] font-black text-gray-900 mb-3">Up and running in 2 minutes</h2>
+            <p className="text-gray-500 text-[15px]">No account linking, no broker access, no risk.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="bg-white rounded-2xl p-6 border border-gray-200 hover:shadow-lg transition-shadow group">
-                <div className={"w-12 h-12 rounded-xl bg-gradient-to-br " + f.color + " flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform"}>{f.icon}</div>
-                {f.badge && <span className="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full mb-2 border border-emerald-200">{f.badge}</span>}
-                <h3 className="font-bold text-gray-900 mb-2">{f.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[
+              { n:"01", icon:"📥", title:"Upload your CAS", desc:"Download the NJ Wealth XLS or CAMS CAS PDF. Drag and drop it. We parse it in seconds — no manual entry." },
+              { n:"02", icon:"🤖", title:"AI analyzes instantly", desc:"Our AI scores every fund on returns, alpha, expense ratio, and risk. Generates Buy/Hold/Sell signals." },
+              { n:"03", icon:"📊", title:"Take action", desc:"See exactly what to sell, what to continue, and how to save tax. All in plain English, not finance jargon." },
+            ].map((s,i)=>(
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[11px] font-black text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{s.n}</span>
+                  <span className="text-2xl">{s.icon}</span>
+                </div>
+                <h3 className="text-[16px] font-black text-gray-900 mb-2">{s.title}</h3>
+                <p className="text-[13px] text-gray-500 leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -209,29 +264,38 @@ export default function HomePage() {
       </section>
 
       {/* COMPARISON */}
-      <section id="compare" className="py-12 sm:py-24 px-4 sm:px-6">
+      <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-gray-900 mb-4">How FolioIQ compares</h2>
-            <p className="text-gray-500 text-lg">The things that matter most to Indian investors.</p>
+          <div className="text-center mb-12">
+            <h2 className="text-[28px] sm:text-[36px] font-black text-gray-900 mb-3">How FolioIQ stacks up</h2>
+            <p className="text-gray-500 text-[15px]">vs IndiaMoney · Kuvera · Value Research · Wright Research</p>
           </div>
-          <div className="overflow-x-auto rounded-2xl border border-gray-200 -mx-4 sm:mx-0">
-            <table className="w-full">
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
+            <table className="w-full min-w-[560px]">
               <thead>
-                <tr className="border-b-2 border-gray-200 bg-gray-50">
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-500">Feature</th>
-                  <th className="py-4 px-4 text-center"><div className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white rounded-lg text-sm font-bold">FolioIQ</div></th>
-                  <th className="py-4 px-4 text-center text-sm font-semibold text-gray-500">Wright</th>
-                  <th className="py-4 px-4 text-center text-sm font-semibold text-gray-500">Dezerv</th>
-                  <th className="py-4 px-4 text-center text-sm font-semibold text-gray-500">Kuvera</th>
+                <tr className="bg-gray-900 text-white">
+                  <th className="text-left px-5 py-4 text-[13px] font-bold">Feature</th>
+                  <th className="px-5 py-4 text-[13px] font-black text-emerald-400">FolioIQ</th>
+                  <th className="px-5 py-4 text-[13px] font-bold text-gray-400">IndiaMoney</th>
+                  <th className="px-5 py-4 text-[13px] font-bold text-gray-400">Value Research</th>
                 </tr>
               </thead>
               <tbody>
-                {VS_TABLE.map((row, i) => (
-                  <tr key={row.feature} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <td className="py-3 px-6 text-sm text-gray-700 font-medium">{row.feature}</td>
-                    {[row.folio, row.wright, row.dezerv, row.kuvera].map((v, j) => (
-                      <td key={j} className="py-3 px-4 text-center text-lg">{v ? "✅" : "❌"}</td>
+                {[
+                  ["After-tax returns (Budget 2024)","✅","❌","❌"],
+                  ["AI Buy/Hold/Sell per fund","✅","Partial","❌"],
+                  ["Tax harvest planner","✅","Partial","❌"],
+                  ["Plain-language explanations","✅","❌","❌"],
+                  ["Fund screener with alpha","✅","❌","✅"],
+                  ["Goal-tagged portfolio","✅","✅","❌"],
+                  ["Free forever","✅","❌","Partial"],
+                ].map(([feat,...vals],i)=>(
+                  <tr key={i} className={i%2===0?"bg-white":"bg-gray-50"}>
+                    <td className="px-5 py-3.5 text-[13px] font-medium text-gray-700">{feat}</td>
+                    {vals.map((v,vi)=>(
+                      <td key={vi} className="px-5 py-3.5 text-center text-[13px]">
+                        <span className={v==="✅"?"text-emerald-600 font-bold":v==="❌"?"text-gray-300":"text-amber-600 font-medium"}>{v}</span>
+                      </td>
                     ))}
                   </tr>
                 ))}
@@ -241,77 +305,51 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="py-12 sm:py-24 px-4 sm:px-6 bg-gray-900">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-white mb-4">Investors who finally understand their portfolio</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-                <div className="flex mb-4">{[1,2,3,4,5].map(i => <span key={i} className="text-yellow-400">★</span>)}</div>
-                <p className="text-gray-300 text-sm leading-relaxed mb-6">&#34;{t.quote}&#34;</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">{t.avatar}</div>
-                  <div>
-                    <div className="text-white font-semibold text-sm">{t.name}</div>
-                    <div className="text-gray-500 text-xs">{t.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
-      <section className="py-12 sm:py-24 px-4 sm:px-6 bg-gradient-to-br from-emerald-600 to-emerald-800">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 bg-gray-900">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-6">Start knowing your real returns today</h2>
-          <p className="text-emerald-200 text-lg mb-10">Upload your statement. Free forever. No credit card. No calls from advisors.</p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center">
-            <Link href={user ? "/dashboard" : "/auth?signup=true"} className="px-8 py-4 bg-white text-emerald-700 rounded-xl text-lg font-bold hover:bg-gray-50 shadow-xl transition-all hover:scale-105">
-              {user ? "Go to Dashboard →" : "Get Started Free →"}
-            </Link>
-            <Link href="/upload" className="px-8 py-4 border-2 border-emerald-400 text-white rounded-xl text-lg font-semibold hover:bg-emerald-700 transition-all">
-              📤 Upload My Statement
-            </Link>
+          <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-emerald-500/30">
+            <span className="text-white text-3xl font-black">F</span>
           </div>
-          <p className="text-emerald-300 text-sm mt-6">Supports NJ Wealth · Kuvera · Groww · Zerodha Coin · ET Money · CAMS CAS</p>
+          <h2 className="text-[32px] sm:text-[44px] font-black text-white mb-4 leading-tight">
+            Stop guessing.<br/>
+            <span className="text-emerald-400">Start knowing.</span>
+          </h2>
+          <p className="text-gray-400 text-[16px] mb-8 leading-relaxed max-w-xl mx-auto">
+            Upload your portfolio in 30 seconds. Get the same clarity a SEBI-registered advisor would give you — for free.
+          </p>
+          <Link href="/auth"
+            className="inline-flex items-center gap-2.5 px-8 py-4 bg-emerald-500 text-white rounded-2xl font-black text-[16px] hover:bg-emerald-400 transition-all shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-400/30 hover:-translate-y-0.5">
+            Analyze my portfolio — it's free
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </Link>
+          <p className="text-gray-600 text-[12px] mt-4">No credit card · No broker access · Data never stored permanently</p>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="py-12 px-6 bg-gray-900 border-t border-gray-800">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center"><span className="text-white font-bold text-xs">F</span></div>
-                <span className="font-bold text-white">FolioIQ</span>
-              </div>
-              <p className="text-gray-500 text-sm max-w-xs">India&#39;s only mutual fund analyzer that shows after-tax returns with AI-powered insights.</p>
+      <footer className="border-t border-gray-100 py-10 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 bg-gray-900 rounded-lg flex items-center justify-center">
+              <span className="text-white text-[10px] font-black">F</span>
             </div>
-            <div className="grid grid-cols-2 gap-8 text-sm">
-              <div>
-                <div className="text-white font-semibold mb-3">Product</div>
-                {[["Dashboard","/dashboard"],["Upload Statement","/upload"],["AI Insights","/intelligence"],["Tax Harvesting","/tax-harvesting"],["Goal Planner","/goals"]].map(([l,h]) => (
-                  <Link key={l} href={h} className="block text-gray-500 hover:text-gray-300 mb-1">{l}</Link>
-                ))}
-              </div>
-              <div>
-                <div className="text-white font-semibold mb-3">Account</div>
-                {[["Sign In","/auth"],["Sign Up Free","/auth?signup=true"],["Upload CAS","/upload"],["AI Chat","/chat"]].map(([l,h]) => (
-                  <Link key={l} href={h} className="block text-gray-500 hover:text-gray-300 mb-1">{l}</Link>
-                ))}
-              </div>
-            </div>
+            <span className="font-bold text-gray-900 text-sm">FolioIQ</span>
+            <span className="text-gray-300">·</span>
+            <span className="text-[12px] text-gray-400">India's AI Portfolio Intelligence Platform</span>
           </div>
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
-            <span>© 2026 FolioIQ. Not SEBI registered. Not investment advice.</span>
-            <span>Budget 2024 tax rules applied. Mutual fund investments are subject to market risks.</span>
+          <div className="flex gap-6 text-[12px] text-gray-400">
+            <Link href="/screener" className="hover:text-gray-700">Fund Screener</Link>
+            <Link href="/calculator" className="hover:text-gray-700">SIP Calculator</Link>
+            <Link href="/auth" className="hover:text-gray-700">Sign in</Link>
           </div>
+        </div>
+        <div className="max-w-5xl mx-auto mt-6 pt-6 border-t border-gray-100">
+          <p className="text-[11px] text-gray-400 leading-relaxed">
+            FolioIQ is not SEBI-registered. Information provided is for educational purposes only and does not constitute investment advice. 
+            Mutual fund investments are subject to market risks. Past performance is not indicative of future returns. 
+            Always consult a qualified financial advisor before making investment decisions.
+          </p>
         </div>
       </footer>
     </div>
