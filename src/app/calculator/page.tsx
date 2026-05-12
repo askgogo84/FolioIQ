@@ -1,305 +1,114 @@
-﻿"use client";
 
+"use client";
 import { useState, useMemo } from "react";
-import { 
-  Calculator, Home, LayoutDashboard, Upload, Search, User, Sparkles, Brain,
-  TrendingUp, PiggyBank, ArrowRight, Target, ChevronRight, Info
-} from "lucide-react";
-import Link from "next/link";
+import AppLayout from "@/components/AppLayout";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
-export default function CalculatorPage() {
-  const [monthlySIP, setMonthlySIP] = useState(10000);
-  const [returnRate, setReturnRate] = useState(12);
+const fmt = (v: number) => v>=10000000?`₹${(v/10000000).toFixed(2)}Cr`:v>=100000?`₹${(v/100000).toFixed(2)}L`:`₹${Math.round(v).toLocaleString()}`;
+
+export default function Calculator() {
+  const [sip, setSip] = useState(10000);
+  const [rate, setRate] = useState(12);
   const [years, setYears] = useState(15);
-  const [stepUp, setStepUp] = useState(10);
-  const [showStepUp, setShowStepUp] = useState(true);
+  const [mode, setMode] = useState<"sip"|"lumpsum">("sip");
+  const [lump, setLump] = useState(100000);
 
-  const results = useMemo(() => {
-    let totalInvested = 0;
-    let corpus = 0;
-    let yearlyData = [];
-    let currentSIP = monthlySIP;
-
-    for (let year = 1; year <= years; year++) {
-      for (let month = 1; month <= 12; month++) {
-        totalInvested += currentSIP;
-        corpus = (corpus + currentSIP) * (1 + returnRate / 100 / 12);
+  const data = useMemo(()=>{
+    const pts = [];
+    for (let y=1; y<=years; y++) {
+      let corpus, invested;
+      if (mode==="sip") {
+        const n = y*12; const r = rate/12/100;
+        corpus = sip * (Math.pow(1+r,n)-1)/r * (1+r);
+        invested = sip * n;
+      } else {
+        corpus = lump * Math.pow(1+rate/100,y);
+        invested = lump;
       }
-      yearlyData.push({
-        year,
-        invested: totalInvested,
-        corpus: Math.round(corpus),
-        sip: currentSIP
-      });
-      if (showStepUp) {
-        currentSIP = Math.round(currentSIP * (1 + stepUp / 100));
-      }
+      pts.push({ year:`Y${y}`, corpus:Math.round(corpus), invested:Math.round(invested), gain:Math.round(corpus-invested) });
     }
+    return pts;
+  },[sip,rate,years,mode,lump]);
 
-    return {
-      totalInvested: Math.round(totalInvested),
-      finalCorpus: Math.round(corpus),
-      wealthGained: Math.round(corpus - totalInvested),
-      yearlyData
-    };
-  }, [monthlySIP, returnRate, years, stepUp, showStepUp]);
-
-  // Without step-up for comparison
-  const withoutStepUp = useMemo(() => {
-    let totalInvested = 0;
-    let corpus = 0;
-    for (let year = 1; year <= years; year++) {
-      for (let month = 1; month <= 12; month++) {
-        totalInvested += monthlySIP;
-        corpus = (corpus + monthlySIP) * (1 + returnRate / 100 / 12);
-      }
-    }
-    return Math.round(corpus);
-  }, [monthlySIP, returnRate, years]);
-
-  const formatCurrency = (num: number) => {
-    if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
-    if (num >= 100000) return `₹${(num / 100000).toFixed(1)} L`;
-    return `₹${num.toLocaleString()}`;
-  };
-
-  const navItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Upload", href: "/upload", icon: Upload },
-    { name: "Explore", href: "/explore", icon: Search },
-    { name: "Profile", href: "/profile", icon: User },
-    { name: "AI Insights", href: "/intelligence", icon: Brain },
-  ];
+  const final = data[data.length-1];
+  const invested = mode==="sip"?sip*years*12:lump;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-slate-900">FolioIQ</span>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link key={item.name} href={item.href} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
-                  <item.icon className="w-4 h-4" />{item.name}
-                </Link>
+    <AppLayout title="SIP Calculator" subtitle="Project your wealth with different SIP and lumpsum scenarios">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+
+        {/* Result */}
+        <div className="bg-gray-900 rounded-2xl p-6">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            {[
+              { l:"Invested", v:fmt(invested), c:"text-white" },
+              { l:"Est. Corpus", v:fmt(final?.corpus||0), c:"text-emerald-400" },
+              { l:"Wealth Gain", v:fmt((final?.gain)||0), c:"text-emerald-400" },
+            ].map((k,i)=>(
+              <div key={i}>
+                <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">{k.l}</div>
+                <div className={`text-[18px] sm:text-[24px] font-black tracking-tight ${k.c}`}>{k.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          {/* Controls */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-5 space-y-5">
+            {/* Mode toggle */}
+            <div className="flex bg-gray-100 rounded-xl p-1">
+              {["sip","lumpsum"].map(m=>(
+                <button key={m} onClick={()=>setMode(m as any)}
+                  className={`flex-1 py-2 text-[12px] font-semibold rounded-lg transition-all capitalize ${mode===m?"bg-white shadow-sm text-gray-900":"text-gray-400 hover:text-gray-600"}`}>
+                  {m==="sip"?"SIP":"Lumpsum"}
+                </button>
               ))}
             </div>
-          </div>
-        </div>
-      </nav>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Calculator className="w-8 h-8 text-green-600" />
-            <h1 className="text-3xl font-bold text-slate-900">SIP Calculator</h1>
-          </div>
-          <p className="text-slate-600">Plan your wealth creation with step-up SIP projections</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Input Panel */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-6">
-              <h2 className="font-semibold text-slate-900">Investment Details</h2>
-              
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-700">Monthly SIP</label>
-                  <span className="text-sm font-semibold text-blue-600">₹{monthlySIP.toLocaleString()}</span>
+            {[
+              ...(mode==="sip"?[{ label:"Monthly SIP", val:sip, set:setSip, min:500, max:200000, step:500, fmt:"₹" }]:[
+                { label:"Lumpsum Amount", val:lump, set:setLump, min:1000, max:10000000, step:1000, fmt:"₹" }
+              ]),
+              { label:"Expected Return (XIRR %)", val:rate, set:setRate, min:4, max:30, step:0.5, fmt:"%" },
+              { label:"Time Horizon (years)", val:years, set:setYears, min:1, max:40, step:1, fmt:"yr" },
+            ].map((s,i)=>(
+              <div key={i}>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[12px] font-semibold text-gray-700">{s.label}</label>
+                  <span className="text-[13px] font-black text-gray-900">{s.fmt==="₹"?`₹${s.val.toLocaleString()}`:s.val+s.fmt}</span>
                 </div>
-                <input
-                  type="range"
-                  min="500"
-                  max="100000"
-                  step="500"
-                  value={monthlySIP}
-                  onChange={(e) => setMonthlySIP(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
-                <div className="flex justify-between text-xs text-slate-400 mt-1">
-                  <span>₹500</span>
-                  <span>₹1L</span>
+                <input type="range" min={s.min} max={s.max} step={s.step} value={s.val}
+                  onChange={e=>s.set(Number(e.target.value))}
+                  className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-gray-900"/>
+                <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                  <span>{s.fmt==="₹"?`₹${s.min.toLocaleString()}`:s.min+s.fmt}</span>
+                  <span>{s.fmt==="₹"?`₹${s.max.toLocaleString()}`:s.max+s.fmt}</span>
                 </div>
               </div>
-
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-700">Expected Return</label>
-                  <span className="text-sm font-semibold text-blue-600">{returnRate}% p.a.</span>
-                </div>
-                <input
-                  type="range"
-                  min="6"
-                  max="20"
-                  step="0.5"
-                  value={returnRate}
-                  onChange={(e) => setReturnRate(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
-                <div className="flex justify-between text-xs text-slate-400 mt-1">
-                  <span>6%</span>
-                  <span>20%</span>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium text-slate-700">Time Period</label>
-                  <span className="text-sm font-semibold text-blue-600">{years} years</span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="30"
-                  step="1"
-                  value={years}
-                  onChange={(e) => setYears(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
-                <div className="flex justify-between text-xs text-slate-400 mt-1">
-                  <span>1 yr</span>
-                  <span>30 yrs</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowStepUp(!showStepUp)}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${showStepUp ? 'bg-blue-600' : 'bg-slate-300'}`}
-                >
-                  <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${showStepUp ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-                <span className="text-sm font-medium text-slate-700">Annual Step-up</span>
-              </div>
-
-              {showStepUp && (
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="text-sm font-medium text-slate-700">Step-up Rate</label>
-                    <span className="text-sm font-semibold text-blue-600">{stepUp}% / year</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="20"
-                    step="1"
-                    value={stepUp}
-                    onChange={(e) => setStepUp(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                  />
-                  <div className="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>0%</span>
-                    <span>20%</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Goal Links */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-              <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <Target className="w-4 h-4 text-purple-600" />
-                Link to Your Goals
-              </h3>
-              <div className="space-y-3">
-                <Link href="/goals" className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Child Education</p>
-                    <p className="text-xs text-slate-500">Needs ₹15,000/month</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </Link>
-                <Link href="/goals" className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Retirement</p>
-                    <p className="text-xs text-slate-500">Needs ₹45,500/month</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </Link>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Results Panel */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
-                <PiggyBank className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-slate-900">{formatCurrency(results.totalInvested)}</p>
-                <p className="text-sm text-slate-500">Total Invested</p>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
-                <TrendingUp className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(results.finalCorpus)}</p>
-                <p className="text-sm text-slate-500">Final Corpus</p>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
-                <Calculator className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-purple-600">{formatCurrency(results.wealthGained)}</p>
-                <p className="text-sm text-slate-500">Wealth Gained</p>
-              </div>
-            </div>
-
-            {/* Step-up Benefit */}
-            {showStepUp && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
-                <Info className="w-5 h-5 text-green-600 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-green-900">
-                    Step-up SIP gives you {formatCurrency(results.finalCorpus - withoutStepUp)} more!
-                  </p>
-                  <p className="text-xs text-green-700">
-                    Without step-up: {formatCurrency(withoutStepUp)} → With {stepUp}% step-up: {formatCurrency(results.finalCorpus)}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Year-by-Year Table */}
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-semibold text-slate-900">Year-by-Year Growth</h3>
-                <span className="text-xs text-slate-500">{years} years projection</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-slate-500">Year</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium text-slate-500">Monthly SIP</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium text-slate-500">Total Invested</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium text-slate-500">Corpus Value</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium text-slate-500">Wealth Gained</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.yearlyData.map((row) => (
-                      <tr key={row.year} className="border-b border-slate-50 hover:bg-slate-50">
-                        <td className="py-3 px-4 text-sm font-medium text-slate-900">Year {row.year}</td>
-                        <td className="py-3 px-4 text-right text-sm text-slate-600">₹{row.sip.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right text-sm text-slate-600">{formatCurrency(row.invested)}</td>
-                        <td className="py-3 px-4 text-right text-sm font-bold text-green-600">{formatCurrency(row.corpus)}</td>
-                        <td className="py-3 px-4 text-right text-sm font-semibold text-purple-600">{formatCurrency(row.corpus - row.invested)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          {/* Chart */}
+          <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="text-[13px] font-bold text-gray-900 mb-4">Growth Projection</div>
+            <ResponsiveContainer width="100%" height={240}>
+              <AreaChart data={data} margin={{top:4,right:4,bottom:0,left:-20}}>
+                <defs>
+                  <linearGradient id="gC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#16a34a" stopOpacity={0.2}/><stop offset="100%" stopColor="#16a34a" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="gI" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#94a3b8" stopOpacity={0.15}/><stop offset="100%" stopColor="#94a3b8" stopOpacity={0}/></linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
+                <XAxis dataKey="year" fontSize={10} tick={{fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
+                <YAxis fontSize={10} tick={{fill:"#94a3b8"}} tickLine={false} axisLine={false} tickFormatter={v=>v>=100000?`${(v/100000).toFixed(0)}L`:`${v}`}/>
+                <Tooltip contentStyle={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:12,fontSize:12}} formatter={(v:number,n:string)=>[fmt(v),n==="corpus"?"Corpus":"Invested"]}/>
+                <Area type="monotone" dataKey="corpus" stroke="#16a34a" fill="url(#gC)" strokeWidth={2} name="corpus" dot={false}/>
+                <Area type="monotone" dataKey="invested" stroke="#cbd5e1" fill="url(#gI)" strokeWidth={1.5} name="invested" dot={false} strokeDasharray="4 4"/>
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
-

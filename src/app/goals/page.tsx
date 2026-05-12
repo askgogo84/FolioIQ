@@ -1,382 +1,114 @@
-﻿"use client";
 
+"use client";
 import { useState } from "react";
-import { MessageSquare,  
-  Target, Home, LayoutDashboard, Upload, Search, User, Sparkles, Brain,
-  GraduationCap, Building, Shield, PiggyBank, Plane, Heart, ChevronRight,
-  TrendingUp, AlertCircle, CheckCircle, Plus, X, Edit3
-} from "lucide-react";
-import Link from "next/link";
+import AppLayout from "@/components/AppLayout";
 
-const defaultGoals = [
-  {
-    id: 1,
-    name: "Child Education",
-    icon: GraduationCap,
-    targetAmount: 5000000,
-    currentAmount: 1250000,
-    timeline: 12,
-    color: "blue",
-    linkedFunds: ["Axis ELSS Tax Saver", "Parag Parikh Flexi Cap"],
-    monthlySIP: 15000,
-    gap: 8500,
-    onTrack: false
-  },
-  {
-    id: 2,
-    name: "Retirement Corpus",
-    icon: Shield,
-    targetAmount: 50000000,
-    currentAmount: 5532843,
-    timeline: 20,
-    color: "green",
-    linkedFunds: ["Invesco India Gold ETF", "Nippon India Small Cap", "Kotak Arbitrage Fund"],
-    monthlySIP: 45500,
-    gap: 0,
-    onTrack: true
-  },
-  {
-    id: 3,
-    name: "Dream Home",
-    icon: Building,
-    targetAmount: 15000000,
-    currentAmount: 2100000,
-    timeline: 8,
-    color: "purple",
-    linkedFunds: ["Axis Multicap Fund", "ICICI Pru ELSS"],
-    monthlySIP: 25000,
-    gap: 12000,
-    onTrack: false
-  },
-  {
-    id: 4,
-    name: "Emergency Fund",
-    icon: Heart,
-    targetAmount: 2000000,
-    currentAmount: 1800000,
-    timeline: 1,
-    color: "red",
-    linkedFunds: ["Kotak Arbitrage Fund", "Invesco India Arbitrage"],
-    monthlySIP: 0,
-    gap: 0,
-    onTrack: true
-  }
+const GOALS = [
+  { id:1, name:"Retirement Corpus", emoji:"🏖️", target:20000000, current:5532844, monthly:91000, horizon:25, category:"Retirement" },
+  { id:2, name:"Child's Education", emoji:"🎓", target:5000000, current:800000, monthly:15000, horizon:12, category:"Education" },
+  { id:3, name:"Dream Home", emoji:"🏡", target:8000000, current:1500000, monthly:25000, horizon:8, category:"Property" },
+  { id:4, name:"Emergency Fund", emoji:"🛡️", target:1800000, current:1781064, monthly:0, horizon:0, category:"Safety" },
 ];
 
-const allFunds = [
-  "Invesco India Gold ETF FoF", "Parag Parikh Flexi Cap", "Nippon India Small Cap",
-  "Kotak Arbitrage Fund", "PGIM India Flexi Cap", "Invesco India Arbitrage",
-  "ICICI Pru ELSS Tax Saver", "HDFC Flexi Cap Fund", "Invesco India Infrastructure",
-  "Axis Multicap Fund", "ICICI Pru Technology", "Mirae Asset ELSS",
-  "Axis ELSS Tax Saver", "Mirae Asset Large & Midcap", "Invesco India Smallcap",
-  "Nippon India Multi Cap", "Canara Robeco ELSS"
-];
+const fmt = (v: number) => v>=10000000?`₹${(v/10000000).toFixed(1)}Cr`:v>=100000?`₹${(v/100000).toFixed(1)}L`:`₹${Math.round(v/1000)}K`;
 
-export default function GoalsPage() {
-  const [goals, setGoals] = useState(defaultGoals);
-  const [showAddGoal, setShowAddGoal] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState<typeof defaultGoals[0] | null>(null);
-
-  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0);
-  const totalCurrent = goals.reduce((s, g) => s + g.currentAmount, 0);
-  const totalSIP = goals.reduce((s, g) => s + g.monthlySIP, 0);
-  const totalGap = goals.reduce((s, g) => s + g.gap, 0);
-
-  const navItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Upload", href: "/upload", icon: Upload },
-    { name: "Explore", href: "/explore", icon: Search },
-    { name: "Profile", href: "/profile", icon: User },
-    { name: "AI Insights", href: "/intelligence", icon: Brain },
-  ];
-
-  const getProgress = (current: number, target: number) => Math.min((current / target) * 100, 100);
+export default function Goals() {
+  const [selected, setSelected] = useState<any>(null);
+  const [adding, setAdding] = useState(false);
+  const [newGoal, setNewGoal] = useState({ name:"", target:"", monthly:"", horizon:"" });
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-slate-900">FolioIQ</span>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link key={item.name} href={item.href} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
-                  <item.icon className="w-4 h-4" />{item.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </nav>
+    <AppLayout title="Goal Planner" subtitle="Tag every fund to a life goal — never sell the wrong investment">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-5">
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Target className="w-8 h-8 text-purple-600" />
-            <h1 className="text-3xl font-bold text-slate-900">Goal-Based SIP Planner</h1>
-          </div>
-          <p className="text-slate-600">Link your investments to life goals and track your progress</p>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <Target className="w-6 h-6 text-blue-600 mb-3" />
-            <p className="text-2xl font-bold text-slate-900">₹{(totalTarget/10000000).toFixed(1)}Cr</p>
-            <p className="text-sm text-slate-500">Total Goals Target</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <TrendingUp className="w-6 h-6 text-green-600 mb-3" />
-            <p className="text-2xl font-bold text-green-600">₹{(totalCurrent/100000).toFixed(1)}L</p>
-            <p className="text-sm text-slate-500">Current Progress</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <PiggyBank className="w-6 h-6 text-purple-600 mb-3" />
-            <p className="text-2xl font-bold text-purple-600">₹{totalSIP.toLocaleString()}</p>
-            <p className="text-sm text-slate-500">Monthly SIP Committed</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <AlertCircle className="w-6 h-6 text-red-600 mb-3" />
-            <p className="text-2xl font-bold text-red-600">₹{totalGap.toLocaleString()}</p>
-            <p className="text-sm text-slate-500">Monthly SIP Gap</p>
-          </div>
-        </div>
-
-        {/* Goals Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-          {goals.map((goal) => {
-            const Icon = goal.icon;
-            const progress = getProgress(goal.currentAmount, goal.targetAmount);
+        {/* Goals grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {GOALS.map(g=>{
+            const pct = Math.min(100, Math.round((g.current/g.target)*100));
+            const onTrack = pct >= Math.round((1-g.horizon/(g.horizon+10))*100);
             return (
-              <div 
-                key={goal.id} 
-                onClick={() => setSelectedGoal(goal)}
-                className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow cursor-pointer"
-              >
+              <button key={g.id} onClick={()=>setSelected(selected?.id===g.id?null:g)}
+                className="bg-white rounded-2xl border border-gray-100 p-5 text-left hover:shadow-md hover:border-gray-200 transition-all">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 bg-${goal.color}-100 rounded-xl flex items-center justify-center`}>
-                      <Icon className={`w-6 h-6 text-${goal.color}-600`} />
-                    </div>
+                    <span className="text-2xl">{g.emoji}</span>
                     <div>
-                      <h3 className="font-semibold text-slate-900">{goal.name}</h3>
-                      <p className="text-sm text-slate-500">{goal.timeline} years to go</p>
+                      <div className="text-[14px] font-bold text-gray-900">{g.name}</div>
+                      <div className="text-[11px] text-gray-400">{g.horizon>0?`${g.horizon} years`:"Ongoing"}</div>
                     </div>
                   </div>
-                  {goal.onTrack ? (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" /> On Track
-                    </span>
-                  ) : (
-                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" /> Needs Attention
-                    </span>
-                  )}
+                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${onTrack||pct>=90?"bg-emerald-50 text-emerald-700":"bg-amber-50 text-amber-700"}`}>
+                    {pct>=100?"✅ Done":onTrack?"On track":"Needs boost"}
+                  </span>
                 </div>
-
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-600">₹{(goal.currentAmount/100000).toFixed(1)}L of ₹{(goal.targetAmount/100000).toFixed(1)}L</span>
-                    <span className="font-semibold text-slate-900">{progress.toFixed(1)}%</span>
+                <div className="mb-2">
+                  <div className="flex justify-between text-[12px] mb-1.5">
+                    <span className="text-gray-500">Progress</span>
+                    <span className="font-bold text-gray-900">{pct}%</span>
                   </div>
-                  <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${goal.onTrack ? 'bg-green-500' : 'bg-amber-500'}`}
-                      style={{ width: `${progress}%` }}
-                    />
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-1000" style={{width:`${pct}%`,background:pct>=100?"#16a34a":pct>=60?"#16a34a":"#d97706"}}/>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between text-sm">
-                  <div>
-                    <p className="text-slate-500">Monthly SIP</p>
-                    <p className="font-semibold text-slate-900">₹{goal.monthlySIP.toLocaleString()}</p>
-                  </div>
-                  {!goal.onTrack && (
-                    <div className="text-right">
-                      <p className="text-red-500">Gap</p>
-                      <p className="font-semibold text-red-600">+₹{goal.gap.toLocaleString()}/mo</p>
-                    </div>
-                  )}
-                  <div className="text-right">
-                    <p className="text-slate-500">Linked Funds</p>
-                    <p className="font-semibold text-slate-900">{goal.linkedFunds.length}</p>
-                  </div>
+                <div className="flex justify-between text-[12px]">
+                  <span className="text-gray-500">{fmt(g.current)} saved</span>
+                  <span className="font-semibold text-gray-900">Goal: {fmt(g.target)}</span>
                 </div>
-              </div>
+                {selected?.id===g.id&&(
+                  <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-3">
+                    {[
+                      { l:"Monthly SIP", v:`₹${g.monthly.toLocaleString()}` },
+                      { l:"Remaining", v:fmt(g.target-g.current) },
+                      { l:"Projected (8% XIRR)", v:fmt(g.current*Math.pow(1.08,g.horizon)+g.monthly*12*((Math.pow(1.08,g.horizon)-1)/0.08)) },
+                      { l:"Years to goal", v:g.horizon>0?`${g.horizon}y`:"Achieved" },
+                    ].map((d,di)=>(
+                      <div key={di} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        <div className="text-[10px] text-gray-400">{d.l}</div>
+                        <div className="text-[13px] font-bold text-gray-900 mt-0.5">{d.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </button>
             );
           })}
 
-          {/* Add Goal Card */}
-          <button 
-            onClick={() => setShowAddGoal(true)}
-            className="bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 p-6 flex flex-col items-center justify-center gap-3 hover:border-blue-400 hover:bg-blue-50 transition-colors min-h-[200px]"
-          >
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Plus className="w-6 h-6 text-blue-600" />
-            </div>
-            <span className="font-medium text-slate-600">Add New Goal</span>
+          {/* Add goal */}
+          <button onClick={()=>setAdding(!adding)}
+            className={`rounded-2xl border-2 border-dashed p-5 text-center transition-all hover:border-emerald-300 hover:bg-emerald-50 ${adding?"border-emerald-300 bg-emerald-50":"border-gray-200"}`}>
+            {!adding?(
+              <div className="flex flex-col items-center gap-2 text-gray-400">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <div className="text-[13px] font-semibold">Add new goal</div>
+                <div className="text-[11px]">Tag a financial milestone</div>
+              </div>
+            ):(
+              <div className="space-y-3 text-left" onClick={e=>e.stopPropagation()}>
+                <div className="text-[13px] font-bold text-gray-900 mb-3">New Goal</div>
+                {[
+                  { label:"Goal name", key:"name", placeholder:"e.g. Retirement Corpus" },
+                  { label:"Target amount (₹)", key:"target", placeholder:"e.g. 2,00,00,000" },
+                  { label:"Monthly SIP (₹)", key:"monthly", placeholder:"e.g. 25,000" },
+                  { label:"Time horizon (years)", key:"horizon", placeholder:"e.g. 20" },
+                ].map(f=>(
+                  <div key={f.key}>
+                    <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide block mb-1">{f.label}</label>
+                    <input placeholder={f.placeholder} value={newGoal[f.key as keyof typeof newGoal]}
+                      onChange={e=>setNewGoal(g=>({...g,[f.key]:e.target.value}))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-[13px] focus:outline-none focus:border-emerald-400"/>
+                  </div>
+                ))}
+                <button className="w-full py-2.5 bg-gray-900 text-white rounded-xl text-[13px] font-bold hover:bg-gray-800">Save Goal</button>
+              </div>
+            )}
           </button>
         </div>
 
-        {/* SIP Gap Analysis */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
-            SIP Gap Analysis
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-slate-500">Goal</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-slate-500">Target</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-slate-500">Current SIP</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-slate-500">Required SIP</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-slate-500">Gap</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-slate-500">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {goals.map((goal) => {
-                  const requiredSIP = goal.monthlySIP + goal.gap;
-                  return (
-                    <tr key={goal.id} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="py-3 px-4 font-medium text-slate-900">{goal.name}</td>
-                      <td className="py-3 px-4 text-right text-slate-600">₹{(goal.targetAmount/100000).toFixed(1)}L</td>
-                      <td className="py-3 px-4 text-right text-slate-600">₹{goal.monthlySIP.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-right font-semibold text-slate-900">₹{requiredSIP.toLocaleString()}</td>
-                      <td className="py-3 px-4 text-right">
-                        {goal.gap > 0 ? (
-                          <span className="text-red-600 font-semibold">+₹{goal.gap.toLocaleString()}</span>
-                        ) : (
-                          <span className="text-green-600 font-semibold">✓</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {goal.onTrack ? (
-                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">On Track</span>
-                        ) : (
-                          <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">Increase SIP</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          
-          {totalGap > 0 && (
-            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600" />
-                <div>
-                  <p className="font-semibold text-amber-900">Increase SIP by ₹{totalGap.toLocaleString()}/month to meet all goals</p>
-                  <p className="text-sm text-amber-700">Consider redirecting SIP from underperforming funds</p>
-                </div>
-              </div>
-              <Link href="/rebalance" className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700">
-                Optimize SIP
-              </Link>
-            </div>
-          )}
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+          <div className="text-[12px] font-semibold text-blue-800 mb-1">💡 FolioIQ Goal Protection</div>
+          <div className="text-[12px] text-blue-700">When you tag funds to goals, FolioIQ will alert you before recommending a sell — so you never accidentally liquidate your emergency fund or education corpus.</div>
         </div>
       </div>
-
-      {/* Goal Detail Modal */}
-      {selectedGoal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedGoal(null)}>
-          <div className="bg-white rounded-2xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 bg-${selectedGoal.color}-100 rounded-lg flex items-center justify-center`}>
-                  <selectedGoal.icon className={`w-5 h-5 text-${selectedGoal.color}-600`} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">{selectedGoal.name}</h3>
-                  <p className="text-sm text-slate-500">{selectedGoal.timeline} years remaining</p>
-                </div>
-              </div>
-              <button onClick={() => setSelectedGoal(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100">
-                <X className="w-5 h-5 text-slate-500" />
-              </button>
-            </div>
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 rounded-lg p-4 text-center">
-                  <p className="text-xs text-slate-500 mb-1">Target</p>
-                  <p className="text-xl font-bold text-slate-900">₹{(selectedGoal.targetAmount/100000).toFixed(1)}L</p>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-4 text-center">
-                  <p className="text-xs text-slate-500 mb-1">Current</p>
-                  <p className="text-xl font-bold text-green-600">₹{(selectedGoal.currentAmount/100000).toFixed(1)}L</p>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-slate-600">Progress</span>
-                  <span className="font-semibold text-slate-900">{getProgress(selectedGoal.currentAmount, selectedGoal.targetAmount).toFixed(1)}%</span>
-                </div>
-                <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full ${selectedGoal.onTrack ? 'bg-green-500' : 'bg-amber-500'}`}
-                    style={{ width: `${getProgress(selectedGoal.currentAmount, selectedGoal.targetAmount)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-slate-900 mb-3">Linked Funds</h4>
-                <div className="space-y-2">
-                  {selectedGoal.linkedFunds.map(fund => (
-                    <div key={fund} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <span className="text-sm font-medium text-slate-900">{fund}</span>
-                      <Link href="/dashboard" className="text-xs text-blue-600 hover:text-blue-700">View →</Link>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-xs text-slate-500 mb-1">Monthly SIP</p>
-                  <p className="text-lg font-bold text-blue-600">₹{selectedGoal.monthlySIP.toLocaleString()}</p>
-                </div>
-                {!selectedGoal.onTrack && (
-                  <div className="bg-red-50 rounded-lg p-4">
-                    <p className="text-xs text-slate-500 mb-1">SIP Gap</p>
-                    <p className="text-lg font-bold text-red-600">+₹{selectedGoal.gap.toLocaleString()}</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <button className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
-                  Increase SIP
-                </button>
-                <button 
-                  onClick={() => setSelectedGoal(null)}
-                  className="px-4 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </AppLayout>
   );
 }
-
-
