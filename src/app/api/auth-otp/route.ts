@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email,
-        options: { redirectTo: 'https://folio-iq.vercel.app/auth/callback?next=/dashboard' }
+        options: { redirectTo: 'https://folio-iq.vercel.app/auth/session' }
       })
 
       if (linkErr) {
