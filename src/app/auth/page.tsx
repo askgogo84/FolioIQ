@@ -135,7 +135,7 @@ function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"/>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"/>
@@ -202,13 +202,13 @@ function AuthForm() {
                 <p className="text-emerald-300 font-bold text-sm mt-0.5 break-all">{email}</p>
               </div>
 
-              <div className="flex gap-2 justify-center mb-5" onPaste={handlePaste}>
+              <div className="flex gap-1.5 sm:gap-2 justify-center mb-5" onPaste={handlePaste}>
                 {otp.map((d, i) => (
                   <input key={i} ref={el => { otpRefs.current[i] = el; }}
                     type="text" inputMode="numeric" maxLength={1} value={d}
                     onChange={e => handleOtpChange(i, e.target.value)}
                     onKeyDown={e => handleKeyDown(i, e)} disabled={loading}
-                    className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 transition-all outline-none bg-white/10 text-white
+                    className={`w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl border-2 transition-all outline-none bg-white/10 text-white
                       ${d ? "border-emerald-400 bg-emerald-500/10" : "border-white/20"}
                       focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20
                       ${error ? "border-red-400" : ""} ${loading ? "opacity-50" : ""}`}

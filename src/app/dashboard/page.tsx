@@ -289,15 +289,15 @@ export default function Dashboard() {
         </div>
 
         {/* ── HEADER ── */}
-        <header className="bg-white/80 backdrop-blur border-b border-gray-100 px-6 py-4 sticky top-0 z-30">
+        <header className="bg-white/80 backdrop-blur border-b border-gray-100 px-4 py-3 sticky top-0 z-30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-lg hover:bg-gray-50 text-gray-500">
                 <Menu className="w-5 h-5"/>
               </button>
               <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-lg font-bold text-gray-900">Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, {user?.email?.split("@")[0]} 👋</h1>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                  <h1 className="text-base sm:text-lg font-bold text-gray-900">Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, {user?.email?.split("@")[0]} 👋</h1>
                   <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${isDailyUp ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}>
                     {isDailyUp ? <ArrowUpRight className="w-3 h-3"/> : <ArrowDownRight className="w-3 h-3"/>}
                     Today: {isDailyUp ? "+" : ""}{fmt(daily.amount)} ({daily.percent.toFixed(2)}%)
@@ -321,11 +321,11 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
           {/* ── HEALTH + KPI ROW ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Health Score */}
-            <div className="lg:col-span-1 bg-white border border-gray-100 rounded-2xl p-5 flex flex-col items-center justify-center">
+            <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-white border border-gray-100 rounded-2xl p-5 flex flex-col items-center justify-center">
               <div className="relative w-24 h-24 mb-3">
                 <svg viewBox="0 0 100 100" className="w-24 h-24 -rotate-90">
                   <circle cx="50" cy="50" r="38" fill="none" stroke="#e5e7eb" strokeWidth="10"/>
@@ -365,7 +365,7 @@ export default function Dashboard() {
                       </span>
                     )}
                   </div>
-                  <div className="text-xl font-black text-gray-900 mb-1">{k.val}</div>
+                  <div className="text-lg sm:text-xl font-black text-gray-900 mb-1">{k.val}</div>
                   <div className="text-xs text-gray-500">{k.sub}</div>
                 </div>
               );
@@ -373,12 +373,12 @@ export default function Dashboard() {
           </div>
 
           {/* ── DAILY CHANGE BANNER ── */}
-          <div className={`rounded-2xl border p-4 flex items-center gap-4 ${isDailyUp ? "bg-emerald-500/5 border-emerald-500/20" : "bg-red-500/5 border-red-500/20"}`}>
+          <div className={`rounded-2xl border p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 ${isDailyUp ? "bg-emerald-500/5 border-emerald-500/20" : "bg-red-500/5 border-red-500/20"}`}>
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isDailyUp ? "bg-emerald-500/20" : "bg-red-500/20"}`}>
               <span className="text-xl">{isDailyUp ? "📈" : "📉"}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-gray-900 text-sm">
+              <div className="font-bold text-gray-900 text-sm leading-tight">
                 {isDailyUp ? "Portfolio gained" : "Portfolio declined"} {fmt(Math.abs(daily.amount), hideValues)} ({Math.abs(daily.percent).toFixed(2)}%) today
               </div>
               <div className="text-xs text-gray-500 mt-0.5">
@@ -394,7 +394,7 @@ export default function Dashboard() {
           </div>
 
           {/* ── QUICK ACTIONS ── */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { icon: "🧠", label: "AI Insights", href: "/intelligence", color: "from-violet-50 to-purple-50 border-violet-200 hover:border-violet-300" },
               { icon: "⚖️", label: "Rebalance", href: "/rebalance", color: "from-amber-50 to-yellow-50 border-amber-200 hover:border-amber-300" },
@@ -423,7 +423,7 @@ export default function Dashboard() {
             {/* OVERVIEW */}
             {tab === "overview" && (
               <div className="p-6 space-y-6">
-                <div className="grid lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-bold text-gray-900 text-sm">Portfolio Growth vs Nifty 50</h3>
@@ -433,7 +433,7 @@ export default function Dashboard() {
                         ))}
                       </div>
                     </div>
-                    <ResponsiveContainer width="100%" height={220}>
+                    <ResponsiveContainer width="100%" height={180}>
                       <AreaChart data={growthData}>
                         <defs>
                           <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1">
@@ -460,7 +460,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-sm mb-4">Asset Allocation</h3>
-                    <ResponsiveContainer width="100%" height={160}>
+                    <ResponsiveContainer width="100%" height={140}>
                       <PieChart>
                         <Pie data={alloc} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
                           {alloc.map((e, i) => <Cell key={i} fill={e.color}/>)}
@@ -488,7 +488,7 @@ export default function Dashboard() {
                 {/* Category returns bar chart */}
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm mb-4">Returns by Asset Class</h3>
-                  <ResponsiveContainer width="100%" height={100}>
+                  <ResponsiveContainer width="100%" height={80}>
                     <BarChart data={catData} barSize={32}>
                       <XAxis dataKey="name" stroke="#e5e7eb" fontSize={11} tick={{fill:"#9ca3af"}}/>
                       <Tooltip contentStyle={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"8px",color:"#111827"}} formatter={(v: number) => `${v}%`}/>
@@ -500,7 +500,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Top & Bottom performers */}
-                <div className="grid lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <h3 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2"><Flame className="w-4 h-4 text-orange-400"/> Top Performers</h3>
                     <div className="space-y-2">
@@ -556,7 +556,7 @@ export default function Dashboard() {
                   <span className="text-xs text-gray-500">{fmt(totalInv, hideValues)} → {fmt(totalCur, hideValues)}</span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full min-w-[600px]">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-900">
                         {["Fund","Category","Invested","Value","Returns","Signal"].map(h => (
@@ -600,7 +600,7 @@ export default function Dashboard() {
             {tab === "insights" && (
               <div className="p-6 space-y-4">
                 {taxSavable > 0 && (
-                  <div className="flex items-start gap-4 p-5 bg-emerald-50 border border-emerald-200 rounded-xl">
+                  <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
                     <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">💰</div>
                     <div className="flex-1">
                       <div className="font-bold text-gray-900 mb-1">Tax Harvest Opportunity — Save {fmt(taxSavable)}</div>
@@ -610,7 +610,7 @@ export default function Dashboard() {
                   </div>
                 )}
                 {losers.map((h, i) => (
-                  <div key={i} className="flex items-start gap-4 p-5 bg-red-50 border border-red-200 rounded-xl">
+                  <div key={i} className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
                     <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🔴</div>
                     <div className="flex-1">
                       <div className="font-bold text-gray-900 mb-1">{(h.name||"").replace(/ - Gr$/,"").substring(0,40)} is underperforming</div>
@@ -619,7 +619,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ))}
-                <div className="flex items-start gap-4 p-5 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
                   <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">📊</div>
                   <div className="flex-1">
                     <div className="font-bold text-gray-900 mb-1">Your XIRR is {meta?.xirr||13.3}% — Beating Nifty 50</div>
@@ -627,7 +627,7 @@ export default function Dashboard() {
                     <Link href="/intelligence" className="inline-flex items-center gap-1 text-sm font-semibold text-blue-400 mt-2 hover:underline">Full Analysis <ChevronRight className="w-4 h-4"/></Link>
                   </div>
                 </div>
-                <div className="flex items-start gap-4 p-5 bg-violet-50 border border-violet-100 rounded-xl">
+                <div className="flex items-start gap-3 p-4 bg-violet-50 border border-violet-100 rounded-xl">
                   <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🧠</div>
                   <div className="flex-1">
                     <div className="font-bold text-gray-900 mb-1">Know your real risk tolerance</div>
@@ -641,7 +641,7 @@ export default function Dashboard() {
 
           {/* ── V2 CONNECT BANNER ── */}
           <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-6">
-            <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Zap className="w-5 h-5 text-yellow-400"/>
@@ -668,8 +668,8 @@ export default function Dashboard() {
 
       {/* ── FUND DETAIL MODAL ── */}
       {selectedFund && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-end lg:items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedFund(null)}>
-          <div className="bg-white border border-gray-200 rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm" onClick={() => setSelectedFund(null)}>
+          <div className="bg-white border border-gray-200 rounded-t-2xl sm:rounded-2xl max-w-md w-full p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-5">
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-gray-900 text-lg leading-tight">{(selectedFund.name||"").replace(/ - Gr$/,"")}</h3>
@@ -704,8 +704,8 @@ export default function Dashboard() {
 
       {/* ── RISK MODAL ── */}
       {showRisk && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white border border-gray-200 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
+          <div className="bg-white border border-gray-200 rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-r from-violet-900/50 to-indigo-900/50 border-b border-gray-200 p-6">
               <div className="flex items-center justify-between">
                 <div>
