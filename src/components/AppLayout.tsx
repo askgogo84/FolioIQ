@@ -44,16 +44,16 @@ export default function AppLayout({children,title,subtitle}:{children:React.Reac
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0B0F1A] text-white flex" style={{fontFamily:"'Inter var',system-ui,sans-serif"}}>
+    <div className="min-h-screen bg-[#F2F4F7] text-gray-900 flex" style={{fontFamily:"'Inter var',system-ui,sans-serif"}}>
       {/* Sidebar */}
-      <aside className={`${sidebar?"translate-x-0":"-translate-x-full"} lg:translate-x-0 fixed lg:static z-50 inset-y-0 left-0 w-56 bg-[#0D1117] border-r border-white/5 flex flex-col transition-transform duration-300 ease-out shadow-2xl lg:shadow-none`}>
-        <div className="px-5 py-4 border-b border-white/5">
+      <aside className={`${sidebar?"translate-x-0":"-translate-x-full"} lg:translate-x-0 fixed lg:static z-50 inset-y-0 left-0 w-56 bg-white border-r border-gray-100 flex flex-col transition-transform duration-300 ease-out shadow-2xl lg:shadow-none`}>
+        <div className="px-5 py-4 border-b border-gray-100">
           <Link href="/dashboard" className="flex items-center gap-2.5" onClick={()=>setSidebar(false)}>
             <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-              <span className="text-white text-sm font-black">F</span>
+              <span className="text-gray-900 text-sm font-black">F</span>
             </div>
             <div>
-              <div className="font-black text-white text-[14px] tracking-tight leading-none">FolioIQ</div>
+              <div className="font-black text-gray-900 text-[14px] tracking-tight leading-none">FolioIQ</div>
               <div className="text-[9px] text-gray-600 tracking-widest uppercase mt-0.5">Portfolio Intelligence</div>
             </div>
           </Link>
@@ -68,7 +68,7 @@ export default function AppLayout({children,title,subtitle}:{children:React.Reac
                 return (
                   <Link key={item.href} href={item.href} onClick={()=>setSidebar(false)}
                     className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium mb-0.5 transition-all
-                      ${active?"bg-emerald-500/10 text-emerald-400 border border-emerald-500/20":"text-gray-500 hover:bg-white/5 hover:text-gray-300"}`}>
+                      ${active?"bg-emerald-50 text-emerald-700 border border-emerald-200":"text-gray-500 hover:bg-gray-50 hover:text-gray-600"}`}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <path d={item.d}/>
                     </svg>
@@ -80,8 +80,8 @@ export default function AppLayout({children,title,subtitle}:{children:React.Reac
           ))}
         </nav>
 
-        <div className="px-3 py-3 border-t border-white/5 space-y-0.5">
-          <div className="px-3 py-2 text-[11px] text-gray-600 truncate">{user?.email}</div>
+        <div className="px-3 py-3 border-t border-gray-100 space-y-0.5">
+          <div className="px-3 py-2 text-[11px] text-gray-500 truncate">{user?.email}</div>
           <button onClick={()=>sb.auth.signOut().then(()=>router.push("/"))}
             className="flex items-center gap-2.5 w-full px-3 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-500/10 rounded-xl transition-colors">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
@@ -92,15 +92,15 @@ export default function AppLayout({children,title,subtitle}:{children:React.Reac
 
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Header */}
-        <header className="bg-[#0D1117]/80 backdrop-blur border-b border-white/5 px-4 sm:px-6 py-3.5 flex items-center gap-4 sticky top-0 z-30">
-          <button onClick={()=>setSidebar(!sidebar)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-300 hover:bg-white/5 rounded-lg flex-shrink-0">
+        <header className="bg-white/80 backdrop-blur border-b border-gray-100 px-4 sm:px-6 py-3.5 flex items-center gap-4 sticky top-0 z-30">
+          <button onClick={()=>setSidebar(!sidebar)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-lg flex-shrink-0">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <div className="flex-1 min-w-0">
-            {title&&<h1 className="text-[15px] font-bold text-white leading-none truncate">{title}</h1>}
+            {title&&<h1 className="text-[15px] font-bold text-gray-900 leading-none truncate">{title}</h1>}
             {subtitle&&<p className="text-[11px] text-gray-600 mt-0.5 truncate">{subtitle}</p>}
           </div>
-          <Link href="/dashboard" className="flex-shrink-0 text-[12px] text-gray-600 hover:text-gray-300 hidden sm:flex items-center gap-1 transition-colors">
+          <Link href="/dashboard" className="flex-shrink-0 text-[12px] text-gray-600 hover:text-gray-600 hidden sm:flex items-center gap-1 transition-colors">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
             Dashboard
           </Link>
