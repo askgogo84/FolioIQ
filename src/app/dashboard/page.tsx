@@ -294,7 +294,7 @@ export default function Dashboard() {
             </button>
             <div>
               <h1 className="text-[15px] font-semibold text-gray-900 leading-none">
-                {new Date().getHours()<12?"Good morning":"new Date().getHours()<17?"Good afternoon":"Good evening"}, <span className="text-gray-700">{user?.email?.split("@")[0]}</span>
+                {new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening"}, <span className="text-gray-700">{user?.email?.split("@")[0]}</span>
               </h1>
               <p className="text-[11px] text-gray-400 mt-0.5">{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})}</p>
             </div>
@@ -363,7 +363,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <div className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-1">Health Score</div>
-                  <div className="text-[16px] font-bold text-gray-900">{health>=70?"Excellent":"health>=50?"Good":"Needs Review"}</div>
+                  <div className="text-[16px] font-bold text-gray-900">{health>=70?"Excellent":health>=50?"Good":"Needs Review"}</div>
                   <div className="text-[11px] text-gray-400 mt-1">{gainers.length} of {holdings.length} funds profitable</div>
                 </div>
               </div>
