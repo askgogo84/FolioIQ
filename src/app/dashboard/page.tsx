@@ -341,7 +341,7 @@ export default function Dashboard() {
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                   <div className="flex-1">
                     <div className="text-[11px] font-bold text-gray-400 tracking-[0.2em] uppercase mb-3">TOTAL PORTFOLIO VALUE</div>
-                    <Counter to={cur} hide={hide} cls="text-[48px] sm:text-[60px] font-black text-gray-900 tracking-tight leading-none block"/>
+                    <Counter to={cur} hide={hide} cls="text-[52px] sm:text-[68px] lg:text-[80px] font-black text-gray-900 tracking-tight leading-none block"/>
                     <div className="flex items-center gap-4 mt-3 flex-wrap">
                       <span className={`text-[14px] font-bold flex items-center gap-1 ${gain>=0?"text-emerald-600":"text-red-600"}`}>
                         {gain>=0?"↑":"↓"} {hide?"••••":fmt(Math.abs(gain))} ({pct(retPct)}) all time
@@ -384,7 +384,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {/* Health Score */}
               <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition-all">
-                <div className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-3">HEALTH SCORE</div>
+                <div className="text-[11px] font-bold text-gray-400 tracking-widest uppercase mb-3">HEALTH SCORE</div>
                 <div className="flex justify-center">
                   <Gauge value={health} color={hColor}/>
                 </div>
@@ -400,7 +400,7 @@ export default function Dashboard() {
                   <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">TOTAL RETURNS</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>
                 </div>
-                <div className={`text-[26px] font-black leading-none ${gain>=0?"text-emerald-600":"text-red-600"}`}>{hide?"••••":(gain>=0?"+":"")+fmt(gain)}</div>
+                <div className={`text-[30px] sm:text-[34px] font-black leading-none ${gain>=0?"text-emerald-600":"text-red-600"}`}>{hide?"••••":(gain>=0?"+":"")+fmt(gain)}</div>
                 <div className={`text-[12px] font-semibold mt-1 ${gain>=0?"text-emerald-500":"text-red-500"}`}>{pct(retPct)} all time</div>
                 <div className="mt-3 pointer-events-none">
                   <Spark data={growthData.map(d=>d.p)} up={gain>=0}/>
@@ -413,7 +413,7 @@ export default function Dashboard() {
                   <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">FUNDS STATUS</span>
                   <span className="text-gray-400">💼</span>
                 </div>
-                <div className="text-[26px] font-black text-gray-900 leading-none">{gainers.length}<span className="text-gray-300 text-[18px]">/{holdings.length}</span></div>
+                <div className="text-[30px] sm:text-[34px] font-black text-gray-900 leading-none">{gainers.length}<span className="text-gray-300 text-[18px]">/{holdings.length}</span></div>
                 <div className="text-[12px] text-gray-400 mt-1">Gaining · {losers.length} need attention</div>
                 <div className="mt-3 flex items-end gap-0.5 h-8">
                   {holdings.slice(0,14).map((h,i)=>{
@@ -430,7 +430,7 @@ export default function Dashboard() {
                   <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">TAX SAVABLE</span>
                   <span className="text-gray-400">🌾</span>
                 </div>
-                <div className="text-[26px] font-black text-amber-600 leading-none">{hide?"••••":"~"+fmt(taxSave)}</div>
+                <div className="text-[30px] sm:text-[34px] font-black text-amber-600 leading-none">{hide?"••••":"~"+fmt(taxSave)}</div>
                 <div className="text-[12px] text-gray-400 mt-1">LTCG before Mar 31</div>
                 <Link href="/tax-harvesting" className="inline-flex items-center gap-1 mt-3 text-[11px] font-bold text-amber-600 hover:text-amber-700 transition-colors">
                   View harvest plan →
@@ -446,11 +446,11 @@ export default function Dashboard() {
                 {e:"🌾",l:"Tax Harvest",s:taxSave>0?`Save ${fmt(taxSave)}`:"Review gains",h:"/tax-harvesting",bg:"bg-emerald-50 border-emerald-200 hover:bg-emerald-100"},
                 {e:"🎯",l:"Goals",s:"Plan your future",h:"/goals",bg:"bg-blue-50 border-blue-200 hover:bg-blue-100"},
               ].map((a,i)=>(
-                <Link key={i} href={a.h} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all hover:shadow-sm active:scale-[0.97] ${a.bg}`}>
+                <Link key={i} href={a.h} className={`flex items-center gap-4 p-5 rounded-2xl border transition-all hover:shadow-sm active:scale-[0.97] ${a.bg}`}>
                   <span className="text-2xl">{a.e}</span>
                   <div className="min-w-0">
-                    <div className="text-[13px] font-bold text-gray-900 truncate">{a.l}</div>
-                    <div className="text-[11px] text-gray-500 truncate">{a.s}</div>
+                    <div className="text-[14px] font-bold text-gray-900 truncate">{a.l}</div>
+                    <div className="text-[12px] text-gray-500 truncate">{a.s}</div>
                   </div>
                 </Link>
               ))}
@@ -461,7 +461,7 @@ export default function Dashboard() {
               <div className="flex border-b border-gray-100 bg-gray-50/50">
                 {[["overview","Overview"],["funds","Fund Holdings"],["insights","Insights"]].map(([id,label])=>(
                   <button key={id} onClick={()=>setTab(id as any)}
-                    className={`flex-1 py-4 text-[13px] font-bold tracking-wide transition-all border-b-2 ${
+                    className={`flex-1 py-5 text-[14px] font-bold tracking-wide transition-all border-b-2 ${
                       tab===id?"text-gray-900 border-gray-900 bg-white":"text-gray-400 border-transparent hover:text-gray-700"
                     }`}>
                     {label}
@@ -486,7 +486,7 @@ export default function Dashboard() {
                           ))}
                         </div>
                       </div>
-                      <ResponsiveContainer width="100%" height={260}>
+                      <ResponsiveContainer width="100%" height={300}>
                         <AreaChart data={growthData} margin={{top:4,right:4,bottom:0,left:-20}}>
                           <defs>
                             <linearGradient id="gP" x1="0" y1="0" x2="0" y2="1">
@@ -548,7 +548,7 @@ export default function Dashboard() {
                       {title:"⚠️ NEEDS ATTENTION",funds:bot2,pos:false},
                     ].map((sec,si)=>(
                       <div key={si}>
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">{sec.title}</div>
+                        <div className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-4">{sec.title}</div>
                         <div className="space-y-2">
                           {sec.funds.length===0?(
                             <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
@@ -606,7 +606,7 @@ export default function Dashboard() {
                             <tr key={i} onClick={()=>setSelFund(h)}
                               className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors group">
                               <td className="px-4 py-3.5">
-                                <div className="text-[13px] font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors max-w-[170px] truncate">{(h.name||"").replace(/ - Gr$/,"")}</div>
+                                <div className="text-[14px] font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors max-w-[180px] truncate">{(h.name||"").replace(/ - Gr$/,"")}</div>
                                 {(h.sip||0)>0&&<span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md font-semibold">SIP ₹{(h.sip||0).toLocaleString()}</span>}
                               </td>
                               <td className="px-4 py-3.5 text-[11px] text-gray-400 max-w-[100px] truncate">{(h.category||"").replace(/^(Equity|Other|Debt) Scheme - /,"").substring(0,20)}</td>
