@@ -55,14 +55,14 @@ function AnimNum({ target, prefix="₹", suffix="", hide=false, dur=1200, classN
 }
 
 // ── MARKET TICKER DATA ───────────────────────────────────────
-const TICKER = [
-  { n:"NIFTY 50", v:"24,315.95", c:"+1.12%", up:true },
-  { n:"SENSEX", v:"80,218.37", c:"+1.09%", up:true },
-  { n:"NIFTY MIDCAP", v:"17,842.20", c:"+0.87%", up:true },
-  { n:"NIFTY SMALLCAP", v:"9,421.55", c:"+1.34%", up:true },
-  { n:"GOLD (MCX)", v:"₹9,342/g", c:"+0.34%", up:true },
-  { n:"USD/INR", v:"83.42", c:"-0.12%", up:false },
-  { n:"10Y G-SEC", v:"6.87%", c:"-0.04%", up:false },
+// Fallback static data until live fetch completes
+const DEFAULT_TICKER = [
+  { n:"NIFTY 50", v:"--", c:"--", up:true },
+  { n:"SENSEX", v:"--", c:"--", up:true },
+  { n:"NIFTY MIDCAP", v:"--", c:"--", up:true },
+  { n:"SMALLCAP 250", v:"--", c:"--", up:true },
+  { n:"GOLD", v:"--", c:"--", up:true },
+  { n:"USD/INR", v:"--", c:"--", up:false },
 ];
 
 const RISK_QS = [
@@ -89,6 +89,23 @@ export default function Dashboard() {
   const [riskResult, setRiskResult] = useState<any>(null);
   const [selectedFund, setSelectedFund] = useState<any>(null);
   const [tickerPaused, setTickerPaused] = useState(false);
+  const [liveIndices, setLiveIndices] = useState(DEFAULT_TICKER);
+
+  // Fetch live market data every 5 minutes
+  useEffect(() => {
+    const fetchMarket = async () => {
+      try {
+        const r = await fetch('/api/market');
+        const d = await r.json();
+        if (d.indices?.length > 0) {
+          setLiveIndices(d.indices.map((idx: any) => ({ n: idx.name, v: idx.value, c: idx.change, up: idx.up })));
+        }
+      } catch {}
+    };
+    fetchMarket();
+    const interval = setInterval(fetchMarket, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -275,7 +292,7 @@ export default function Dashboard() {
           <div className="flex items-center h-full" onMouseEnter={()=>setTickerPaused(true)} onMouseLeave={()=>setTickerPaused(false)}>
             <div className={`flex gap-8 px-4 whitespace-nowrap text-[11px] ${tickerPaused?"":"animate-[ticker_40s_linear_infinite]"}`}
               style={{animationPlayState:tickerPaused?"paused":"running"}}>
-              {[...TICKER,...TICKER,...TICKER].map((t,i)=>(
+              {[...liveIndices,...liveIndices,...liveIndices].map((t,i)=>(
                 <span key={i} className="flex items-center gap-2">
                   <span className="text-gray-500">{t.n}</span>
                   <span className="text-gray-200 font-mono font-medium">{t.v}</span>
