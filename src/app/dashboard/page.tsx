@@ -699,9 +699,9 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </div>
-                <button className="flex-shrink-0 px-5 py-2.5 bg-white text-gray-900 rounded-xl text-[13px] font-bold hover:bg-gray-100 transition-colors">
-                  Sync Waitlist →
-                </button>
+                <a href="/connect" className="flex-shrink-0 px-5 py-2.5 bg-white text-gray-900 rounded-xl text-[13px] font-bold hover:bg-gray-100 transition-colors inline-block">
+                  Connect Now →
+                </a>
               </div>
             </div>
           </div>

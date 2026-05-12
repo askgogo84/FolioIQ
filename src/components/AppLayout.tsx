@@ -9,6 +9,7 @@ const NAV = [
   { section:"PORTFOLIO", items:[
     {label:"Dashboard",href:"/dashboard",d:"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"},
     {label:"Upload CAS",href:"/upload",d:"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"},
+    {label:"Auto-Connect ⚡",href:"/connect",d:"M13 2L3 14h9l-1 8 10-12h-9l1-8z"},
     {label:"Transactions",href:"/transactions",d:"M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"},
     {label:"Profile",href:"/profile",d:"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"},
   ]},
