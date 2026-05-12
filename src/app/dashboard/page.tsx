@@ -142,10 +142,10 @@ export default function Dashboard() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
         <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"/>
-        <p className="text-gray-400 text-sm">Loading your portfolio...</p>
+        <p className="text-gray-500 text-sm">Loading your portfolio...</p>
       </div>
     </div>
   );
@@ -211,16 +211,16 @@ export default function Dashboard() {
   const sig = (ret: number) => ret < -10 ? { label: "🔴 Exit", cls: "bg-red-500/20 text-red-400 border-red-500/30" }
     : ret < 0 ? { label: "🟠 Review", cls: "bg-orange-500/20 text-orange-400 border-orange-500/30" }
     : ret < 8 ? { label: "🟡 Watch", cls: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" }
-    : ret < 20 ? { label: "🟢 Hold", cls: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" }
-    : { label: "⭐ Star", cls: "bg-emerald-600/30 text-emerald-300 border-emerald-400/30" };
+    : ret < 20 ? { label: "🟢 Hold", cls: "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" }
+    : { label: "⭐ Star", cls: "bg-emerald-600/30 text-emerald-700 border-emerald-400/30" };
 
   if (holdings.length === 0) return (
-    <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="text-center max-w-sm">
         <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6">📊</div>
-        <h2 className="text-2xl font-bold text-white mb-3">Welcome to FolioIQ</h2>
-        <p className="text-gray-400 mb-8 leading-relaxed">Upload your NJ Wealth statement to unlock AI-powered portfolio intelligence.</p>
-        <Link href="/upload" className="flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-400 transition-all">
+        <h2 className="text-2xl font-bold text-gray-900 mb-3">Welcome to FolioIQ</h2>
+        <p className="text-gray-500 mb-8 leading-relaxed">Upload your NJ Wealth statement to unlock AI-powered portfolio intelligence.</p>
+        <Link href="/upload" className="flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-500 text-gray-900 rounded-xl font-bold hover:bg-emerald-400 transition-all">
           <Upload className="w-5 h-5"/> Upload Statement
         </Link>
       </div>
@@ -228,16 +228,16 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0f1117] text-white flex">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex">
       {/* ── SIDEBAR ── */}
-      <aside className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 fixed lg:static z-50 inset-y-0 left-0 w-64 bg-[#161b22] border-r border-white/5 flex flex-col transition-transform duration-300`}>
-        <div className="p-5 border-b border-white/5">
+      <aside className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 fixed lg:static z-50 inset-y-0 left-0 w-64 bg-white border-r border-gray-100 flex flex-col transition-transform duration-300`}>
+        <div className="p-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-              <Sparkles className="w-5 h-5 text-white"/>
+              <Sparkles className="w-5 h-5 text-gray-900"/>
             </div>
             <div>
-              <div className="font-bold text-white">FolioIQ</div>
+              <div className="font-bold text-gray-900">FolioIQ</div>
               <div className="text-xs text-gray-500">Smart Analytics</div>
             </div>
           </div>
@@ -251,7 +251,7 @@ export default function Dashboard() {
                 return (
                   <Link key={item.href} href={item.href}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all mb-0.5 group
-                      ${item.active ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "text-gray-500 hover:bg-white/5 hover:text-gray-300"}`}
+                      ${item.active ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "text-gray-500 hover:bg-gray-50 hover:text-gray-600"}`}
                     onClick={() => setSidebarOpen(false)}>
                     <Icon className="w-4 h-4 flex-shrink-0"/>
                     {item.label}
@@ -262,9 +262,9 @@ export default function Dashboard() {
             </div>
           ))}
         </nav>
-        <div className="p-3 border-t border-white/5 space-y-1">
+        <div className="p-3 border-t border-gray-100 space-y-1">
           <button onClick={() => { setShowRisk(true); setRiskStep(0); setRiskAnswers([]); setRiskResult(null); }}
-            className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-violet-400 hover:bg-violet-500/10 rounded-xl transition-colors">
+            className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-violet-600 hover:bg-violet-50 rounded-xl transition-colors">
             <Brain className="w-4 h-4"/> Risk Profile Quiz
           </button>
           <button onClick={logout}
@@ -276,29 +276,29 @@ export default function Dashboard() {
 
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* ── LIVE MARKET TICKER ── */}
-        <div className="bg-[#0d1117] border-b border-white/5 py-2 overflow-hidden relative">
+        <div className="bg-gray-900 border-b border-gray-100 py-2 overflow-hidden relative">
           <div className="flex items-center gap-8 animate-[marquee_30s_linear_infinite] whitespace-nowrap px-4">
             {[...LIVE_INDICES, ...LIVE_INDICES].map((idx, i) => (
               <div key={i} className="flex items-center gap-2 text-xs flex-shrink-0">
                 <span className="text-gray-500">{idx.name}</span>
-                <span className="text-white font-mono font-medium">{idx.val}</span>
-                <span className={`font-semibold ${idx.up ? "text-emerald-400" : "text-red-400"}`}>{idx.chg}</span>
+                <span className="text-gray-900 font-mono font-medium">{idx.val}</span>
+                <span className={`font-semibold ${idx.up ? "text-emerald-600" : "text-red-400"}`}>{idx.chg}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* ── HEADER ── */}
-        <header className="bg-[#161b22]/80 backdrop-blur border-b border-white/5 px-6 py-4 sticky top-0 z-30">
+        <header className="bg-white/80 backdrop-blur border-b border-gray-100 px-6 py-4 sticky top-0 z-30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-lg hover:bg-white/5 text-gray-400">
+              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-lg hover:bg-gray-50 text-gray-500">
                 <Menu className="w-5 h-5"/>
               </button>
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-lg font-bold text-white">Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, {user?.email?.split("@")[0]} 👋</h1>
-                  <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${isDailyUp ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}>
+                  <h1 className="text-lg font-bold text-gray-900">Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, {user?.email?.split("@")[0]} 👋</h1>
+                  <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${isDailyUp ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}>
                     {isDailyUp ? <ArrowUpRight className="w-3 h-3"/> : <ArrowDownRight className="w-3 h-3"/>}
                     Today: {isDailyUp ? "+" : ""}{fmt(daily.amount)} ({daily.percent.toFixed(2)}%)
                   </span>
@@ -307,14 +307,14 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setHideValues(!hideValues)} className="p-2 text-gray-500 hover:text-gray-300 hover:bg-white/5 rounded-lg transition-colors" title="Toggle values">
+              <button onClick={() => setHideValues(!hideValues)} className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="Toggle values">
                 {hideValues ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
               </button>
-              <button className="relative p-2 text-gray-500 hover:text-gray-300 hover:bg-white/5 rounded-lg">
+              <button className="relative p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-lg">
                 <Bell className="w-4 h-4"/>
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"/>
               </button>
-              <Link href="/upload" className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-sm font-semibold hover:bg-emerald-500/20 transition-all">
+              <Link href="/upload" className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-lg text-sm font-semibold hover:bg-emerald-500/20 transition-all">
                 <RefreshCw className="w-4 h-4"/> Update CAS
               </Link>
             </div>
@@ -325,10 +325,10 @@ export default function Dashboard() {
           {/* ── HEALTH + KPI ROW ── */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Health Score */}
-            <div className="lg:col-span-1 bg-[#161b22] border border-white/5 rounded-2xl p-5 flex flex-col items-center justify-center">
+            <div className="lg:col-span-1 bg-white border border-gray-100 rounded-2xl p-5 flex flex-col items-center justify-center">
               <div className="relative w-24 h-24 mb-3">
                 <svg viewBox="0 0 100 100" className="w-24 h-24 -rotate-90">
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="#1f2937" strokeWidth="10"/>
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#e5e7eb" strokeWidth="10"/>
                   <circle cx="50" cy="50" r="38" fill="none" stroke={healthColor} strokeWidth="10"
                     strokeDasharray={`${(healthScore/100)*239} 239`} strokeLinecap="round"
                     style={{transition:"stroke-dasharray 1.5s ease"}}/>
@@ -338,7 +338,7 @@ export default function Dashboard() {
                   <span className="text-[9px] text-gray-500 uppercase tracking-wide">Health</span>
                 </div>
               </div>
-              <div className="text-sm font-bold text-white text-center">
+              <div className="text-sm font-bold text-gray-900 text-center">
                 {healthScore >= 70 ? "Excellent 🌟" : healthScore >= 50 ? "Good 👍" : "Review ⚠️"}
               </div>
               <div className="text-xs text-gray-500 mt-1">{gainers.length}/{holdings.length} funds up</div>
@@ -352,20 +352,20 @@ export default function Dashboard() {
               { label: "Monthly SIP", val: fmt(monthlySIP, hideValues), sub: `${activeSIPs} active SIPs`, icon: Zap, color: "violet", trend: null },
             ].map((k, i) => {
               const Icon = k.icon;
-              const colors: Record<string, string> = { emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", blue: "text-blue-400 bg-blue-500/10 border-blue-500/20", red: "text-red-400 bg-red-500/10 border-red-500/20", violet: "text-violet-400 bg-violet-500/10 border-violet-500/20" };
+              const colors: Record<string, string> = { emerald: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20", blue: "text-blue-600 bg-blue-50 border-blue-200", red: "text-red-600 bg-red-50 border-red-200", violet: "text-violet-600 bg-violet-500/10 border-violet-500/20" };
               return (
-                <div key={i} className={`bg-[#161b22] border border-white/5 rounded-2xl p-5 transition-all duration-500 hover:border-white/10 hover:shadow-lg ${animateCards ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+                <div key={i} className={`bg-white border border-gray-100 rounded-2xl p-5 transition-all duration-500 hover:border-gray-200 hover:shadow-lg ${animateCards ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
                   style={{transitionDelay:`${i*80}ms`}}>
                   <div className="flex items-center justify-between mb-4">
                     <div className={`p-2 rounded-xl border ${colors[k.color]}`}><Icon className="w-4 h-4"/></div>
                     {k.trend !== null && (
-                      <span className={`text-xs font-bold flex items-center gap-0.5 ${k.trend ? "text-emerald-400" : "text-red-400"}`}>
+                      <span className={`text-xs font-bold flex items-center gap-0.5 ${k.trend ? "text-emerald-600" : "text-red-400"}`}>
                         {k.trend ? <ArrowUpRight className="w-3 h-3"/> : <ArrowDownRight className="w-3 h-3"/>}
                         {Math.abs(retPct).toFixed(1)}%
                       </span>
                     )}
                   </div>
-                  <div className="text-xl font-black text-white mb-1">{k.val}</div>
+                  <div className="text-xl font-black text-gray-900 mb-1">{k.val}</div>
                   <div className="text-xs text-gray-500">{k.sub}</div>
                 </div>
               );
@@ -378,7 +378,7 @@ export default function Dashboard() {
               <span className="text-xl">{isDailyUp ? "📈" : "📉"}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-white text-sm">
+              <div className="font-bold text-gray-900 text-sm">
                 {isDailyUp ? "Portfolio gained" : "Portfolio declined"} {fmt(Math.abs(daily.amount), hideValues)} ({Math.abs(daily.percent).toFixed(2)}%) today
               </div>
               <div className="text-xs text-gray-500 mt-0.5">
@@ -386,7 +386,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="text-right flex-shrink-0">
-              <div className={`text-lg font-black ${isDailyUp ? "text-emerald-400" : "text-red-400"}`}>
+              <div className={`text-lg font-black ${isDailyUp ? "text-emerald-600" : "text-red-400"}`}>
                 {isDailyUp ? "+" : ""}{daily.percent.toFixed(2)}%
               </div>
               <div className="text-xs text-gray-500">vs yesterday</div>
@@ -396,25 +396,25 @@ export default function Dashboard() {
           {/* ── QUICK ACTIONS ── */}
           <div className="grid grid-cols-4 gap-3">
             {[
-              { icon: "🧠", label: "AI Insights", href: "/intelligence", color: "from-violet-500/10 to-purple-500/5 border-violet-500/20 hover:border-violet-400/40" },
-              { icon: "⚖️", label: "Rebalance", href: "/rebalance", color: "from-amber-500/10 to-yellow-500/5 border-amber-500/20 hover:border-amber-400/40" },
-              { icon: "🌾", label: `Save ${fmt(taxSavable)} tax`, href: "/tax-harvesting", color: "from-emerald-500/10 to-teal-500/5 border-emerald-500/20 hover:border-emerald-400/40" },
-              { icon: "🎯", label: "Goals", href: "/goals", color: "from-cyan-500/10 to-blue-500/5 border-cyan-500/20 hover:border-cyan-400/40" },
+              { icon: "🧠", label: "AI Insights", href: "/intelligence", color: "from-violet-50 to-purple-50 border-violet-200 hover:border-violet-300" },
+              { icon: "⚖️", label: "Rebalance", href: "/rebalance", color: "from-amber-50 to-yellow-50 border-amber-200 hover:border-amber-300" },
+              { icon: "🌾", label: `Save ${fmt(taxSavable)} tax`, href: "/tax-harvesting", color: "from-emerald-50 to-teal-50 border-emerald-200 hover:border-emerald-300" },
+              { icon: "🎯", label: "Goals", href: "/goals", color: "from-cyan-50 to-blue-50 border-cyan-200 hover:border-cyan-300" },
             ].map((a, i) => (
               <Link key={i} href={a.href}
                 className={`flex flex-col items-center gap-2.5 p-4 rounded-xl bg-gradient-to-br border text-center transition-all hover:scale-[1.03] ${a.color}`}>
                 <span className="text-2xl">{a.icon}</span>
-                <span className="text-xs font-semibold text-gray-300 leading-tight">{a.label}</span>
+                <span className="text-xs font-semibold text-gray-600 leading-tight">{a.label}</span>
               </Link>
             ))}
           </div>
 
           {/* ── TABS ── */}
-          <div className="bg-[#161b22] border border-white/5 rounded-2xl overflow-hidden">
-            <div className="flex border-b border-white/5">
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+            <div className="flex border-b border-gray-100">
               {[["overview","📊 Overview"],["funds","📋 Funds"],["insights","💡 Insights"]].map(([id, label]) => (
                 <button key={id} onClick={() => setTab(id as any)}
-                  className={`flex-1 px-4 py-4 text-sm font-semibold transition-all ${tab===id ? "text-emerald-400 border-b-2 border-emerald-500 bg-emerald-500/5" : "text-gray-500 hover:text-gray-300 hover:bg-white/5"}`}>
+                  className={`flex-1 px-4 py-4 text-sm font-semibold transition-all ${tab===id ? "text-emerald-600 border-b-2 border-emerald-500 bg-emerald-500/5" : "text-gray-500 hover:text-gray-600 hover:bg-gray-50"}`}>
                   {label}
                 </button>
               ))}
@@ -426,10 +426,10 @@ export default function Dashboard() {
                 <div className="grid lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-white text-sm">Portfolio Growth vs Nifty 50</h3>
+                      <h3 className="font-bold text-gray-900 text-sm">Portfolio Growth vs Nifty 50</h3>
                       <div className="flex gap-1">
                         {["1M","3M","6M","1Y","All"].map(p => (
-                          <button key={p} className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${p==="All" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-gray-500 hover:bg-white/5 hover:text-gray-300"}`}>{p}</button>
+                          <button key={p} className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${p==="All" ? "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30" : "text-gray-500 hover:bg-gray-50 hover:text-gray-600"}`}>{p}</button>
                         ))}
                       </div>
                     </div>
@@ -445,10 +445,10 @@ export default function Dashboard() {
                             <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937"/>
-                        <XAxis dataKey="month" stroke="#374151" fontSize={11} tick={{fill:"#6b7280"}}/>
-                        <YAxis stroke="#374151" fontSize={11} tick={{fill:"#6b7280"}} tickFormatter={v=>`₹${(v/100000).toFixed(0)}L`}/>
-                        <Tooltip contentStyle={{background:"#1f2937",border:"1px solid #374151",borderRadius:"12px",color:"#fff"}} formatter={(v: number, n: string) => [fmt(v), n==="value"?"Portfolio":"Nifty 50"]}/>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb"/>
+                        <XAxis dataKey="month" stroke="#e5e7eb" fontSize={11} tick={{fill:"#9ca3af"}}/>
+                        <YAxis stroke="#e5e7eb" fontSize={11} tick={{fill:"#9ca3af"}} tickFormatter={v=>`₹${(v/100000).toFixed(0)}L`}/>
+                        <Tooltip contentStyle={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"12px",color:"#111827"}} formatter={(v: number, n: string) => [fmt(v), n==="value"?"Portfolio":"Nifty 50"]}/>
                         <Area type="monotone" dataKey="value" stroke="#10b981" fill="url(#gp)" strokeWidth={2.5} name="value"/>
                         <Area type="monotone" dataKey="nifty" stroke="#6366f1" fill="url(#gn)" strokeWidth={1.5} strokeDasharray="4 4" name="nifty"/>
                       </AreaChart>
@@ -459,13 +459,13 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-sm mb-4">Asset Allocation</h3>
+                    <h3 className="font-bold text-gray-900 text-sm mb-4">Asset Allocation</h3>
                     <ResponsiveContainer width="100%" height={160}>
                       <PieChart>
                         <Pie data={alloc} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
                           {alloc.map((e, i) => <Cell key={i} fill={e.color}/>)}
                         </Pie>
-                        <Tooltip contentStyle={{background:"#1f2937",border:"1px solid #374151",borderRadius:"8px",color:"#fff"}} formatter={(v: number) => `${v}%`}/>
+                        <Tooltip contentStyle={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"8px",color:"#111827"}} formatter={(v: number) => `${v}%`}/>
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="space-y-2 mt-1">
@@ -473,10 +473,10 @@ export default function Dashboard() {
                         <div key={a.name} className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-2.5 h-2.5 rounded-full" style={{backgroundColor:a.color}}/>
-                            <span className="text-xs text-gray-400">{a.name}</span>
+                            <span className="text-xs text-gray-500">{a.name}</span>
                           </div>
                           <div className="flex gap-3">
-                            <span className="text-xs font-bold text-white">{a.value}%</span>
+                            <span className="text-xs font-bold text-gray-900">{a.value}%</span>
                             <span className="text-xs text-gray-500">{fmt(a.amt, hideValues)}</span>
                           </div>
                         </div>
@@ -487,11 +487,11 @@ export default function Dashboard() {
 
                 {/* Category returns bar chart */}
                 <div>
-                  <h3 className="font-bold text-white text-sm mb-4">Returns by Asset Class</h3>
+                  <h3 className="font-bold text-gray-900 text-sm mb-4">Returns by Asset Class</h3>
                   <ResponsiveContainer width="100%" height={100}>
                     <BarChart data={catData} barSize={32}>
-                      <XAxis dataKey="name" stroke="#374151" fontSize={11} tick={{fill:"#6b7280"}}/>
-                      <Tooltip contentStyle={{background:"#1f2937",border:"1px solid #374151",borderRadius:"8px",color:"#fff"}} formatter={(v: number) => `${v}%`}/>
+                      <XAxis dataKey="name" stroke="#e5e7eb" fontSize={11} tick={{fill:"#9ca3af"}}/>
+                      <Tooltip contentStyle={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"8px",color:"#111827"}} formatter={(v: number) => `${v}%`}/>
                       <Bar dataKey="pct" radius={[6,6,0,0]}>
                         {catData.map((c, i) => <Cell key={i} fill={c.color}/>)}
                       </Bar>
@@ -502,18 +502,18 @@ export default function Dashboard() {
                 {/* Top & Bottom performers */}
                 <div className="grid lg:grid-cols-2 gap-4">
                   <div>
-                    <h3 className="font-bold text-white text-sm mb-3 flex items-center gap-2"><Flame className="w-4 h-4 text-orange-400"/> Top Performers</h3>
+                    <h3 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2"><Flame className="w-4 h-4 text-orange-400"/> Top Performers</h3>
                     <div className="space-y-2">
                       {topFunds.map((h, i) => (
                         <div key={i} onClick={() => setSelectedFund(h)}
-                          className="flex items-center gap-3 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl cursor-pointer hover:border-emerald-500/30 transition-all">
-                          <div className="w-7 h-7 bg-emerald-500/20 rounded-lg flex items-center justify-center text-emerald-400 font-bold text-sm flex-shrink-0">{i+1}</div>
+                          className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl cursor-pointer hover:border-emerald-300 transition-all">
+                          <div className="w-7 h-7 bg-emerald-500/20 rounded-lg flex items-center justify-center text-emerald-600 font-bold text-sm flex-shrink-0">{i+1}</div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-white truncate">{(h.name||"").replace(/ - Gr$/,"").substring(0,32)}</div>
+                            <div className="text-sm font-semibold text-gray-900 truncate">{(h.name||"").replace(/ - Gr$/,"").substring(0,32)}</div>
                             <div className="text-xs text-gray-500">{h.category?.substring(0,25)}</div>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <div className="text-emerald-400 font-bold text-sm">+{(h.returnsPercent||0).toFixed(1)}%</div>
+                            <div className="text-emerald-600 font-bold text-sm">+{(h.returnsPercent||0).toFixed(1)}%</div>
                             <div className="text-xs text-gray-500">{fmt(h.value||0, hideValues)}</div>
                           </div>
                         </div>
@@ -521,14 +521,14 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-sm mb-3 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-400"/> Needs Attention</h3>
+                    <h3 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-400"/> Needs Attention</h3>
                     <div className="space-y-2">
                       {bottomFunds.length > 0 ? bottomFunds.map((h, i) => (
                         <div key={i} onClick={() => setSelectedFund(h)}
-                          className="flex items-center gap-3 p-3 bg-red-500/5 border border-red-500/10 rounded-xl cursor-pointer hover:border-red-500/30 transition-all">
+                          className="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-xl cursor-pointer hover:border-red-300 transition-all">
                           <XCircle className="w-7 h-7 text-red-400 flex-shrink-0"/>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-white truncate">{(h.name||"").replace(/ - Gr$/,"").substring(0,32)}</div>
+                            <div className="text-sm font-semibold text-gray-900 truncate">{(h.name||"").replace(/ - Gr$/,"").substring(0,32)}</div>
                             <div className="text-xs text-gray-500">{h.category?.substring(0,25)}</div>
                           </div>
                           <div className="text-right flex-shrink-0">
@@ -537,9 +537,9 @@ export default function Dashboard() {
                           </div>
                         </div>
                       )) : (
-                        <div className="flex items-center gap-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0"/>
-                          <span className="text-sm text-emerald-300">All funds are in positive territory! 🎉</span>
+                        <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0"/>
+                          <span className="text-sm text-emerald-700">All funds are in positive territory! 🎉</span>
                         </div>
                       )}
                     </div>
@@ -551,14 +551,14 @@ export default function Dashboard() {
             {/* FUNDS */}
             {tab === "funds" && (
               <div>
-                <div className="px-6 py-3 border-b border-white/5 flex items-center justify-between">
-                  <span className="text-sm font-bold text-white">All Holdings ({holdings.length})</span>
+                <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <span className="text-sm font-bold text-gray-900">All Holdings ({holdings.length})</span>
                   <span className="text-xs text-gray-500">{fmt(totalInv, hideValues)} → {fmt(totalCur, hideValues)}</span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-white/5 bg-[#0d1117]">
+                      <tr className="border-b border-gray-100 bg-gray-900">
                         {["Fund","Category","Invested","Value","Returns","Signal"].map(h => (
                           <th key={h} className="text-left py-3 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                         ))}
@@ -569,16 +569,16 @@ export default function Dashboard() {
                         const ret = h.returnsPercent || 0;
                         const s = sig(ret);
                         return (
-                          <tr key={i} className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors" onClick={() => setSelectedFund(h)}>
+                          <tr key={i} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedFund(h)}>
                             <td className="py-3.5 px-4">
-                              <div className="text-sm font-semibold text-white max-w-[180px] truncate">{(h.name||"").replace(/ - Gr$/,"")}</div>
+                              <div className="text-sm font-semibold text-gray-900 max-w-[180px] truncate">{(h.name||"").replace(/ - Gr$/,"")}</div>
                               {(h.sip||0) > 0 && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-md font-bold border border-blue-500/20">SIP ₹{(h.sip||0).toLocaleString("en-IN")}</span>}
                             </td>
                             <td className="py-3.5 px-4 text-xs text-gray-500 max-w-[110px] truncate">{(h.category||"").replace(/^(Equity|Other|Debt) Scheme - /,"").substring(0,22)}</td>
-                            <td className="py-3.5 px-4 text-sm text-gray-400 font-mono">{fmt(h.invested||0, hideValues)}</td>
+                            <td className="py-3.5 px-4 text-sm text-gray-500 font-mono">{fmt(h.invested||0, hideValues)}</td>
                             <td className="py-3.5 px-4 text-sm font-bold font-mono" style={{color:ret>=0?"#10b981":"#ef4444"}}>{fmt(h.value||0, hideValues)}</td>
                             <td className="py-3.5 px-4">
-                              <div className={`text-sm font-bold ${ret>=0?"text-emerald-400":"text-red-400"}`}>{ret>=0?"+":""}{ret.toFixed(1)}%</div>
+                              <div className={`text-sm font-bold ${ret>=0?"text-emerald-600":"text-red-400"}`}>{ret>=0?"+":""}{ret.toFixed(1)}%</div>
                               <div className={`text-xs ${ret>=0?"text-emerald-600":"text-red-600"}`}>{ret>=0?"+":""}{fmt((h.value||0)-(h.invested||0), hideValues)}</div>
                             </td>
                             <td className="py-3.5 px-4">
@@ -590,7 +590,7 @@ export default function Dashboard() {
                     </tbody>
                   </table>
                 </div>
-                <div className="px-4 py-3 bg-amber-500/5 border-t border-amber-500/10 text-xs text-amber-500/70">
+                <div className="px-4 py-3 bg-amber-50 border-t border-amber-100 text-xs text-amber-600">
                   ⚡ Budget 2024: Equity LTCG (12m+) = 12.5% above ₹1.25L · STCG = 20% · Debt = Slab rate
                 </div>
               </div>
@@ -600,39 +600,39 @@ export default function Dashboard() {
             {tab === "insights" && (
               <div className="p-6 space-y-4">
                 {taxSavable > 0 && (
-                  <div className="flex items-start gap-4 p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                    <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-xl flex-shrink-0">💰</div>
+                  <div className="flex items-start gap-4 p-5 bg-emerald-50 border border-emerald-200 rounded-xl">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">💰</div>
                     <div className="flex-1">
-                      <div className="font-bold text-white mb-1">Tax Harvest Opportunity — Save {fmt(taxSavable)}</div>
-                      <div className="text-sm text-gray-400">You have eligible LTCG gains. Book ₹1.25L tax-free before March 31st, reinvest same day.</div>
-                      <Link href="/tax-harvesting" className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2 hover:underline">View Plan <ChevronRight className="w-4 h-4"/></Link>
+                      <div className="font-bold text-gray-900 mb-1">Tax Harvest Opportunity — Save {fmt(taxSavable)}</div>
+                      <div className="text-sm text-gray-500">You have eligible LTCG gains. Book ₹1.25L tax-free before March 31st, reinvest same day.</div>
+                      <Link href="/tax-harvesting" className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 mt-2 hover:underline">View Plan <ChevronRight className="w-4 h-4"/></Link>
                     </div>
                   </div>
                 )}
                 {losers.map((h, i) => (
-                  <div key={i} className="flex items-start gap-4 p-5 bg-red-500/5 border border-red-500/20 rounded-xl">
-                    <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🔴</div>
+                  <div key={i} className="flex items-start gap-4 p-5 bg-red-50 border border-red-200 rounded-xl">
+                    <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🔴</div>
                     <div className="flex-1">
-                      <div className="font-bold text-white mb-1">{(h.name||"").replace(/ - Gr$/,"").substring(0,40)} is underperforming</div>
-                      <div className="text-sm text-gray-400">Down {(h.returnsPercent||0).toFixed(1)}% (₹{Math.round(Math.abs((h.value||0)-(h.invested||0))).toLocaleString("en-IN")} loss). Consider pausing SIP. Alternatives: Parag Parikh Flexi Cap, Mirae Asset Large & Mid Cap.</div>
+                      <div className="font-bold text-gray-900 mb-1">{(h.name||"").replace(/ - Gr$/,"").substring(0,40)} is underperforming</div>
+                      <div className="text-sm text-gray-500">Down {(h.returnsPercent||0).toFixed(1)}% (₹{Math.round(Math.abs((h.value||0)-(h.invested||0))).toLocaleString("en-IN")} loss). Consider pausing SIP. Alternatives: Parag Parikh Flexi Cap, Mirae Asset Large & Mid Cap.</div>
                       <Link href="/intelligence" className="inline-flex items-center gap-1 text-sm font-semibold text-red-400 mt-2 hover:underline">Get AI Analysis <ChevronRight className="w-4 h-4"/></Link>
                     </div>
                   </div>
                 ))}
-                <div className="flex items-start gap-4 p-5 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center text-xl flex-shrink-0">📊</div>
+                <div className="flex items-start gap-4 p-5 bg-blue-50 border border-blue-200 rounded-xl">
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">📊</div>
                   <div className="flex-1">
-                    <div className="font-bold text-white mb-1">Your XIRR is {meta?.xirr||13.3}% — Beating Nifty 50</div>
-                    <div className="text-sm text-gray-400">Portfolio return of {retPct.toFixed(1)}% vs market average of ~12%. Top contributor: {topFunds[0]?.name?.substring(0,30)} (+{(topFunds[0]?.returnsPercent||0).toFixed(1)}%).</div>
+                    <div className="font-bold text-gray-900 mb-1">Your XIRR is {meta?.xirr||13.3}% — Beating Nifty 50</div>
+                    <div className="text-sm text-gray-500">Portfolio return of {retPct.toFixed(1)}% vs market average of ~12%. Top contributor: {topFunds[0]?.name?.substring(0,30)} (+{(topFunds[0]?.returnsPercent||0).toFixed(1)}%).</div>
                     <Link href="/intelligence" className="inline-flex items-center gap-1 text-sm font-semibold text-blue-400 mt-2 hover:underline">Full Analysis <ChevronRight className="w-4 h-4"/></Link>
                   </div>
                 </div>
-                <div className="flex items-start gap-4 p-5 bg-violet-500/5 border border-violet-500/20 rounded-xl">
-                  <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🧠</div>
+                <div className="flex items-start gap-4 p-5 bg-violet-50 border border-violet-100 rounded-xl">
+                  <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🧠</div>
                   <div className="flex-1">
-                    <div className="font-bold text-white mb-1">Know your real risk tolerance</div>
-                    <div className="text-sm text-gray-400">Take the 5-question quiz to get personalized fund recommendations matched to how you actually behave in market downturns.</div>
-                    <button onClick={()=>{setShowRisk(true);setRiskStep(0);setRiskAnswers([]);setRiskResult(null);}} className="inline-flex items-center gap-1 text-sm font-semibold text-violet-400 mt-2 hover:underline">Take Quiz <ChevronRight className="w-4 h-4"/></button>
+                    <div className="font-bold text-gray-900 mb-1">Know your real risk tolerance</div>
+                    <div className="text-sm text-gray-500">Take the 5-question quiz to get personalized fund recommendations matched to how you actually behave in market downturns.</div>
+                    <button onClick={()=>{setShowRisk(true);setRiskStep(0);setRiskAnswers([]);setRiskResult(null);}} className="inline-flex items-center gap-1 text-sm font-semibold text-violet-600 mt-2 hover:underline">Take Quiz <ChevronRight className="w-4 h-4"/></button>
                   </div>
                 </div>
               </div>
@@ -640,22 +640,22 @@ export default function Dashboard() {
           </div>
 
           {/* ── V2 CONNECT BANNER ── */}
-          <div className="bg-gradient-to-r from-indigo-900/50 to-violet-900/50 border border-indigo-500/20 rounded-2xl p-6">
+          <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Zap className="w-5 h-5 text-yellow-400"/>
-                  <span className="font-bold text-white text-lg">Auto Portfolio Sync</span>
-                  <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs font-bold rounded-full border border-indigo-500/20">Coming Soon</span>
+                  <span className="font-bold text-gray-900 text-lg">Auto Portfolio Sync</span>
+                  <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-600 text-xs font-bold rounded-full border border-indigo-500/20">Coming Soon</span>
                 </div>
-                <p className="text-gray-400 text-sm max-w-lg">Connect directly via MF Central (CAMS + KFintech). One-time OTP consent — portfolio syncs automatically every day. No more uploading files.</p>
+                <p className="text-gray-500 text-sm max-w-lg">Connect directly via MF Central (CAMS + KFintech). One-time OTP consent — portfolio syncs automatically every day. No more uploading files.</p>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {["NJ Wealth","Groww","Zerodha","ET Money","Kuvera","CAMS CAS"].map(p => (
-                    <span key={p} className="px-2.5 py-1 bg-white/5 text-gray-400 text-xs rounded-lg border border-white/10">{p}</span>
+                    <span key={p} className="px-2.5 py-1 bg-gray-50 text-gray-500 text-xs rounded-lg border border-gray-200">{p}</span>
                   ))}
                 </div>
               </div>
-              <button className="px-6 py-3 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 rounded-xl font-bold hover:bg-indigo-500/30 transition-colors whitespace-nowrap text-sm">
+              <button className="px-6 py-3 bg-indigo-500/20 border border-indigo-500/30 text-indigo-600 rounded-xl font-bold hover:bg-indigo-100 transition-colors whitespace-nowrap text-sm">
                 Join Waitlist →
               </button>
             </div>
@@ -669,13 +669,13 @@ export default function Dashboard() {
       {/* ── FUND DETAIL MODAL ── */}
       {selectedFund && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-end lg:items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedFund(null)}>
-          <div className="bg-[#161b22] border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-white border border-gray-200 rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-5">
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-white text-lg leading-tight">{(selectedFund.name||"").replace(/ - Gr$/,"")}</h3>
+                <h3 className="font-bold text-gray-900 text-lg leading-tight">{(selectedFund.name||"").replace(/ - Gr$/,"")}</h3>
                 <p className="text-gray-500 text-sm mt-1">{selectedFund.category}</p>
               </div>
-              <button onClick={() => setSelectedFund(null)} className="p-2 hover:bg-white/5 rounded-lg flex-shrink-0 ml-3"><X className="w-5 h-5 text-gray-400"/></button>
+              <button onClick={() => setSelectedFund(null)} className="p-2 hover:bg-gray-50 rounded-lg flex-shrink-0 ml-3"><X className="w-5 h-5 text-gray-500"/></button>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-5">
               {[
@@ -684,9 +684,9 @@ export default function Dashboard() {
                 { label:"Gain/Loss", val: (selectedFund.returnsPercent>=0?"+":"")+fmt((selectedFund.value||0)-(selectedFund.invested||0)) },
                 { label:"Returns", val: (selectedFund.returnsPercent>=0?"+":"")+Number(selectedFund.returnsPercent||0).toFixed(1)+"%" },
               ].map((item, i) => (
-                <div key={i} className="bg-white/5 rounded-xl p-3">
+                <div key={i} className="bg-gray-50 rounded-xl p-3">
                   <div className="text-xs text-gray-500 mb-1">{item.label}</div>
-                  <div className={`font-bold text-sm ${i===2||i===3 ? (selectedFund.returnsPercent>=0?"text-emerald-400":"text-red-400") : "text-white"}`}>{item.val}</div>
+                  <div className={`font-bold text-sm ${i===2||i===3 ? (selectedFund.returnsPercent>=0?"text-emerald-600":"text-red-400") : "text-gray-900"}`}>{item.val}</div>
                 </div>
               ))}
             </div>
@@ -695,8 +695,8 @@ export default function Dashboard() {
               <span className="font-bold">{sig(selectedFund.returnsPercent||0).label}</span>
             </div>
             <div className="flex gap-3">
-              <Link href="/intelligence" className="flex-1 py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-bold text-center hover:bg-emerald-500/20 transition-colors">AI Analysis</Link>
-              <Link href="/tax-harvesting" className="flex-1 py-2.5 bg-white/5 border border-white/10 text-gray-300 rounded-xl text-sm font-bold text-center hover:bg-white/10 transition-colors">Tax Plan</Link>
+              <Link href="/intelligence" className="flex-1 py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-xl text-sm font-bold text-center hover:bg-emerald-500/20 transition-colors">AI Analysis</Link>
+              <Link href="/tax-harvesting" className="flex-1 py-2.5 bg-gray-50 border border-gray-200 text-gray-600 rounded-xl text-sm font-bold text-center hover:bg-gray-100 transition-colors">Tax Plan</Link>
             </div>
           </div>
         </div>
@@ -705,17 +705,17 @@ export default function Dashboard() {
       {/* ── RISK MODAL ── */}
       {showRisk && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-[#161b22] border border-white/10 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-violet-900/50 to-indigo-900/50 border-b border-white/10 p-6">
+          <div className="bg-white border border-gray-200 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-violet-900/50 to-indigo-900/50 border-b border-gray-200 p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-white text-lg">Risk Profile Quiz</div>
-                  <div className="text-gray-400 text-sm mt-0.5">5 questions · 2 minutes</div>
+                  <div className="font-bold text-gray-900 text-lg">Risk Profile Quiz</div>
+                  <div className="text-gray-500 text-sm mt-0.5">5 questions · 2 minutes</div>
                 </div>
-                <button onClick={()=>{setShowRisk(false);}} className="p-2 hover:bg-white/5 rounded-lg"><X className="w-5 h-5 text-gray-400"/></button>
+                <button onClick={()=>{setShowRisk(false);}} className="p-2 hover:bg-gray-50 rounded-lg"><X className="w-5 h-5 text-gray-500"/></button>
               </div>
               {!riskResult && (
-                <div className="mt-4 bg-white/5 rounded-full h-1.5 overflow-hidden">
+                <div className="mt-4 bg-gray-50 rounded-full h-1.5 overflow-hidden">
                   <div className="bg-violet-500 h-full rounded-full transition-all duration-500" style={{width:`${(riskStep/RISK_QS.length)*100}%`}}/>
                 </div>
               )}
@@ -724,26 +724,26 @@ export default function Dashboard() {
               {riskResult ? (
                 <div className="text-center">
                   <div className="text-5xl mb-4">{riskResult.label.includes("Conservative")?"🛡️":riskResult.label.includes("Balanced")?"⚖️":"🚀"}</div>
-                  <div className="text-xl font-black text-white mb-2">{riskResult.label}</div>
-                  <div className="text-sm text-gray-400 mb-6">{riskResult.rec}</div>
-                  <button onClick={()=>{setShowRisk(false);}} className="w-full py-3 bg-violet-500/20 border border-violet-500/30 text-violet-300 rounded-xl font-bold hover:bg-violet-500/30 transition-colors">
+                  <div className="text-xl font-black text-gray-900 mb-2">{riskResult.label}</div>
+                  <div className="text-sm text-gray-500 mb-6">{riskResult.rec}</div>
+                  <button onClick={()=>{setShowRisk(false);}} className="w-full py-3 bg-violet-500/20 border border-violet-500/30 text-violet-700 rounded-xl font-bold hover:bg-violet-500/30 transition-colors">
                     Apply to My Portfolio
                   </button>
                 </div>
               ) : (
                 <div>
                   <div className="text-xs text-gray-500 mb-3">Question {riskStep+1} of {RISK_QS.length}</div>
-                  <h3 className="font-bold text-white text-base mb-5 leading-snug">{RISK_QS[riskStep].q}</h3>
+                  <h3 className="font-bold text-gray-900 text-base mb-5 leading-snug">{RISK_QS[riskStep].q}</h3>
                   <div className="space-y-2">
                     {RISK_QS[riskStep].opts.map((opt, i) => (
                       <button key={i} onClick={() => handleRisk(RISK_QS[riskStep].scores[i])}
-                        className="w-full text-left px-4 py-3.5 border border-white/10 rounded-xl text-sm text-gray-300 hover:border-violet-400/50 hover:bg-violet-500/5 transition-all font-medium">
+                        className="w-full text-left px-4 py-3.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:border-violet-400/50 hover:bg-violet-500/5 transition-all font-medium">
                         {opt}
                       </button>
                     ))}
                   </div>
                   {riskStep > 0 && (
-                    <button onClick={()=>{setRiskStep(riskStep-1);setRiskAnswers(riskAnswers.slice(0,-1));}} className="mt-4 text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1">
+                    <button onClick={()=>{setRiskStep(riskStep-1);setRiskAnswers(riskAnswers.slice(0,-1));}} className="mt-4 text-xs text-gray-500 hover:text-gray-600 flex items-center gap-1">
                       ← Back
                     </button>
                   )}
