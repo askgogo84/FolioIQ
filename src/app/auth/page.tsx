@@ -53,40 +53,33 @@ function AuthForm() {
     setLoading(true); setError(null);
     
     try {
-      // Try custom Resend OTP first (reliable delivery)
       const res = await fetch("/api/auth-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
       
-      const sendData = await res.json().catch(()=>({}));
-      if (res.ok) {
-        // If we got a direct link (all email methods failed), redirect immediately
-        if (sendData.link && sendData.method === 'direct_link') {
-          setStage("success");
-          setTimeout(() => { window.location.href = sendData.link; }, 300);
-          return;
-        }
-        // Invite method — show OTP entry but also let them know
-        setUseCustomOtp(sendData.method === 'resend');
-        setStage("otp");
-        setResendTimer(60);
-        setTimeout(() => otpRefs.current[0]?.focus(), 100);
+      const data = await res.json().catch(()=>({}));
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send login link");
+      }
+
+      // direct_link = instant auto-login (no email needed)
+      if (data.link && (data.method === 'direct_link' || data.link)) {
+        setStage("success");
+        setTimeout(() => { window.location.href = data.link; }, 400);
         return;
       }
-      
-      // Fall back to Supabase built-in OTP
-      const { error: sbErr } = await supabase.auth.signInWithOtp({
-        email, options: { shouldCreateUser: true },
-      });
-      if (sbErr) throw sbErr;
-      setUseCustomOtp(false);
+
+      // Email was sent via Resend — show OTP entry
+      setUseCustomOtp(data.method === 'resend');
       setStage("otp");
       setResendTimer(60);
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
+
     } catch (err: any) {
-      setError(err.message?.includes("rate") ? "Too many attempts. Wait 1 min." : (err.message || "Failed to send OTP."));
+      setError(err.message || "Failed to send login link. Please try again.");
     } finally { setLoading(false); }
   };
 

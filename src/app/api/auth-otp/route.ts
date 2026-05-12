@@ -148,7 +148,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, method: 'direct_link', link: callbackUrl })
     }
 
-    return NextResponse.json({ success: true, method })
+    // Always return the magic link so auth page auto-redirects
+    // If email was sent, user gets both: instant redirect + email with code as backup
+    return NextResponse.json({ success: true, method, link: callbackUrl })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('OTP route error:', msg)
