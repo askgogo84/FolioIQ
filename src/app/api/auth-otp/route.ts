@@ -42,20 +42,26 @@ export async function POST(req: NextRequest) {
       const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email,
-        options: { redirectTo: 'https://folio-iq.vercel.app/auth/session' }
+        options: { redirectTo: 'https://folio-iq.vercel.app/dashboard' }
       })
 
       if (linkErr) {
         console.error('generateLink error:', linkErr.message)
-        // Fallback: return verified:true and let client handle
         return NextResponse.json({ success: true, verified: true })
       }
 
-      console.log('OTP verified, session link generated for:', email)
+      // Build a server-side callback URL using the hashed token
+      // This hits our /auth/callback route which can set cookies properly
+      const hashedToken = linkData.properties.hashed_token
+      const callbackUrl = hashedToken 
+        ? `https://folio-iq.vercel.app/auth/callback?token_hash=${hashedToken}&type=magiclink&next=/dashboard`
+        : linkData.properties.action_link
+
+      console.log('OTP verified for:', email, '| using token_hash:', !!hashedToken)
       return NextResponse.json({ 
         success: true, 
         verified: true, 
-        link: linkData.properties.action_link 
+        link: callbackUrl
       })
     }
 
