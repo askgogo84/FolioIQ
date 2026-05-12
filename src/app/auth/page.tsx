@@ -60,10 +60,16 @@ function AuthForm() {
         body: JSON.stringify({ email }),
       });
       
+      const sendData = await res.json().catch(()=>({}));
       if (res.ok) {
-        const sendData = await res.json().catch(()=>({}));
-        // If Supabase was used as fallback, don't use our custom OTP verify
-        setUseCustomOtp(sendData.method !== 'supabase');
+        // If we got a direct link (all email methods failed), redirect immediately
+        if (sendData.link && sendData.method === 'direct_link') {
+          setStage("success");
+          setTimeout(() => { window.location.href = sendData.link; }, 300);
+          return;
+        }
+        // Invite method — show OTP entry but also let them know
+        setUseCustomOtp(sendData.method === 'resend');
         setStage("otp");
         setResendTimer(60);
         setTimeout(() => otpRefs.current[0]?.focus(), 100);
