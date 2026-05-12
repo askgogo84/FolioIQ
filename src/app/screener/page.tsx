@@ -131,7 +131,7 @@ export default function Screener() {
 
   return (
     <AppLayout title="Fund Screener" subtitle={`${ALL_FUNDS.length} funds · Filter, compare, and find the right one for you`}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 space-y-4">
+      <div className="px-5 sm:px-6 py-5 space-y-4">
 
         {/* Search + filter row */}
         <div className="flex gap-2">

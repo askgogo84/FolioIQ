@@ -30,7 +30,7 @@ export default function TaxHarvesting() {
 
   return (
     <AppLayout title="Tax Harvesting" subtitle={`Save up to ${fmt(taxSaved)} in LTCG taxes this financial year`}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <div className="px-5 sm:px-6 py-6 space-y-5">
 
         {/* Hero metric */}
         <div className="bg-gray-900 rounded-2xl p-6 text-white">

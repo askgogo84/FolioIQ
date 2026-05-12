@@ -112,7 +112,15 @@ export default function Dashboard() {
   const [rAns, setRAns] = useState<number[]>([]);
   const [rResult, setRResult] = useState<any>(null);
   const [selFund, setSelFund] = useState<any>(null);
-  const [ticker, setTicker] = useState<any[]>([]);
+  const [ticker, setTicker] = useState<any[]>([
+    {name:"NIFTY 50",value:"24,315",change:"+1.12%",up:true},
+    {name:"SENSEX",value:"80,218",change:"+1.09%",up:true},
+    {name:"NIFTY MIDCAP",value:"17,842",change:"+0.87%",up:true},
+    {name:"GOLD",value:"₹9,342/g",change:"+0.34%",up:true},
+    {name:"USD/INR",value:"₹83.42",change:"-0.12%",up:false},
+    {name:"NIFTY IT",value:"38,621",change:"-0.54%",up:false},
+    {name:"10Y G-SEC",value:"6.87%",change:"-0.04%",up:false},
+  ]);
   const [showAll, setShowAll] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -274,8 +282,7 @@ export default function Dashboard() {
 
       <main className="flex-1 min-w-0 flex flex-col">
         {/* TICKER */}
-        {ticker.length>0&&(
-          <div className="bg-gray-900 overflow-hidden" style={{height:28}}>
+        <div className="bg-gray-900 overflow-hidden" style={{height:28}}>
             <div className="flex items-center h-full gap-8 px-4 text-[10px] animate-[ticker_35s_linear_infinite] whitespace-nowrap">
               {[...ticker,...ticker,...ticker].map((t,i)=>(
                 <span key={i} className="flex items-center gap-2 flex-shrink-0">
@@ -286,7 +293,6 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-        )}
 
         {/* HEADER */}
         <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
@@ -324,7 +330,7 @@ export default function Dashboard() {
 
         {/* BODY */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-6 py-5 space-y-5 max-w-7xl mx-auto">
+          <div className="px-5 py-5 space-y-5">
 
             {/* HERO CARD */}
             <div className="relative overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-sm">
@@ -377,7 +383,7 @@ export default function Dashboard() {
             {/* 4 KPI CARDS */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {/* Health Score */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center shadow-sm hover:shadow-md transition-all">
+              <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md transition-all">
                 <div className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-3">HEALTH SCORE</div>
                 <div className="flex justify-center">
                   <Gauge value={health} color={hColor}/>
@@ -480,7 +486,7 @@ export default function Dashboard() {
                           ))}
                         </div>
                       </div>
-                      <ResponsiveContainer width="100%" height={220}>
+                      <ResponsiveContainer width="100%" height={260}>
                         <AreaChart data={growthData} margin={{top:4,right:4,bottom:0,left:-20}}>
                           <defs>
                             <linearGradient id="gP" x1="0" y1="0" x2="0" y2="1">

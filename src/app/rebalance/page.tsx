@@ -26,7 +26,7 @@ export default function Rebalance() {
 
   return (
     <AppLayout title="Smart Rebalance" subtitle="Your portfolio has drifted from target allocation — here's the plan">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <div className="px-5 sm:px-6 py-6 space-y-5">
 
         {/* Drift score */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

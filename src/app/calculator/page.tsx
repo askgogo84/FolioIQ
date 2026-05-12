@@ -35,7 +35,7 @@ export default function Calculator() {
 
   return (
     <AppLayout title="SIP Calculator" subtitle="Project your wealth with different SIP and lumpsum scenarios">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <div className="px-5 sm:px-6 py-6 space-y-5">
 
         {/* Result */}
         <div className="bg-gray-900 rounded-2xl p-6">

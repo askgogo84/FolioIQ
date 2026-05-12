@@ -44,7 +44,7 @@ export default function Intelligence() {
 
   return (
     <AppLayout title="AI Insights" subtitle="Signal-based analysis for every fund in your portfolio">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <div className="px-5 sm:px-6 py-6 space-y-5">
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

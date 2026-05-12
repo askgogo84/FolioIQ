@@ -19,7 +19,7 @@ export default function Goals() {
 
   return (
     <AppLayout title="Goal Planner" subtitle="Tag every fund to a life goal — never sell the wrong investment">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <div className="px-5 sm:px-6 py-6 space-y-5">
 
         {/* Goals grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

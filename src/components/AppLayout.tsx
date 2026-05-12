@@ -106,7 +106,7 @@ export default function AppLayout({children,title,subtitle}:{children:React.Reac
           </Link>
         </header>
 
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        <div className="flex-1 overflow-y-auto w-full">{children}</div>
       </main>
 
       {sidebar&&<div className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm" onClick={()=>setSidebar(false)}/>}
