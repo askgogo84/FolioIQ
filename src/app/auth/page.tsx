@@ -1,91 +1,29 @@
-
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  signInWithPopup, signInWithRedirect, getRedirectResult,
-  GoogleAuthProvider, OAuthProvider, onAuthStateChanged
-} from "firebase/auth";
-import { auth, googleProvider, appleProvider } from "@/lib/firebase";
-import { createAdminClient } from "@/utils/supabase/admin";
-
-// After Firebase auth, sync user to Supabase
-async function syncToSupabase(firebaseUser: any) {
-  try {
-    await fetch("/api/auth/firebase-sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        name: firebaseUser.displayName,
-        photo: firebaseUser.photoURL,
-      }),
-    });
-  } catch (e) {
-    console.error("Supabase sync error:", e);
-  }
-}
+import { signInWithPopup, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function AuthPage() {
   const router = useRouter();
   const [loading, setLoading] = useState<"google" | "apple" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-  const log = (msg: string) => setDebugLog(prev => [...prev, `${new Date().toISOString().slice(11,19)} ${msg}`]);
 
-  // Check if already logged in or handling redirect result
   useEffect(() => {
-    log("useEffect: calling getRedirectResult");
-    getRedirectResult(auth).then(async (result) => {
-      log(`getRedirectResult: result=${result ? 'HAS_USER' : 'null'}`);
-      if (result?.user) {
-        setLoading("google");
-        setError(null);
-        try {
-          log(`calling firebase-sync for ${result.user.email}`);
-          const res = await fetch("/api/auth/firebase-sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              uid: result.user.uid,
-              email: result.user.email,
-              name: result.user.displayName,
-              photo: result.user.photoURL,
-            }),
-          });
-          const data = await res.json();
-          log(`firebase-sync response: sessionUrl=${data.sessionUrl ? 'EXISTS' : 'MISSING'} error=${data.error || 'none'}`);
-          if (data.sessionUrl) {
-            log("redirecting to sessionUrl...");
-            window.location.href = data.sessionUrl;
-          } else {
-            setError(`Session failed: ${data.error || 'no sessionUrl'}`);
-            setLoading(null);
-          }
-        } catch (e: any) {
-          log(`fetch error: ${e?.message}`);
-          setError("Sign-in failed. Please try again.");
-          setLoading(null);
-        }
-      } else {
-        log("no redirect result - showing login page");
-        setChecking(false);
-      }
-    }).catch((e) => {
-      log(`getRedirectResult error: ${e?.code} ${e?.message}`);
-      setChecking(false);
-    });
-  }, [router]);
+    // Check if already have a Supabase session
+    fetch("/api/auth/check").then(r => r.json()).then(d => {
+      if (d.loggedIn) router.push("/dashboard");
+      else setChecking(false);
+    }).catch(() => setChecking(false));
+  }, []);
 
   const signIn = async (provider: any, type: "google" | "apple") => {
     setLoading(type);
     setError(null);
     try {
-      // Use popup on all devices - redirect loses Firebase state on Android Chrome
       const result = await signInWithPopup(auth, provider);
-      log(`popup success: ${result.user.email}`);
+      // Sync Firebase user to Supabase and get session URL
       const res = await fetch("/api/auth/firebase-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,21 +35,21 @@ export default function AuthPage() {
         }),
       });
       const data = await res.json();
-      log(`firebase-sync: sessionUrl=${data.sessionUrl ? 'EXISTS' : 'MISSING'} error=${data.error || 'none'}`);
       if (data.sessionUrl) {
         window.location.href = data.sessionUrl;
       } else {
-        setError(`Session failed: ${data.error || 'no sessionUrl'}`);
-        setLoading(null);
+        router.push("/dashboard");
       }
     } catch (e: any) {
-      log(`signIn error: ${e?.code} ${e?.message}`);
       if (e.code !== "auth/popup-closed-by-user") {
-        setError(`${e?.code || 'Sign-in failed'}`);
+        setError("Sign-in failed. Please try again.");
       }
       setLoading(null);
     }
   };
+
+  const googleProvider = new GoogleAuthProvider();
+  const appleProvider = new OAuthProvider("apple.com");
 
   if (checking) return (
     <div className="min-h-screen bg-[#0B1221] flex items-center justify-center">
@@ -122,31 +60,21 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-[#0B1221] flex items-center justify-center p-4"
       style={{ fontFamily: "'Inter var',system-ui,sans-serif" }}>
-
-      {/* Background glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"/>
         <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"/>
       </div>
-
       <div className="relative w-full max-w-sm">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-emerald-500/30">
             <span className="text-white text-2xl font-black">F</span>
           </div>
           <h1 className="text-[24px] font-black text-white tracking-tight">FolioIQ</h1>
-          <p className="text-gray-500 text-[13px] mt-1">AI-Powered Portfolio Intelligence</p>
+          <p className="text-emerald-400 text-[13px] mt-1">AI-Powered Portfolio Intelligence</p>
         </div>
-
-        {/* Card */}
         <div className="bg-[#111827] border border-white/8 rounded-3xl p-7 shadow-2xl">
           <h2 className="text-[18px] font-bold text-white mb-1 text-center">Sign in to FolioIQ</h2>
-          <p className="text-gray-500 text-[13px] text-center mb-7">
-            One tap — no password, no OTP
-          </p>
-
-          {/* Google */}
+          <p className="text-gray-500 text-[13px] text-center mb-7">One tap — no password, no OTP</p>
           <button
             onClick={() => signIn(googleProvider, "google")}
             disabled={!!loading}
@@ -164,8 +92,6 @@ export default function AuthPage() {
             )}
             Continue with Google
           </button>
-
-          {/* Apple */}
           <button
             onClick={() => signIn(appleProvider, "apple")}
             disabled={!!loading}
@@ -180,13 +106,9 @@ export default function AuthPage() {
             )}
             Continue with Apple
           </button>
-
           {error && (
-            <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[13px] text-red-400 text-center">
-              {error}
-            </div>
+            <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[13px] text-red-400 text-center">{error}</div>
           )}
-
           <div className="text-center">
             <p className="text-[11px] text-gray-600 leading-relaxed">
               By continuing, you agree to FolioIQ's Terms & Privacy Policy.<br/>
@@ -194,19 +116,11 @@ export default function AuthPage() {
             </p>
           </div>
         </div>
-
-        {/* Trust badges */}
         <div className="flex items-center justify-center gap-6 mt-6 text-[11px] text-gray-600">
           <span className="flex items-center gap-1"><span>🔒</span> Read-only</span>
           <span className="flex items-center gap-1"><span>🇮🇳</span> India-hosted</span>
           <span className="flex items-center gap-1"><span>🆓</span> Free forever</span>
         </div>
-        {/* DEBUG LOG - remove after fixing */}
-        {debugLog.length > 0 && (
-          <div className="mt-4 p-3 bg-black/60 rounded-xl border border-yellow-500/30 text-[10px] text-yellow-400 font-mono">
-            {debugLog.map((l, i) => <div key={i}>{l}</div>)}
-          </div>
-        )}
       </div>
     </div>
   );
