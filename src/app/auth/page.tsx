@@ -35,44 +35,40 @@ export default function AuthPage() {
 
   // Check if already logged in or handling redirect result
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        await syncToSupabase(user);
-        router.push("/dashboard");
-      } else {
-        setChecking(false);
-      }
-    });
-
-    // Handle redirect result on mobile
+    // Handle redirect result FIRST (mobile Google sign-in comeback)
     getRedirectResult(auth).then(async (result) => {
       if (result?.user) {
         setLoading("google");
-        const res = await fetch("/api/auth/firebase-sync", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            uid: result.user.uid,
-            email: result.user.email,
-            name: result.user.displayName,
-            photo: result.user.photoURL,
-          }),
-        });
-        const data = await res.json();
-        if (data.sessionUrl) {
-          // sessionUrl is a magic link that creates a Supabase session
-          window.location.href = data.sessionUrl;
-        } else {
-          router.push("/dashboard");
+        setError(null);
+        try {
+          const res = await fetch("/api/auth/firebase-sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              uid: result.user.uid,
+              email: result.user.email,
+              name: result.user.displayName,
+              photo: result.user.photoURL,
+            }),
+          });
+          const data = await res.json();
+          if (data.sessionUrl) {
+            window.location.href = data.sessionUrl;
+          } else {
+            setError("Session creation failed. Please try again.");
+            setLoading(null);
+          }
+        } catch (e: any) {
+          setError("Sign-in failed. Please try again.");
+          setLoading(null);
         }
+      } else {
+        setChecking(false);
       }
     }).catch((e) => {
       console.error("Redirect result error:", e?.code, e?.message);
-      setError(`Sign-in error: ${e?.code || e?.message || 'unknown'}`);
-      setLoading(null);
+      setChecking(false);
     });
-
-    return () => unsub();
   }, [router]);
 
   const isMobile = () =>
