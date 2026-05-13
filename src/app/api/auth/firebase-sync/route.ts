@@ -9,8 +9,8 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient()
 
     // Check if user exists in Supabase, create if not
-    const { data: existing } = await admin.auth.admin.listUsers()
-    const found = existing.users.find(u => u.email === email)
+    const { data: existing } = await admin.auth.admin.listUsers() as any
+    const found = (existing?.users ?? []).find((u: any) => u.email === email)
 
     let userId: string
 
