@@ -43,17 +43,22 @@ export default function Intelligence() {
       setAnalyses(d.analyses || []);
       setMethodology(d.methodology || '');
       setLoading(false);
-    }).catch(()=>setLoading(false));
+    }).catch((err)=>{
+      console.error('Intelligence fetch error:', err);
+      setLoading(false);
+    });
   },[]);
 
-  const filtered = filter==="all"?analyses
-    :analyses.filter(a=>a.signal?.toLowerCase()===filter.toUpperCase()||a.signal===filter.toUpperCase());
+  // Guard: if API failed, show empty array
+  const safeAnalyses = Array.isArray(analyses) ? analyses : [];
+  const filtered = filter==="all"?safeAnalyses
+    :safeAnalyses.filter(a=>a.signal?.toLowerCase()===filter.toUpperCase()||a.signal===filter.toUpperCase());
 
   const counts = {
-    buy: analyses.filter(a=>a.signal==="BUY").length,
-    hold: analyses.filter(a=>a.signal==="HOLD").length,
-    review: analyses.filter(a=>a.signal==="REVIEW").length,
-    sell: analyses.filter(a=>a.signal==="SELL").length,
+    buy: safeAnalyses.filter(a=>a.signal==="BUY").length,
+    hold: safeAnalyses.filter(a=>a.signal==="HOLD").length,
+    review: safeAnalyses.filter(a=>a.signal==="REVIEW").length,
+    sell: safeAnalyses.filter(a=>a.signal==="SELL").length,
   };
 
   const totalVal = PORTFOLIO_FUNDS.reduce((s,f)=>s+f.value,0);
@@ -231,11 +236,15 @@ export default function Intelligence() {
                             {(fund.signal==="SELL"||fund.signal==="REVIEW")&&fund.alternatives?.length>0&&(
                               <div>
                                 <div className="text-[12px] font-bold text-gray-500 uppercase tracking-widest mb-2">💡 Better Alternatives</div>
-                                <div className="space-y-1.5">
-                                  {fund.alternatives.map((alt:string,ai:number)=>(
-                                    <div key={ai} className="flex items-center gap-2 text-[13px] text-gray-700 bg-white p-2.5 rounded-xl border border-gray-100">
-                                      <span className="w-5 h-5 bg-emerald-100 text-emerald-700 rounded-full text-[11px] font-black flex items-center justify-center flex-shrink-0">{ai+1}</span>
-                                      {alt}
+                                <div className="space-y-2">
+                                  {fund.alternatives.map((alt:any,ai:number)=>(
+                                    <div key={ai} className="bg-white p-3 rounded-xl border border-gray-100">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="w-5 h-5 bg-emerald-100 text-emerald-700 rounded-full text-[11px] font-black flex items-center justify-center flex-shrink-0">{ai+1}</span>
+                                        <span className="text-[13px] font-bold text-gray-900">{typeof alt === 'string' ? alt : alt.name}</span>
+                                        {alt.return1Y && <span className="ml-auto text-[12px] font-black text-emerald-600">+{alt.return1Y}%</span>}
+                                      </div>
+                                      {alt.reason && <div className="text-[11px] text-gray-500 pl-7">{alt.reason}</div>}
                                     </div>
                                   ))}
                                 </div>
