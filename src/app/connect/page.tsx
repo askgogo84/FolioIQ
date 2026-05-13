@@ -48,11 +48,7 @@ export default function Connect() {
           enableInbox: false,
           enableGenerator: false,
           homeLayout: "actions",
-          primaryColor: "#111827",
-          logo: "https://folio-iq.vercel.app/favicon.ico",
-          title: "Import Your Portfolio",
-          closeOnSuccess: true,
-          showSummary: true,
+
         },
       });
 
