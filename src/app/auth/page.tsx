@@ -32,15 +32,19 @@ export default function AuthPage() {
   const [loading, setLoading] = useState<"google" | "apple" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+  const log = (msg: string) => setDebugLog(prev => [...prev, `${new Date().toISOString().slice(11,19)} ${msg}`]);
 
   // Check if already logged in or handling redirect result
   useEffect(() => {
-    // Handle redirect result FIRST (mobile Google sign-in comeback)
+    log("useEffect: calling getRedirectResult");
     getRedirectResult(auth).then(async (result) => {
+      log(`getRedirectResult: result=${result ? 'HAS_USER' : 'null'}`);
       if (result?.user) {
         setLoading("google");
         setError(null);
         try {
+          log(`calling firebase-sync for ${result.user.email}`);
           const res = await fetch("/api/auth/firebase-sync", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -52,21 +56,25 @@ export default function AuthPage() {
             }),
           });
           const data = await res.json();
+          log(`firebase-sync response: sessionUrl=${data.sessionUrl ? 'EXISTS' : 'MISSING'} error=${data.error || 'none'}`);
           if (data.sessionUrl) {
+            log("redirecting to sessionUrl...");
             window.location.href = data.sessionUrl;
           } else {
-            setError("Session creation failed. Please try again.");
+            setError(`Session failed: ${data.error || 'no sessionUrl'}`);
             setLoading(null);
           }
         } catch (e: any) {
+          log(`fetch error: ${e?.message}`);
           setError("Sign-in failed. Please try again.");
           setLoading(null);
         }
       } else {
+        log("no redirect result - showing login page");
         setChecking(false);
       }
     }).catch((e) => {
-      console.error("Redirect result error:", e?.code, e?.message);
+      log(`getRedirectResult error: ${e?.code} ${e?.message}`);
       setChecking(false);
     });
   }, [router]);
@@ -197,6 +205,12 @@ export default function AuthPage() {
           <span className="flex items-center gap-1"><span>🇮🇳</span> India-hosted</span>
           <span className="flex items-center gap-1"><span>🆓</span> Free forever</span>
         </div>
+        {/* DEBUG LOG - remove after fixing */}
+        {debugLog.length > 0 && (
+          <div className="mt-4 p-3 bg-black/60 rounded-xl border border-yellow-500/30 text-[10px] text-yellow-400 font-mono">
+            {debugLog.map((l, i) => <div key={i}>{l}</div>)}
+          </div>
+        )}
       </div>
     </div>
   );
