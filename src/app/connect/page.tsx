@@ -146,31 +146,20 @@ export default function Connect() {
         </div>
 
         {/* What's inside */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {/* Feature cards - horizontal scroll on mobile */}
+        <div className="flex gap-3 overflow-x-auto pb-1 mb-6 scrollbar-hide -mx-5 px-5 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3">
           {[
-            {
-              icon:"📄", title:"PDF Upload",
-              desc:"Upload CAMS, KFintech, CDSL, or NSDL CAS PDF. Drag and drop — parsed in seconds.",
-              badge:"Instant",
-            },
-            {
-              icon:"🏦", title:"CDSL OTP Live Fetch",
-              desc:"Enter 16-digit Demat ID, verify with OTP on your registered mobile. Real-time holdings.",
-              badge:"No PDF needed",
-            },
-            {
-              icon:"📧", title:"Gmail Auto-Import",
-              desc:"One-time read-only OAuth. We find CAS emails from CAMS and KFintech automatically.",
-              badge:"Auto-sync",
-            },
+            { icon:"📄", title:"PDF Upload", desc:"CAMS, KFintech, CDSL or NSDL CAS PDF. Drag & drop.", badge:"Instant" },
+            { icon:"🏦", title:"CDSL OTP", desc:"16-digit Demat ID + OTP = live real-time holdings.", badge:"No PDF" },
+            { icon:"📧", title:"Gmail Import", desc:"Read-only OAuth. Auto-finds CAS emails from CAMS/KFintech.", badge:"Auto-sync" },
           ].map((m,i)=>(
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-2xl">{m.icon}</span>
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm flex-shrink-0 w-[200px] sm:w-auto">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xl">{m.icon}</span>
                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">{m.badge}</span>
               </div>
-              <h3 className="text-[14px] font-black text-gray-900 mb-1.5">{m.title}</h3>
-              <p className="text-[12px] text-gray-500 leading-relaxed">{m.desc}</p>
+              <h3 className="text-[13px] font-black text-gray-900 mb-1">{m.title}</h3>
+              <p className="text-[11px] text-gray-500 leading-relaxed">{m.desc}</p>
             </div>
           ))}
         </div>
