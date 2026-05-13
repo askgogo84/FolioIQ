@@ -47,8 +47,24 @@ export default function AuthPage() {
     // Handle redirect result on mobile
     getRedirectResult(auth).then(async (result) => {
       if (result?.user) {
-        await syncToSupabase(result.user);
-        router.push("/dashboard");
+        setLoading("google");
+        const res = await fetch("/api/auth/firebase-sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uid: result.user.uid,
+            email: result.user.email,
+            name: result.user.displayName,
+            photo: result.user.photoURL,
+          }),
+        });
+        const data = await res.json();
+        if (data.sessionUrl) {
+          // sessionUrl is a magic link that creates a Supabase session
+          window.location.href = data.sessionUrl;
+        } else {
+          router.push("/dashboard");
+        }
       }
     }).catch((e) => {
       console.error("Redirect result error:", e?.code, e?.message);
@@ -72,8 +88,22 @@ export default function AuthPage() {
       } else {
         // Desktop: use popup
         const result = await signInWithPopup(auth, provider);
-        await syncToSupabase(result.user);
-        router.push("/dashboard");
+        const res = await fetch("/api/auth/firebase-sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uid: result.user.uid,
+            email: result.user.email,
+            name: result.user.displayName,
+            photo: result.user.photoURL,
+          }),
+        });
+        const data = await res.json();
+        if (data.sessionUrl) {
+          window.location.href = data.sessionUrl;
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch (e: any) {
       if (e.code !== "auth/popup-closed-by-user") {
