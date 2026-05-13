@@ -28,10 +28,8 @@ export default function Connect() {
         if (d.access_token) {
           setAccessToken(d.access_token);
           setStage("ready");
-        } else if (d.error?.includes("not set")) {
-          setStage("no-key");
         } else {
-          setError(d.error || "Failed to initialize");
+          setError(d.error || "Failed to initialize. Please try again.");
           setStage("ready");
         }
       })

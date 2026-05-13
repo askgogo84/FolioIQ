@@ -7,7 +7,9 @@ export async function GET(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-    const key = process.env.CAS_PARSER_API_KEY
+    // Env var takes precedence; fallback to hardcoded for initial activation
+    // Move to Vercel env vars: CAS_PARSER_API_KEY for production security
+    const key = process.env.CAS_PARSER_API_KEY || 'sk_3b3bb349a0038d3af978f16af4db52da'
     if (!key) return NextResponse.json({ error: 'CAS_PARSER_API_KEY not set' }, { status: 500 })
 
     const res = await fetch('https://api.casparser.in/v1/token', {
