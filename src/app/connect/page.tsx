@@ -45,9 +45,14 @@ export default function Connect() {
         accessToken,
         config: {
           enableCdslFetch: true,
-          enableInbox: false,   // Gmail needs OAuth setup in CASParser dashboard
+          enableInbox: false,
           enableGenerator: false,
           homeLayout: "actions",
+          primaryColor: "#111827",
+          logo: "https://folio-iq.vercel.app/favicon.ico",
+          title: "Import Your Portfolio",
+          closeOnSuccess: true,
+          showSummary: true,
         },
       });
 
