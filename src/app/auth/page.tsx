@@ -1,116 +1,40 @@
-
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  signInWithPopup, signInWithRedirect, getRedirectResult,
-  GoogleAuthProvider, OAuthProvider, onAuthStateChanged
-} from "firebase/auth";
-import { auth, googleProvider, appleProvider } from "@/lib/firebase";
-import { createAdminClient } from "@/utils/supabase/admin";
-
-// After Firebase auth, sync user to Supabase
-async function syncToSupabase(firebaseUser: any) {
-  try {
-    await fetch("/api/auth/firebase-sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        name: firebaseUser.displayName,
-        photo: firebaseUser.photoURL,
-      }),
-    });
-  } catch (e) {
-    console.error("Supabase sync error:", e);
-  }
-}
+import { createClient } from "@/utils/supabase/client";
 
 export default function AuthPage() {
   const router = useRouter();
   const [loading, setLoading] = useState<"google" | "apple" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-  const log = (msg: string) => setDebugLog(prev => [...prev, `${new Date().toISOString().slice(11,19)} ${msg}`]);
+  const supabase = createClient();
 
-  // Check if already logged in or handling redirect result
   useEffect(() => {
-    log("useEffect: calling getRedirectResult");
-    getRedirectResult(auth).then(async (result) => {
-      log(`getRedirectResult: result=${result ? 'HAS_USER' : 'null'}`);
-      if (result?.user) {
-        setLoading("google");
-        setError(null);
-        try {
-          log(`calling firebase-sync for ${result.user.email}`);
-          const res = await fetch("/api/auth/firebase-sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              uid: result.user.uid,
-              email: result.user.email,
-              name: result.user.displayName,
-              photo: result.user.photoURL,
-            }),
-          });
-          const data = await res.json();
-          log(`firebase-sync response: sessionUrl=${data.sessionUrl ? 'EXISTS' : 'MISSING'} error=${data.error || 'none'}`);
-          if (data.sessionUrl) {
-            log("redirecting to sessionUrl...");
-            window.location.href = data.sessionUrl;
-          } else {
-            setError(`Session failed: ${data.error || 'no sessionUrl'}`);
-            setLoading(null);
-          }
-        } catch (e: any) {
-          log(`fetch error: ${e?.message}`);
-          setError("Sign-in failed. Please try again.");
-          setLoading(null);
-        }
+    // Check if already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.push("/dashboard");
       } else {
-        log("no redirect result - showing login page");
         setChecking(false);
       }
-    }).catch((e) => {
-      log(`getRedirectResult error: ${e?.code} ${e?.message}`);
-      setChecking(false);
     });
-  }, [router]);
+  }, []);
 
-  const signIn = async (provider: any, type: "google" | "apple") => {
-    setLoading(type);
+  const signInWithGoogle = async () => {
+    setLoading("google");
     setError(null);
-    try {
-      // Use popup on all devices - redirect loses Firebase state on Android Chrome
-      const result = await signInWithPopup(auth, provider);
-      log(`popup success: ${result.user.email}`);
-      const res = await fetch("/api/auth/firebase-sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          uid: result.user.uid,
-          email: result.user.email,
-          name: result.user.displayName,
-          photo: result.user.photoURL,
-        }),
-      });
-      const data = await res.json();
-      log(`firebase-sync: sessionUrl=${data.sessionUrl ? 'EXISTS' : 'MISSING'} error=${data.error || 'none'}`);
-      if (data.sessionUrl) {
-        window.location.href = data.sessionUrl;
-      } else {
-        setError(`Session failed: ${data.error || 'no sessionUrl'}`);
-        setLoading(null);
-      }
-    } catch (e: any) {
-      log(`signIn error: ${e?.code} ${e?.message}`);
-      if (e.code !== "auth/popup-closed-by-user") {
-        setError(`${e?.code || 'Sign-in failed'}`);
-      }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
+    });
+    if (error) {
+      setError(error.message);
       setLoading(null);
     }
+    // On success: browser redirects to Google, then back to /auth/callback
   };
 
   if (checking) return (
@@ -136,7 +60,7 @@ export default function AuthPage() {
             <span className="text-white text-2xl font-black">F</span>
           </div>
           <h1 className="text-[24px] font-black text-white tracking-tight">FolioIQ</h1>
-          <p className="text-gray-500 text-[13px] mt-1">AI-Powered Portfolio Intelligence</p>
+          <p className="text-emerald-400 text-[13px] mt-1">AI-Powered Portfolio Intelligence</p>
         </div>
 
         {/* Card */}
@@ -148,7 +72,7 @@ export default function AuthPage() {
 
           {/* Google */}
           <button
-            onClick={() => signIn(googleProvider, "google")}
+            onClick={signInWithGoogle}
             disabled={!!loading}
             className="w-full flex items-center justify-center gap-3 px-5 py-3.5 bg-white hover:bg-gray-100 text-gray-800 rounded-2xl font-semibold text-[15px] transition-all mb-3 disabled:opacity-60 shadow-lg active:scale-[0.98]"
           >
@@ -165,29 +89,13 @@ export default function AuthPage() {
             Continue with Google
           </button>
 
-          {/* Apple */}
-          <button
-            onClick={() => signIn(appleProvider, "apple")}
-            disabled={!!loading}
-            className="w-full flex items-center justify-center gap-3 px-5 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-semibold text-[15px] transition-all mb-6 disabled:opacity-60 active:scale-[0.98]"
-          >
-            {loading === "apple" ? (
-              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"/>
-            ) : (
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-              </svg>
-            )}
-            Continue with Apple
-          </button>
-
           {error && (
             <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[13px] text-red-400 text-center">
               {error}
             </div>
           )}
 
-          <div className="text-center">
+          <div className="text-center mt-4">
             <p className="text-[11px] text-gray-600 leading-relaxed">
               By continuing, you agree to FolioIQ's Terms & Privacy Policy.<br/>
               We never access your investments or trading account.
@@ -201,12 +109,6 @@ export default function AuthPage() {
           <span className="flex items-center gap-1"><span>🇮🇳</span> India-hosted</span>
           <span className="flex items-center gap-1"><span>🆓</span> Free forever</span>
         </div>
-        {/* DEBUG LOG - remove after fixing */}
-        {debugLog.length > 0 && (
-          <div className="mt-4 p-3 bg-black/60 rounded-xl border border-yellow-500/30 text-[10px] text-yellow-400 font-mono">
-            {debugLog.map((l, i) => <div key={i}>{l}</div>)}
-          </div>
-        )}
       </div>
     </div>
   );
