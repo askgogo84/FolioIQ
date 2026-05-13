@@ -196,6 +196,7 @@ OUTPUT: Return ONLY valid JSON in this exact format:
       headers: {
         'x-api-key': ANTHROPIC_KEY,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'web-search-2025-03-05',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -270,6 +271,7 @@ WHAT TO SEARCH FOR:
       headers: {
         'x-api-key': ANTHROPIC_KEY,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'web-search-2025-03-05',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
