@@ -79,39 +79,35 @@ export default function AuthPage() {
     });
   }, [router]);
 
-  const isMobile = () =>
-    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
   const signIn = async (provider: any, type: "google" | "apple") => {
     setLoading(type);
     setError(null);
     try {
-      if (isMobile()) {
-        // Mobile: use redirect (popup blocked on mobile browsers)
-        await signInWithRedirect(auth, provider);
+      // Use popup on all devices - redirect loses Firebase state on Android Chrome
+      const result = await signInWithPopup(auth, provider);
+      log(`popup success: ${result.user.email}`);
+      const res = await fetch("/api/auth/firebase-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: result.user.uid,
+          email: result.user.email,
+          name: result.user.displayName,
+          photo: result.user.photoURL,
+        }),
+      });
+      const data = await res.json();
+      log(`firebase-sync: sessionUrl=${data.sessionUrl ? 'EXISTS' : 'MISSING'} error=${data.error || 'none'}`);
+      if (data.sessionUrl) {
+        window.location.href = data.sessionUrl;
       } else {
-        // Desktop: use popup
-        const result = await signInWithPopup(auth, provider);
-        const res = await fetch("/api/auth/firebase-sync", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            uid: result.user.uid,
-            email: result.user.email,
-            name: result.user.displayName,
-            photo: result.user.photoURL,
-          }),
-        });
-        const data = await res.json();
-        if (data.sessionUrl) {
-          window.location.href = data.sessionUrl;
-        } else {
-          router.push("/dashboard");
-        }
+        setError(`Session failed: ${data.error || 'no sessionUrl'}`);
+        setLoading(null);
       }
     } catch (e: any) {
+      log(`signIn error: ${e?.code} ${e?.message}`);
       if (e.code !== "auth/popup-closed-by-user") {
-        setError("Sign-in failed. Please try again.");
+        setError(`${e?.code || 'Sign-in failed'}`);
       }
       setLoading(null);
     }
