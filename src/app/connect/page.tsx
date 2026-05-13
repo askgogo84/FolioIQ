@@ -44,14 +44,10 @@ export default function Connect() {
       const result = await open({
         accessToken,
         config: {
-          enableUpload: true,
           enableCdslFetch: true,
           enableInbox: true,
           enableGenerator: true,
-          primaryColor: "#111827",
-          title: "Import Your Portfolio",
-          closeOnSuccess: true,
-          showSummary: true,
+          homeLayout: "actions",
         },
       });
 
