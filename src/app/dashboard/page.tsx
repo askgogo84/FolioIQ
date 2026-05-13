@@ -220,15 +220,122 @@ export default function Dashboard() {
     :{l:"Star ⭐",bg:"bg-emerald-100",tc:"text-emerald-800",dot:"#15803d"};
 
   if(!holdings.length) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-xl p-10 max-w-sm text-center">
-        <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-5 shadow-lg shadow-emerald-200">📊</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to FolioIQ</h2>
-        <p className="text-gray-500 text-sm leading-relaxed mb-6">Upload your NJ Wealth statement to unlock AI-powered portfolio intelligence.</p>
-        <Link href="/upload" className="flex items-center justify-center gap-2 w-full py-3.5 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-colors">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Upload Statement
-        </Link>
+    <div className="min-h-screen bg-[#F2F4F7] flex flex-col" style={{fontFamily:"'Inter var',system-ui,sans-serif"}}>
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-56 bg-white border-r border-gray-100 flex-col z-30">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center shadow-sm">
+              <span className="text-white text-sm font-black">F</span>
+            </div>
+            <div>
+              <div className="font-black text-gray-900 text-[14px] tracking-tight leading-none">FolioIQ</div>
+              <div className="text-[9px] text-gray-400 tracking-widest uppercase mt-0.5">Portfolio Intelligence</div>
+            </div>
+          </Link>
+        </div>
+        <div className="flex-1 px-3 py-4">
+          <div className="text-[9px] font-bold text-gray-400 tracking-widest uppercase px-3 mb-2">GETTING STARTED</div>
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium bg-gray-900 text-white">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            Dashboard
+          </div>
+        </div>
+        <div className="px-3 py-3 border-t border-gray-100">
+          <button onClick={()=>sb.auth.signOut().then(()=>router.push("/"))}
+            className="flex items-center gap-2.5 w-full px-3 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      <div className="lg:ml-56 flex-1 flex flex-col min-h-screen">
+        <header className="bg-white border-b border-gray-100 px-5 sm:px-8 py-3.5 sticky top-0 z-20 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[15px] font-bold text-gray-900">
+                {new Date().getHours()<12?"Good morning":new Date().getHours()<17?"Good afternoon":"Good evening"}, <span className="text-gray-500">{user?.email?.split("@")[0]}</span> 👋
+              </div>
+              <div className="text-[11px] text-gray-400">Connect your portfolio to get started</div>
+            </div>
+            <button onClick={()=>sb.auth.signOut().then(()=>router.push("/"))} className="text-[12px] text-gray-400 hover:text-red-500 transition-colors lg:hidden">Sign out</button>
+          </div>
+        </header>
+
+        <div className="flex-1 px-5 sm:px-8 py-8 w-full max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-full text-[12px] font-bold mb-5">
+              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"/>
+              Step 1 of 2 — Import your portfolio
+            </div>
+            <h1 className="text-[28px] sm:text-[36px] font-black text-gray-900 mb-2 leading-tight">
+              How would you like to connect<br className="hidden sm:block"/> your mutual funds?
+            </h1>
+            <p className="text-[15px] text-gray-500">Pick any method — takes under 2 minutes</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+            {[
+              {
+                icon:"📄", step:"01",
+                title:"Upload CAS / XLS File",
+                sub:"Download from NJ Wealth, CAMS, KFintech, or CDSL and upload here. We parse it in seconds.",
+                tag:"✅ Works instantly · No signup needed",
+                href:"/upload",
+                cta:"Upload File",
+                primary:true,
+              },
+              {
+                icon:"🏦", step:"02",
+                title:"CDSL OTP — Live Data",
+                sub:"Enter your 16-digit Demat ID, verify with OTP on your registered mobile. Real-time holdings.",
+                tag:"📱 No PDF needed · Instant",
+                href:"/connect",
+                cta:"Fetch via OTP",
+                primary:false,
+              },
+              {
+                icon:"📧", step:"03",
+                title:"Gmail Auto-Import",
+                sub:"One-time read-only consent. We find CAS emails from CAMS and KFintech automatically.",
+                tag:"⚡ Most convenient · Auto-syncs",
+                href:"/connect",
+                cta:"Connect Gmail",
+                primary:false,
+              },
+            ].map((m,i)=>(
+              <div key={i} className={`rounded-2xl border p-6 flex flex-col transition-all hover:shadow-lg ${m.primary?"bg-gray-900 border-gray-800":"bg-white border-gray-100 hover:border-gray-300"}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <span className={`text-[10px] font-black px-2 py-1 rounded-full ${m.primary?"bg-white/10 text-gray-400":"bg-gray-100 text-gray-500"}`}>{m.step}</span>
+                  <span className="text-2xl">{m.icon}</span>
+                </div>
+                <h3 className={`text-[15px] font-black mb-2 ${m.primary?"text-white":"text-gray-900"}`}>{m.title}</h3>
+                <p className={`text-[12px] leading-relaxed flex-1 mb-4 ${m.primary?"text-gray-400":"text-gray-500"}`}>{m.sub}</p>
+                <div className={`text-[11px] mb-4 font-medium ${m.primary?"text-emerald-400":"text-gray-400"}`}>{m.tag}</div>
+                <Link href={m.href}
+                  className={`w-full py-3 rounded-xl text-[13px] font-bold text-center transition-colors ${m.primary?"bg-emerald-500 text-white hover:bg-emerald-400":"bg-gray-900 text-white hover:bg-gray-800"}`}>
+                  {m.cta} →
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
+            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Works with all major platforms</div>
+            <div className="flex flex-wrap gap-2">
+              {["NJ Wealth","Groww","Zerodha","ET Money","Kuvera","Paytm Money","CAMS","KFintech","CDSL","NSDL","Axis MF","HDFC MF","Mirae Asset"].map(p=>(
+                <span key={p} className="px-3 py-1.5 bg-gray-50 border border-gray-100 text-gray-600 text-[12px] rounded-full font-medium">{p}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 px-4 py-3.5 bg-emerald-50 border border-emerald-100 rounded-2xl">
+            <span className="text-xl">🔒</span>
+            <p className="text-[12px] text-emerald-700 leading-relaxed">
+              <strong>Read-only · Bank-grade security.</strong> We never have trading or redemption access. Data encrypted end-to-end. NAVs refresh daily from AMFI.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
