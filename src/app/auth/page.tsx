@@ -50,7 +50,11 @@ export default function AuthPage() {
         await syncToSupabase(result.user);
         router.push("/dashboard");
       }
-    }).catch(() => {});
+    }).catch((e) => {
+      console.error("Redirect result error:", e?.code, e?.message);
+      setError(`Sign-in error: ${e?.code || e?.message || 'unknown'}`);
+      setLoading(null);
+    });
 
     return () => unsub();
   }, [router]);

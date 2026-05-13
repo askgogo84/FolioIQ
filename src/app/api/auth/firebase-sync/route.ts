@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
       : null
 
     return NextResponse.json({ success: true, userId, sessionUrl })
-  } catch (err) {
+  } catch (err: any) {
     console.error('Firebase sync error:', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 })
   }
 }
