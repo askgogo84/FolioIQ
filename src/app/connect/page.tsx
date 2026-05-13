@@ -45,8 +45,8 @@ export default function Connect() {
         accessToken,
         config: {
           enableCdslFetch: true,
-          enableInbox: true,
-          enableGenerator: true,
+          enableInbox: false,   // Gmail needs OAuth setup in CASParser dashboard
+          enableGenerator: false,
           homeLayout: "actions",
         },
       });
