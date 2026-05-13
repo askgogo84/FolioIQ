@@ -92,7 +92,7 @@ async function parseWithVision(base64: string, mediaType: string) {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20251001',
       max_tokens: 4000,
       system: `You are an expert at extracting Indian mutual fund data from NJ Wealth, Kuvera, Groww, Zerodha Coin, ET Money, CAMS CAS PDF statements.
 For NJ Wealth Scheme Valuation Reports: find all "Sub Total" rows. Each has: Total Invested Amount, Total Units, Current NAV, Current Value.
