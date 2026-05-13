@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+
 import { AreaChart, Area, PieChart, Pie, Cell, Tooltip, ResponsiveContainer, CartesianGrid, XAxis, YAxis, LineChart, Line } from "recharts";
 import Link from "next/link";
 
@@ -130,29 +129,9 @@ export default function Dashboard() {
     (async()=>{
       const {data:{user}}=await sb.auth.getUser();
       
-      // Also check Firebase auth (Google/Apple sign-in)
-      const firebaseUser = auth.currentUser;
+      if(!user){router.push("/auth");return;}
       
-      if(!user && !firebaseUser){router.push("/auth");return;}
-      
-      if(firebaseUser && !user) {
-        // Firebase user but no Supabase session yet — sync and create session
-        const res = await fetch("/api/auth/firebase-sync", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
-            photo: firebaseUser.photoURL,
-          })
-        });
-        const d = await res.json();
-        if (d.sessionUrl) window.location.href = d.sessionUrl;
-        return;
-      }
-      
-      setUser(user || {email: firebaseUser?.email, uid: firebaseUser?.uid});
+      setUser(user);
       const {data:pd}=await sb.from("portfolios").select("data").eq("user_id",user.id).maybeSingle();
       if(pd?.data?.funds){
         const v=(pd.data.funds as any[]).filter((f:any)=>{
