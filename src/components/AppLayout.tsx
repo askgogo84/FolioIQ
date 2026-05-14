@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
 // ── Market ticker ─────────────────────────────────────────────────────
@@ -107,6 +107,15 @@ export default function AppLayout({
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [tickers, setTickers] = useState(TICKER_FALLBACK);
   const [collapsed, setCollapsed] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/auth');
+  };
 
   // Theme
   useEffect(() => {
@@ -277,29 +286,55 @@ export default function AppLayout({
           </div>
         )}
 
-        {/* User row */}
-        <Link href="/profile" style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 8px',
+        {/* User row + logout */}
+        <div style={{
           borderTop: '1px solid var(--border)',
-          paddingTop: 12,
-          textDecoration: 'none',
+          paddingTop: 8,
+          display: 'flex', flexDirection: 'column', gap: 4,
         }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 10,
-            background: 'linear-gradient(135deg, var(--brand), var(--brand-2))',
-            color: 'var(--bg-deep)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, fontSize: 11, letterSpacing: '-0.02em',
-            flexShrink: 0,
-          }}>AS</div>
-          {!collapsed && (
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Aarav Sharma</div>
-              <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>Plus member · ⚙</div>
-            </div>
-          )}
-        </Link>
+          <Link href="/profile" style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '8px 8px',
+            textDecoration: 'none', borderRadius: 10,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: 'linear-gradient(135deg, var(--brand), var(--brand-2))',
+              color: 'var(--bg-deep)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, fontSize: 11, letterSpacing: '-0.02em',
+              flexShrink: 0,
+            }}>AS</div>
+            {!collapsed && (
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Aarav Sharma</div>
+                <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>Plus member · ⚙</div>
+              </div>
+            )}
+          </Link>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            title="Sign out"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: collapsed ? '8px' : '8px 10px',
+              borderRadius: 10, border: 'none',
+              background: 'transparent', cursor: loggingOut ? 'wait' : 'pointer',
+              color: 'var(--ink-3)', fontSize: 12,
+              width: '100%', justifyContent: collapsed ? 'center' : 'flex-start',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            {!collapsed && (
+              <span>{loggingOut ? 'Signing out…' : 'Sign out'}</span>
+            )}
+          </button>
+        </div>
       </aside>
 
       {/* ── Main column ──────────────────────────────────────────── */}
