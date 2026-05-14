@@ -108,7 +108,23 @@ export default function AppLayout({
   const [tickers, setTickers] = useState(TICKER_FALLBACK);
   const [collapsed, setCollapsed] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [userInitials, setUserInitials] = useState('?');
   const router = useRouter();
+
+  // Fetch real logged-in user from Supabase
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data?.user;
+      if (!u) return;
+      const raw = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Investor';
+      setUserName(raw);
+      const parts = raw.trim().split(/\s+/);
+      const ini = ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? parts[0]?.[1] ?? '')).toUpperCase();
+      setUserInitials(ini || '?');
+    });
+  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -166,13 +182,13 @@ export default function AppLayout({
         display: 'flex', flexDirection: 'column',
         position: 'sticky', top: 0, height: '100vh',
         overflow: 'hidden',
-        padding: collapsed ? '20px 10px' : '20px 16px',
+        padding: collapsed ? '16px 8px' : '16px 12px',
       }}>
         {/* Brand */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
-          padding: collapsed ? '6px 0 18px' : '6px 6px 20px',
-          borderBottom: '1px solid var(--border)', marginBottom: 14,
+          padding: collapsed ? '4px 0 14px' : '4px 4px 14px',
+          borderBottom: '1px solid var(--border)', marginBottom: 10,
         }}>
           <Link href="/dashboard" style={{
             width: 40, height: 40, borderRadius: 12,
@@ -255,59 +271,23 @@ export default function AppLayout({
           ))}
         </div>
 
-        {/* Plus upgrade card */}
-        {!collapsed && (
-          <div style={{
-            padding: 14, borderRadius: 14,
-            background: 'linear-gradient(135deg, var(--surface-3), var(--surface-2))',
-            border: '1px solid var(--border)',
-            margin: '8px 0', position: 'relative', overflow: 'hidden',
-          }}>
-            <div style={{
-              position: 'absolute', top: -20, right: -20, width: 80, height: 80,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, color-mix(in oklab, var(--brand) 20%, transparent), transparent 70%)',
-            }} />
-            <div style={{ position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
-                <Sparkle size={11} />
-                <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--brand)', fontWeight: 600 }}>Plus+</span>
-              </div>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, lineHeight: 1.15, marginBottom: 8, color: 'var(--ink)' }}>Unlock the full vault</div>
-              <Link href="/pricing" style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: '100%', padding: '8px 0', borderRadius: 10,
-                background: 'var(--brand)', color: 'var(--bg-deep)',
-                fontSize: 11.5, fontWeight: 600, textDecoration: 'none',
-              }}>
-                Try 30 days free →
-              </Link>
-            </div>
-          </div>
-        )}
-
         {/* User row + logout */}
-        <div style={{
-          borderTop: '1px solid var(--border)',
-          paddingTop: 8,
-          display: 'flex', flexDirection: 'column', gap: 4,
-        }}>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Link href="/profile" style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            padding: '8px 8px',
-            textDecoration: 'none', borderRadius: 10,
+            padding: '8px 8px', textDecoration: 'none', borderRadius: 10,
           }}>
             <div style={{
               width: 32, height: 32, borderRadius: 10,
               background: 'linear-gradient(135deg, var(--brand), var(--brand-2))',
-              color: 'var(--bg-deep)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: 11, letterSpacing: '-0.02em',
-              flexShrink: 0,
-            }}>AS</div>
+              color: 'var(--bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, fontSize: 11, letterSpacing: '-0.02em', flexShrink: 0,
+            }}>{userInitials}</div>
             {!collapsed && (
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Aarav Sharma</div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {userName || 'Loading…'}
+                </div>
                 <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>Plus member · ⚙</div>
               </div>
             )}
@@ -318,21 +298,18 @@ export default function AppLayout({
             title="Sign out"
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: collapsed ? '8px' : '8px 10px',
-              borderRadius: 10, border: 'none',
-              background: 'transparent', cursor: loggingOut ? 'wait' : 'pointer',
+              padding: collapsed ? '7px' : '7px 10px',
+              borderRadius: 10, border: 'none', background: 'transparent',
+              cursor: loggingOut ? 'wait' : 'pointer',
               color: 'var(--ink-3)', fontSize: 12,
               width: '100%', justifyContent: collapsed ? 'center' : 'flex-start',
-            }}
-          >
+            }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
-            {!collapsed && (
-              <span>{loggingOut ? 'Signing out…' : 'Sign out'}</span>
-            )}
+            {!collapsed && <span>{loggingOut ? 'Signing out…' : 'Sign out'}</span>}
           </button>
         </div>
       </aside>
@@ -401,6 +378,18 @@ export default function AppLayout({
             <button onClick={toggleTheme} style={{ padding: 9, borderRadius: 10, background: 'transparent', border: 'none', color: 'var(--ink-2)', cursor: 'pointer' }} aria-label="Toggle theme">
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </button>
+
+            {/* Plus nudge — compact, non-intrusive */}
+            <Link href="/pricing" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              padding: '6px 11px', borderRadius: 99,
+              background: 'linear-gradient(135deg, var(--brand-soft), transparent)',
+              border: '1px solid var(--border)',
+              fontSize: 11, fontWeight: 600, color: 'var(--brand-2)',
+              textDecoration: 'none', whiteSpace: 'nowrap',
+            }}>
+              ✦ Try Plus free
+            </Link>
 
             {/* Ask Folio */}
             <Link href="/chat" style={{
