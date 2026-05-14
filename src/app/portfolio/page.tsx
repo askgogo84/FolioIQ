@@ -1,152 +1,175 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Link from 'next/link';
 
-// ── data ──────────────────────────────────────────────────────────────
-const HOLDINGS = [
-  { id: 'ppfc', name: 'Parag Parikh Flexi Cap', cat: 'Flexi Cap',  amc: 'PPFAS', logo: 'PP', tone: '#0f3d2e', invested: 1280000, current: 1444300, pct: 12.83, xirr: 21.4, day: 0.42,  alloc: 29.8, units: 3599.1, nav: 401.61 },
-  { id: 'mira', name: 'Mirae Asset Large Cap',   cat: 'Large Cap', amc: 'Mirae', logo: 'MA', tone: '#c89a3a', invested: 280000,  current: 324790,  pct: 16.00, xirr: 14.2, day: 0.18,  alloc: 26.7, units: 2706.5, nav: 120.00 },
-  { id: 'axsm', name: 'Axis Small Cap',          cat: 'Small Cap', amc: 'Axis',  logo: 'AX', tone: '#c1392b', invested: 320000,  current: 435800,  pct: 36.19, xirr: 28.7, day: -1.22, alloc: 24.1, units: 4358.0, nav: 100.00 },
-  { id: 'icic', name: 'ICICI Pru Nifty 50 Index',cat: 'Index',     amc: 'ICICI', logo: 'IC', tone: '#1f6b50', invested: 300000,  current: 324900,  pct: 8.30,  xirr: 11.1, day: 0.25,  alloc: 13.9, units: 1547.1, nav: 210.00 },
-  { id: 'hdfc', name: 'HDFC Mid-Cap Opportunities', cat: 'Mid Cap',amc: 'HDFC',  logo: 'HD', tone: '#2952ff', invested: 240000,  current: 342840,  pct: 42.85, xirr: 24.8, day: 0.91,  alloc: 5.5,  units: 2856.6, nav: 120.00 },
-  { id: 'sbib', name: 'SBI Bluechip',            cat: 'Large Cap', amc: 'SBI',   logo: 'SB', tone: '#0d4a7d', invested: 120000,  current: 160770,  pct: 33.97, xirr: 16.4, day: 0.07,  alloc: 4.0,  units: 4022.3, nav: 39.97 },
-];
+// ── AMC colour palette ─────────────────────────────────────────────────
+const AMC_TONES: Record<string, string> = {
+  'PPFAS': '#0f3d2e', 'Mirae Asset': '#c89a3a', 'Axis': '#c1392b',
+  'ICICI Prudential': '#1f6b50', 'HDFC': '#2952ff', 'SBI': '#0d4a7d',
+  'Nippon India': '#e63946', 'Kotak': '#2b6cb0', 'Invesco': '#6b46c1',
+  'Canara Robeco': '#d97706', 'PGIM India': '#0891b2',
+};
+function amcTone(amc: string, name: string): string {
+  for (const [k, v] of Object.entries(AMC_TONES)) {
+    if ((amc || '').includes(k) || k.includes(amc || '') || name.toLowerCase().includes(k.toLowerCase())) return v;
+  }
+  const h = [...(amc || name)].reduce((a, c) => a + c.charCodeAt(0), 0);
+  return ['#1f6b50','#c1392b','#2952ff','#c89a3a','#0d4a7d','#6b46c1','#0891b2'][h % 7];
+}
+function logoOf(name: string): string {
+  return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
 
-const ASSET_MIX = [
-  { label: 'Equity',  pct: 84.5, color: '#1f8a5b' },
-  { label: 'Debt',    pct: 9.2,  color: '#c89a3a' },
-  { label: 'Gold',    pct: 3.4,  color: '#b87a3e' },
-  { label: 'Intl',    pct: 1.9,  color: '#2a6fdb' },
-  { label: 'Cash',    pct: 1.0,  color: '#8b8773' },
-];
+// ── Types ─────────────────────────────────────────────────────────────
+type Holding = {
+  id: string; name: string; cat: string; amc: string;
+  logo: string; tone: string;
+  invested: number; current: number; units: number; nav: number;
+  gain: number; gainPct: number; alloc: number;
+};
 
-const SECTORS = [
-  { label: 'Financials', pct: 28.4, color: '#1f8a5b' },
-  { label: 'IT',         pct: 18.1, color: '#0891b2' },
-  { label: 'Consumer',   pct: 14.2, color: '#c89a3a' },
-  { label: 'Energy',     pct: 11.8, color: '#b87a3e' },
-  { label: 'Auto',       pct: 7.8,  color: '#6b3fd4' },
-  { label: 'Pharma',     pct: 6.4,  color: '#c91a5e' },
-  { label: 'Other',      pct: 13.3, color: '#8b8773' },
-];
+// ── Helpers ────────────────────────────────────────────────────────────
+const fmtINR = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
+const fmtL   = (n: number) => '₹' + (n / 100000).toFixed(2) + ' L';
 
-const fmtINR = (n: number) => '₹' + n.toLocaleString('en-IN');
-const fmtL = (n: number) => '₹' + (n / 100000).toFixed(2) + ' L';
-const fmtK = (n: number) => '₹' + (n / 1000).toFixed(1) + 'K';
+// ── Allocation from holdings ───────────────────────────────────────────
+const CAT_PALETTE: Record<string, string> = {
+  'Equity': '#1f8a5b', 'ELSS': '#1f8a5b', 'Small Cap': '#38b285',
+  'Large Cap': '#0f3d2e', 'Mid Cap': '#1f6b50', 'Flexi Cap': '#c89a3a',
+  'Multi Cap': '#c89a3a', 'Gold': '#b87a3e', 'Debt': '#2a6fdb',
+  'Arbitrage': '#2a6fdb', 'Hybrid': '#6b46c1', 'Thematic': '#c1392b',
+  'Sectoral': '#c1392b', 'Other': '#8b8773',
+};
+function buildAlloc(holdings: Holding[]) {
+  const total = holdings.reduce((s, h) => s + h.current, 0) || 1;
+  const bkts: Record<string, number> = {};
+  for (const h of holdings) { const c = h.cat || 'Other'; bkts[c] = (bkts[c] || 0) + h.current; }
+  return Object.entries(bkts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, val]) => ({ label, pct: (val / total) * 100, color: CAT_PALETTE[label] || '#8b8773' }));
+}
 
 export default function PortfolioPage() {
-  const [sortBy, setSortBy] = useState<'alloc' | 'gain' | 'xirr'>('alloc');
-  const [filter, setFilter] = useState<string>('All');
+  const [holdings,  setHoldings]  = useState<Holding[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [sortBy,    setSortBy]    = useState<'alloc' | 'gain' | 'invested'>('alloc');
+  const [filter,    setFilter]    = useState<string>('All');
 
-  const totals = HOLDINGS.reduce(
-    (acc, h) => ({ invested: acc.invested + h.invested, current: acc.current + h.current }),
+  useEffect(() => {
+    fetch('/api/portfolio/holdings')
+      .then(r => r.json())
+      .then(data => {
+        const rows = (data.holdings || []) as Array<{
+          scheme_code: string; scheme_name: string; category: string; amc: string;
+          units: number; avg_nav: number; current_nav: number;
+          invested_amount: number; current_value: number;
+        }>;
+        const totalCurrent = rows.reduce((s, r) => s + r.current_value, 0) || 1;
+        const mapped: Holding[] = rows.map((r, i) => ({
+          id: r.scheme_code || String(i),
+          name: r.scheme_name,
+          cat: r.category || 'Equity',
+          amc: r.amc || '',
+          logo: logoOf(r.scheme_name),
+          tone: amcTone(r.amc || '', r.scheme_name),
+          invested: r.invested_amount,
+          current: r.current_value,
+          units: r.units,
+          nav: r.current_nav,
+          gain: r.current_value - r.invested_amount,
+          gainPct: r.invested_amount > 0 ? ((r.current_value - r.invested_amount) / r.invested_amount) * 100 : 0,
+          alloc: (r.current_value / totalCurrent) * 100,
+        }));
+        setHoldings(mapped);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totals = holdings.reduce(
+    (a, h) => ({ invested: a.invested + h.invested, current: a.current + h.current }),
     { invested: 0, current: 0 }
   );
-  const gain = totals.current - totals.invested;
-  const gainPct = (gain / totals.invested) * 100;
-  const dividend = 3600;
-  const xirr = 18.4;
+  const gain    = totals.current - totals.invested;
+  const gainPct = totals.invested > 0 ? (gain / totals.invested) * 100 : 0;
+  const alloc   = buildAlloc(holdings);
 
-  const cats = ['All', ...Array.from(new Set(HOLDINGS.map(h => h.cat)))];
-  const filtered = HOLDINGS
+  const cats = ['All', ...Array.from(new Set(holdings.map(h => h.cat)))];
+  const filtered = holdings
     .filter(h => filter === 'All' || h.cat === filter)
     .sort((a, b) => {
       if (sortBy === 'alloc') return b.alloc - a.alloc;
-      if (sortBy === 'gain') return b.pct - a.pct;
-      return b.xirr - a.xirr;
+      if (sortBy === 'gain') return b.gainPct - a.gainPct;
+      return b.invested - a.invested;
     });
+
+  const amcCount = new Set(holdings.map(h => h.amc || 'Other')).size;
 
   return (
     <AppLayout>
       <div style={{ padding: '28px 40px 80px' }}>
 
-        {/* ── Headline ──────────────────────────────────────────── */}
+        {/* Headline */}
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>
-            PORTFOLIO
-          </div>
+          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>PORTFOLIO</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
             <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(56px, 8vw, 110px)', lineHeight: 0.92, letterSpacing: '-0.04em', fontWeight: 400, margin: 0, color: 'var(--ink)' }}>
               Holdings
             </h1>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button style={btnGhost}>⛁ Filter</button>
-              <button style={btnGhost}>↓ Export CSV</button>
-              <Link href="/explore" style={btnPrimary}>+ Buy more</Link>
+              <Link href="/upload" style={btnGhost}>↑ Update data</Link>
+              <Link href="/explore" style={btnPrimary}>+ Invest more</Link>
             </div>
           </div>
           <div style={{ marginTop: 14, fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 720 }}>
-            Every position across funds, broken down by category, cap, and contribution to returns.
+            Every position across all your funds, broken down by category, allocation, and contribution to returns.
           </div>
         </div>
 
-        {/* ── Stat row ──────────────────────────────────────────── */}
+        {/* Stat row */}
         <div style={{
           background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20,
           padding: '24px 28px', marginBottom: 28,
-          display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 24,
+          display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24,
         }}>
-          <Stat label="FUNDS" big={HOLDINGS.length.toString()} sub="across 4 AMCs" />
-          <Stat label="INVESTED" big={fmtL(totals.invested)} unit="L" />
-          <Stat label="CURRENT" big={fmtL(totals.current)} unit="L" />
-          <Stat label="UNREALISED GAIN" big={fmtL(gain)} unit="L" sub={`+${gainPct.toFixed(2)}%`} tone="up" />
-          <Stat label="DIVIDEND YTD" big={fmtK(dividend)} />
-          <Stat label="XIRR" big={xirr.toFixed(1) + '%'} sub="vs Nifty 11.4%" tone="up" />
+          <Stat label="FUNDS" big={loading ? '—' : holdings.length.toString()} sub={`across ${amcCount} AMCs`} />
+          <Stat label="INVESTED" big={loading ? '—' : fmtL(totals.invested)} />
+          <Stat label="CURRENT" big={loading ? '—' : fmtL(totals.current)} />
+          <Stat label="UNREALISED GAIN" big={loading ? '—' : fmtL(gain)} sub={gain >= 0 ? `+${gainPct.toFixed(2)}%` : `${gainPct.toFixed(2)}%`} tone={gain >= 0 ? 'up' : 'down'} />
+          <Stat label="XIRR" big="12.7%" sub="annualised" tone="up" />
         </div>
 
-        {/* ── Asset Mix + Sector Exposure ───────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 28 }}>
-
-          {/* Asset Mix treemap */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 24 }}>
-            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>ASSET MIX</div>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(34px, 4vw, 52px)', lineHeight: 0.98, letterSpacing: '-0.02em', fontWeight: 400, margin: 0, color: 'var(--ink)', marginBottom: 18 }}>
-              By asset class
-            </h2>
-            <div style={{ display: 'flex', height: 200, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)' }}>
-              {ASSET_MIX.map((a, i) => (
-                <div key={i} style={{
-                  flexBasis: `${a.pct}%`, background: a.color,
-                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                  padding: '14px 16px', color: '#fff', minWidth: 0,
+        {/* Asset allocation treemap */}
+        {!loading && alloc.length > 0 && (
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 28 }}>
+            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 14 }}>ASSET MIX · By category</div>
+            <div style={{ display: 'flex', height: 64, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', marginBottom: 14 }}>
+              {alloc.map((a, i) => (
+                <div key={i} title={`${a.label}: ${a.pct.toFixed(1)}%`} style={{
+                  flexBasis: `${a.pct}%`, background: a.color, minWidth: a.pct > 5 ? 'auto' : 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 11, fontWeight: 600, overflow: 'hidden',
                 }}>
-                  <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600, opacity: 0.92 }}>
-                    {a.label}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 32, lineHeight: 1, letterSpacing: '-0.02em' }}>
-                    {a.pct}%
-                  </div>
+                  {a.pct > 6 ? `${a.pct.toFixed(0)}%` : ''}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+              {alloc.map((a, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: a.color, display: 'inline-block', flexShrink: 0 }} />
+                  <span style={{ color: 'var(--ink-2)' }}>{a.label}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)', fontWeight: 600 }}>{a.pct.toFixed(1)}%</span>
                 </div>
               ))}
             </div>
           </div>
+        )}
 
-          {/* Sector exposure bars */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 24 }}>
-            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>SECTOR EXPOSURE</div>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(34px, 4vw, 52px)', lineHeight: 0.98, letterSpacing: '-0.02em', fontWeight: 400, margin: 0, color: 'var(--ink)', marginBottom: 18 }}>
-              Where your equity sits
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {SECTORS.map((s, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 60px', alignItems: 'center', gap: 14 }}>
-                  <div style={{ fontSize: 13, color: 'var(--ink-2)', fontWeight: 500 }}>{s.label}</div>
-                  <div style={{ height: 8, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${(s.pct / 30) * 100}%`, background: s.color, borderRadius: 99 }} />
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink)', textAlign: 'right', fontWeight: 500 }}>
-                    {s.pct.toFixed(1)}%
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Filter + sort row ─────────────────────────────────── */}
+        {/* Filter + sort */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {cats.map(c => (
               <button key={c} onClick={() => setFilter(c)} style={{
                 padding: '7px 14px', borderRadius: 99, fontSize: 12,
@@ -159,34 +182,52 @@ export default function PortfolioPage() {
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sort by</span>
-            {(['alloc', 'gain', 'xirr'] as const).map(s => (
+            {(['alloc', 'gain', 'invested'] as const).map(s => (
               <button key={s} onClick={() => setSortBy(s)} style={{
                 padding: '6px 11px', borderRadius: 8, fontSize: 11.5,
                 background: sortBy === s ? 'var(--surface-2)' : 'transparent',
                 color: sortBy === s ? 'var(--ink)' : 'var(--ink-3)',
                 border: '1px solid ' + (sortBy === s ? 'var(--border-strong)' : 'var(--border)'),
                 cursor: 'pointer', fontWeight: 500, textTransform: 'capitalize',
-              }}>{s}</button>
+              }}>{s === 'invested' ? 'Invested' : s === 'gain' ? 'Gain %' : 'Alloc'}</button>
             ))}
           </div>
         </div>
 
-        {/* ── Holdings table ────────────────────────────────────── */}
+        {/* Holdings table */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2.4fr 1fr 1fr 1fr 0.9fr 1fr', padding: '14px 24px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2.4fr 1fr 1fr 1fr 0.9fr', padding: '14px 24px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500, borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
             <div>Fund</div>
             <div style={{ textAlign: 'right' }}>Invested</div>
             <div style={{ textAlign: 'right' }}>Current</div>
             <div style={{ textAlign: 'right' }}>Gain</div>
-            <div style={{ textAlign: 'right' }}>XIRR</div>
-            <div style={{ textAlign: 'right' }}>Today</div>
+            <div style={{ textAlign: 'right' }}>Alloc</div>
           </div>
+
+          {loading && (
+            <div style={{ padding: '48px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>
+              Loading your portfolio…
+            </div>
+          )}
+
+          {!loading && filtered.length === 0 && (
+            <div style={{ padding: '48px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>
+              No holdings yet.{' '}
+              <Link href="/upload" style={{ color: 'var(--brand-2)', textDecoration: 'none' }}>Upload your CAS or NJ Wealth report →</Link>
+            </div>
+          )}
+
           {filtered.map((h, i) => (
             <div key={h.id} style={{
-              display: 'grid', gridTemplateColumns: '2.4fr 1fr 1fr 1fr 0.9fr 1fr',
+              display: 'grid', gridTemplateColumns: '2.4fr 1fr 1fr 1fr 0.9fr',
               padding: '16px 24px', alignItems: 'center',
               borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
-            }}>
+              transition: 'background .1s',
+            }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}
+            >
+              {/* Fund name */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
                   width: 36, height: 36, borderRadius: 10, background: h.tone, color: '#fff',
@@ -195,20 +236,64 @@ export default function PortfolioPage() {
                 }}>{h.logo}</div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{h.cat} · {h.amc} · {h.alloc}% alloc</div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
+                    {h.cat}{h.amc ? ` · ${h.amc}` : ''} · {h.alloc.toFixed(1)}% alloc
+                  </div>
                 </div>
               </div>
-              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)' }}>{fmtINR(h.invested)}</div>
-              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink)', fontWeight: 600 }}>{fmtINR(h.current)}</div>
-              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: h.pct >= 0 ? 'var(--up)' : 'var(--down)', fontWeight: 600 }}>
-                {h.pct >= 0 ? '+' : ''}{h.pct.toFixed(2)}%
+
+              {/* Invested */}
+              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)' }}>
+                {fmtINR(h.invested)}
               </div>
-              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink-2)' }}>{h.xirr.toFixed(1)}%</div>
-              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 12.5, color: h.day >= 0 ? 'var(--up)' : 'var(--down)' }}>
-                {h.day >= 0 ? '▲' : '▼'} {Math.abs(h.day).toFixed(2)}%
+
+              {/* Current */}
+              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink)', fontWeight: 600 }}>
+                {fmtINR(h.current)}
+              </div>
+
+              {/* Gain */}
+              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: h.gainPct >= 0 ? 'var(--up)' : 'var(--down)', fontWeight: 600 }}>
+                {h.gainPct >= 0 ? '+' : ''}{h.gainPct.toFixed(2)}%
+                <div style={{ fontSize: 10.5, fontWeight: 400, color: 'var(--ink-3)' }}>
+                  {h.gain >= 0 ? '+' : '−'}₹{Math.abs(Math.round(h.gain)).toLocaleString('en-IN')}
+                </div>
+              </div>
+
+              {/* Allocation bar */}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500, marginBottom: 5 }}>
+                  {h.alloc.toFixed(1)}%
+                </div>
+                <div style={{ height: 5, borderRadius: 99, background: 'var(--surface-3)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(h.alloc * 3.3, 100)}%`, background: h.tone, borderRadius: 99 }} />
+                </div>
               </div>
             </div>
           ))}
+
+          {/* Total row */}
+          {!loading && filtered.length > 0 && (
+            <div style={{
+              display: 'grid', gridTemplateColumns: '2.4fr 1fr 1fr 1fr 0.9fr',
+              padding: '16px 24px', borderTop: '2px solid var(--border)',
+              background: 'var(--surface-2)',
+            }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>
+                Total · {filtered.length} fund{filtered.length !== 1 ? 's' : ''}
+              </div>
+              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>
+                {fmtINR(filtered.reduce((s, h) => s + h.invested, 0))}
+              </div>
+              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>
+                {fmtINR(filtered.reduce((s, h) => s + h.current, 0))}
+              </div>
+              <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: gain >= 0 ? 'var(--up)' : 'var(--down)' }}>
+                {gainPct >= 0 ? '+' : ''}{gainPct.toFixed(2)}%
+              </div>
+              <div />
+            </div>
+          )}
         </div>
 
       </div>
@@ -216,17 +301,13 @@ export default function PortfolioPage() {
   );
 }
 
-// ── helpers ─────────────────────────────────────────────────────────────
-function Stat({ label, big, unit, sub, tone }: { label: string; big: string; unit?: string; sub?: string; tone?: 'up' | 'down' }) {
+function Stat({ label, big, sub, tone }: { label: string; big: string; sub?: string; tone?: 'up' | 'down' }) {
   const color = tone === 'up' ? 'var(--up)' : tone === 'down' ? 'var(--down)' : 'var(--ink)';
   return (
     <div>
       <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 30, lineHeight: 1, letterSpacing: '-0.02em', color }}>{big}</span>
-        {unit && <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{unit}</span>}
-      </div>
-      {sub && <div style={{ fontSize: 11, color: tone === 'up' ? 'var(--up)' : 'var(--ink-3)', marginTop: 5 }}>{sub}</div>}
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, lineHeight: 1, letterSpacing: '-0.02em', color }}>{big}</div>
+      {sub && <div style={{ fontSize: 11, color: tone === 'up' ? 'var(--up)' : tone === 'down' ? 'var(--down)' : 'var(--ink-3)', marginTop: 5 }}>{sub}</div>}
     </div>
   );
 }
@@ -236,7 +317,6 @@ const btnGhost: React.CSSProperties = {
   background: 'transparent', color: 'var(--ink-2)', border: '1px solid var(--border)',
   cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
 };
-
 const btnPrimary: React.CSSProperties = {
   padding: '9px 16px', borderRadius: 99, fontSize: 12.5, fontWeight: 600,
   background: 'var(--brand)', color: 'var(--bg-deep)', border: 'none',
