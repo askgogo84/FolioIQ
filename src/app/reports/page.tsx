@@ -1,213 +1,150 @@
-﻿"use client";
+'use client';
+import { useState } from 'react';
+import AppLayout from '@/components/AppLayout';
 
-import { useState } from "react";
-import { 
-  FileText, Download, Home, LayoutDashboard, Upload, Search, 
-  User, Sparkles, Brain, CheckCircle, Clock, Calendar,
-  TrendingUp, Shield, DollarSign, PieChart, ArrowRight
-} from "lucide-react";
-import Link from "next/link";
+const fmtINR=(n:number,o:any={})=>{if(!n&&n!==0)return'—';const a=Math.abs(n);const s=n<0?'−':'';if(o.short){if(a>=1e7)return`${s}₹${(a/1e7).toFixed(2)} Cr`;if(a>=1e5)return`${s}₹${(a/1e5).toFixed(2)} L`;if(a>=1e3)return`${s}₹${(a/1e3).toFixed(1)}K`;return`${s}₹${a.toFixed(0)}`;}const p=a.toFixed(0);let l=p.slice(-3),r=p.slice(0,-3);if(r)r=r.replace(/\B(?=(\d{2})+(?!\d))/g,',');return`${s}₹${r?r+','+l:l}`;};
 
-const reports = [
-  {
-    id: "portfolio-summary",
-    name: "Portfolio Summary Report",
-    description: "Complete overview of your ₹55.3L portfolio with allocation, returns, and risk analysis",
-    format: "PDF",
-    size: "2.4 MB",
-    lastGenerated: "2026-05-03",
-    icon: PieChart,
-    color: "blue"
-  },
-  {
-    id: "capital-gains",
-    name: "Capital Gains Statement",
-    description: "STCG and LTCG breakdown for FY 2025-26. Ready for ITR filing",
-    format: "PDF / Excel",
-    size: "1.1 MB",
-    lastGenerated: "2026-05-03",
-    icon: TrendingUp,
-    color: "green"
-  },
-  {
-    id: "tax-harvesting",
-    name: "Tax Loss Harvesting Plan",
-    description: "Actionable plan to save ₹28,400 in taxes with specific sell/buy recommendations",
-    format: "PDF",
-    size: "856 KB",
-    lastGenerated: "2026-05-02",
-    icon: DollarSign,
-    color: "purple"
-  },
-  {
-    id: "rebalance-plan",
-    name: "Portfolio Rebalance Plan",
-    description: "AI-generated rebalancing strategy: Sell 7 funds, buy 6 new ones. Expected health score: 85/100",
-    format: "PDF",
-    size: "1.8 MB",
-    lastGenerated: "2026-05-02",
-    icon: Shield,
-    color: "orange"
-  },
-  {
-    id: "transaction-history",
-    name: "Transaction History",
-    description: "All SIPs, lump sum buys, and redemptions from Jan 2025 to Apr 2026",
-    format: "Excel (CSV)",
-    size: "324 KB",
-    lastGenerated: "2026-05-01",
-    icon: FileText,
-    color: "slate"
-  },
-  {
-    id: "sip-summary",
-    name: "Monthly SIP Summary",
-    description: "Active SIPs across 17 funds. Total monthly commitment: ₹91,000",
-    format: "PDF",
-    size: "512 KB",
-    lastGenerated: "2026-05-01",
-    icon: Calendar,
-    color: "cyan"
-  },
-];
+export default function ReportsPage(){
+  const [year,setYear]=useState('FY 25-26');
+  const s=(t:string)=>({padding:'28px 40px 80px'} as any);
+  return(
+    <AppLayout>
+      <div style={{padding:'28px 40px 80px'}}>
+        {/* Header */}
+        <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',marginBottom:36,gap:20,flexWrap:'wrap'}}>
+          <div>
+            <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.14em',color:'var(--ink-3)',fontWeight:500,marginBottom:10}}>Reports & Tax</div>
+            <h1 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(32px,4.5vw,72px)',lineHeight:.98,letterSpacing:'-0.03em',fontWeight:400,margin:0,color:'var(--ink)'}}>
+              Statements, capital gains,<br/>and IT-ready filings
+            </h1>
+            <div style={{marginTop:14,fontSize:15,color:'var(--ink-2)',lineHeight:1.55,maxWidth:600}}>Download official statements, see realised gains by year, and prep for tax season in two clicks.</div>
+          </div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <select value={year} onChange={e=>setYear(e.target.value)} style={{padding:'9px 14px',borderRadius:999,fontSize:13,border:'1px solid var(--border)',background:'var(--surface-2)',color:'var(--ink)',cursor:'pointer'}}>
+              <option>FY 25-26</option><option>FY 24-25</option><option>FY 23-24</option>
+            </select>
+            <button style={{padding:'9px 18px',borderRadius:999,fontSize:13,fontWeight:600,border:'none',background:'var(--brand)',color:'var(--bg-deep)',cursor:'pointer'}}>↓ Download all</button>
+          </div>
+        </div>
 
-export default function ReportsPage() {
-  const [generating, setGenerating] = useState<string | null>(null);
-  const [downloaded, setDownloaded] = useState<string[]>([]);
-
-  const handleDownload = (reportId: string) => {
-    setGenerating(reportId);
-    setTimeout(() => {
-      setGenerating(null);
-      setDownloaded(prev => [...prev, reportId]);
-    }, 2000);
-  };
-
-  const navItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Upload", href: "/upload", icon: Upload },
-    { name: "Explore", href: "/explore", icon: Search },
-    { name: "Profile", href: "/profile", icon: User },
-    { name: "AI Insights", href: "/intelligence", icon: Brain },
-  ];
-
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-slate-900">FolioIQ</span>
-              </Link>
+        {/* Tax snapshot + 80C grid */}
+        <div style={{display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:20,marginBottom:24}}>
+          {/* Tax snapshot */}
+          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:20,padding:24}}>
+            <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.14em',color:'var(--ink-3)',fontWeight:500,marginBottom:6}}>Tax snapshot · FY 25-26</div>
+            <h2 style={{fontFamily:'var(--font-serif)',fontSize:28,letterSpacing:'-0.02em',fontWeight:400,margin:'0 0 20px',color:'var(--ink)'}}>Estimated capital gains tax</h2>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:24}}>
+              {/* LTCG */}
+              <div>
+                <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.12em',color:'var(--ink-3)',fontWeight:500,marginBottom:6}}>LTCG (held &gt; 1yr)</div>
+                <div style={{fontFamily:'var(--font-serif)',fontSize:30,letterSpacing:'-0.02em',color:'var(--ink)'}}>₹2.18 L</div>
+                <div style={{fontSize:11,color:'var(--ink-3)',marginTop:4}}>realised gain</div>
+                <div style={{fontSize:12,color:'var(--ink-2)',marginTop:10,fontFamily:'var(--font-mono)'}}><span style={{color:'var(--ink-3)'}}>Exempt:</span> ₹1,25,000</div>
+                <div style={{fontSize:12,color:'var(--ink-2)',fontFamily:'var(--font-mono)'}}><span style={{color:'var(--ink-3)'}}>Taxable:</span> ₹93,400 @ 10%</div>
+                <div style={{marginTop:10,padding:'8px 12px',background:'var(--up-soft)',color:'var(--up)',borderRadius:8,fontSize:12,fontWeight:500}}>Tax due: ₹9,340</div>
+              </div>
+              {/* STCG */}
+              <div>
+                <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.12em',color:'var(--ink-3)',fontWeight:500,marginBottom:6}}>STCG (held &lt; 1yr)</div>
+                <div style={{fontFamily:'var(--font-serif)',fontSize:30,letterSpacing:'-0.02em',color:'var(--ink)'}}>₹42.1K</div>
+                <div style={{fontSize:11,color:'var(--ink-3)',marginTop:4}}>realised gain</div>
+                <div style={{fontSize:12,color:'var(--ink-2)',marginTop:10,fontFamily:'var(--font-mono)'}}><span style={{color:'var(--ink-3)'}}>Rate:</span> 15%</div>
+                <div style={{fontSize:12,color:'var(--ink-2)',fontFamily:'var(--font-mono)'}}><span style={{color:'var(--ink-3)'}}>Source:</span> 2 redemptions</div>
+                <div style={{marginTop:10,padding:'8px 12px',background:'var(--down-soft)',color:'var(--down)',borderRadius:8,fontSize:12,fontWeight:500}}>Tax due: ₹6,315</div>
+              </div>
+              {/* Total */}
+              <div>
+                <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.12em',color:'var(--ink-3)',fontWeight:500,marginBottom:6}}>Total tax estimate</div>
+                <div style={{fontFamily:'var(--font-serif)',fontSize:30,letterSpacing:'-0.02em',color:'var(--ink)'}}>₹15.7K</div>
+                <div style={{fontSize:11,color:'var(--ink-3)',marginTop:4}}>before harvesting</div>
+                <div style={{fontSize:12,color:'var(--ink-2)',marginTop:10,fontFamily:'var(--font-mono)'}}><span style={{color:'var(--ink-3)'}}>After harvest:</span> <span style={{color:'var(--up)'}}>₹0</span></div>
+                <div style={{fontSize:12,color:'var(--ink-2)',fontFamily:'var(--font-mono)'}}><span style={{color:'var(--ink-3)'}}>Savings:</span> <span style={{color:'var(--up)'}}>₹15,655</span></div>
+                <button style={{marginTop:10,width:'100%',padding:'8px 12px',borderRadius:8,border:'none',background:'var(--brand)',color:'var(--bg-deep)',fontSize:12,fontWeight:600,cursor:'pointer'}}>✦ Run harvest plan</button>
+              </div>
             </div>
-            <div className="flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link key={item.name} href={item.href} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
-                  <item.icon className="w-4 h-4" />{item.name}
-                </Link>
+          </div>
+          {/* 80C tracker */}
+          <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:20,padding:24}}>
+            <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.14em',color:'var(--ink-3)',fontWeight:500,marginBottom:6}}>80C tracker</div>
+            <h2 style={{fontFamily:'var(--font-serif)',fontSize:28,letterSpacing:'-0.02em',fontWeight:400,margin:'0 0 8px',color:'var(--ink)'}}>Tax-saving slot</h2>
+            <div style={{fontFamily:'var(--font-serif)',fontSize:36,letterSpacing:'-0.02em',color:'var(--ink)'}}>₹98.0K</div>
+            <div style={{fontSize:12,color:'var(--ink-3)',marginBottom:14}}>of ₹1,50,000 used</div>
+            <div style={{height:10,background:'var(--surface-3)',borderRadius:999,overflow:'hidden',marginBottom:18}}>
+              <div style={{width:'65%',height:'100%',background:'var(--accent)',borderRadius:999}}/>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {[['ELSS Mutual Fund','₹60,000'],['PPF','₹30,000'],['Term Insurance','₹8,000']].map(([l,v],i)=>(
+                <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'var(--ink-2)'}}>
+                  <span>{l}</span><span style={{fontFamily:'var(--font-mono)',color:'var(--ink)'}}>{v}</span>
+                </div>
               ))}
             </div>
+            <div style={{marginTop:18,padding:'12px 14px',background:'var(--brand-soft)',color:'var(--brand)',borderRadius:10,fontSize:12}}>
+              ₹52,000 unused — invest in ELSS to save ~₹15,600 in tax.
+            </div>
           </div>
         </div>
-      </nav>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Export Reports</h1>
-          <p className="text-slate-600">Download your portfolio data in PDF or Excel format</p>
-        </div>
-
-        <div className="grid gap-4">
-          {reports.map((report) => {
-            const Icon = report.icon;
-            const isGenerating = generating === report.id;
-            const isDownloaded = downloaded.includes(report.id);
-            
-            return (
-              <div key={report.id} className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 bg-${report.color}-100 rounded-xl flex items-center justify-center flex-shrink-0`}>
-                      <Icon className={`w-6 h-6 text-${report.color}-600`} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-slate-900">{report.name}</h3>
-                        {isDownloaded && (
-                          <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                            <CheckCircle className="w-3 h-3" /> Downloaded
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-500 mb-2">{report.description}</p>
-                      <div className="flex items-center gap-4 text-xs text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <FileText className="w-3 h-3" /> {report.format}
-                        </span>
-                        <span>{report.size}</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> Generated {report.lastGenerated}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <button
-                    onClick={() => handleDownload(report.id)}
-                    disabled={isGenerating}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-colors ${
-                      isGenerating 
-                        ? 'bg-slate-100 text-slate-500 cursor-wait' 
-                        : isDownloaded
-                        ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    {isGenerating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                        Generating...
-                      </>
-                    ) : isDownloaded ? (
-                      <>
-                        <CheckCircle className="w-4 h-4" />
-                        Downloaded
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4" />
-                        Download
-                      </>
-                    )}
-                  </button>
-                </div>
+        {/* Reports library */}
+        <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.14em',color:'var(--ink-3)',fontWeight:500,marginBottom:8}}>Statements</div>
+        <h2 style={{fontFamily:'var(--font-serif)',fontSize:28,letterSpacing:'-0.02em',fontWeight:400,margin:'0 0 16px',color:'var(--ink)'}}>Reports library</h2>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
+          {[
+            {name:'Account statement',desc:'All transactions, units, NAVs',date:'Updated daily',icon:'📄'},
+            {name:'Capital gains report',desc:'LTCG & STCG itemised for IT filing',date:'FY 25-26',icon:'📈'},
+            {name:'P&L statement',desc:'Realised and unrealised gains',date:'YTD',icon:'💰'},
+            {name:'Form 26AS reconciliation',desc:'Matches AIS / Form 26AS',date:'Quarterly',icon:'🛡'},
+            {name:'ELSS lock-in tracker',desc:'When each ELSS unlocks',date:'5 plans',icon:'📅'},
+            {name:'Dividend statement',desc:'Dividend received by fund',date:'YTD ₹3,640',icon:'✦'},
+          ].map((r,i)=>(
+            <div key={i} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:20}}>
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:14}}>
+                <div style={{width:40,height:40,borderRadius:11,background:'var(--surface-3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{r.icon}</div>
+                <button style={{padding:6,borderRadius:8,border:'none',background:'transparent',color:'var(--ink-3)',cursor:'pointer',fontSize:16}}>↓</button>
               </div>
-            );
-          })}
+              <div style={{fontSize:14,fontWeight:500,marginBottom:4,color:'var(--ink)'}}>{r.name}</div>
+              <div style={{fontSize:12,color:'var(--ink-3)',marginBottom:14,lineHeight:1.5}}>{r.desc}</div>
+              <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.12em',color:'var(--ink-3)',fontWeight:500}}>{r.date}</div>
+            </div>
+          ))}
         </div>
 
-        {/* Quick Stats */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-            <p className="text-sm text-blue-600 font-medium mb-1">Total Reports</p>
-            <p className="text-2xl font-bold text-blue-900">{reports.length}</p>
+        {/* Realised gains history */}
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:20,overflow:'hidden'}}>
+          <div style={{padding:'20px 24px',borderBottom:'1px solid var(--border)',background:'var(--surface-2)'}}>
+            <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.14em',color:'var(--ink-3)',fontWeight:500,marginBottom:4}}>History</div>
+            <h3 style={{fontFamily:'var(--font-serif)',fontSize:22,letterSpacing:'-0.02em',fontWeight:400,margin:0,color:'var(--ink)'}}>Realised gains by financial year</h3>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-            <p className="text-sm text-green-600 font-medium mb-1">Downloaded</p>
-            <p className="text-2xl font-bold text-green-900">{downloaded.length}</p>
-          </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-5">
-            <p className="text-sm text-purple-600 font-medium mb-1">Ready for CA</p>
-            <p className="text-2xl font-bold text-purple-900">2</p>
-          </div>
+          <table style={{width:'100%',borderCollapse:'separate',borderSpacing:0}}>
+            <thead>
+              <tr>
+                {['Financial year','LTCG','STCG','Total gain','Tax paid',''].map((h,i)=>(
+                  <th key={i} style={{padding:'14px 18px',fontSize:10.5,fontWeight:500,textTransform:'uppercase',letterSpacing:'0.12em',color:'var(--ink-3)',textAlign:i>0?'right':'left',borderBottom:'1px solid var(--border)',background:'var(--surface-2)'}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                {fy:'FY 25-26 (current)',ltcg:218400,stcg:42100,tax:15655},
+                {fy:'FY 24-25',ltcg:184200,stcg:0,tax:5920},
+                {fy:'FY 23-24',ltcg:92400,stcg:18200,tax:2730},
+                {fy:'FY 22-23',ltcg:0,stcg:0,tax:0},
+              ].map((r,i,a)=>(
+                <tr key={i}>
+                  <td style={{padding:'16px 18px',fontWeight:500,fontSize:14,borderBottom:i<a.length-1?'1px solid var(--border)':'none',color:'var(--ink)'}}>{r.fy}</td>
+                  <td style={{padding:'16px 18px',textAlign:'right',fontFamily:'var(--font-mono)',fontSize:13,borderBottom:i<a.length-1?'1px solid var(--border)':'none',color:'var(--ink)'}}>{fmtINR(r.ltcg)}</td>
+                  <td style={{padding:'16px 18px',textAlign:'right',fontFamily:'var(--font-mono)',fontSize:13,borderBottom:i<a.length-1?'1px solid var(--border)':'none',color:'var(--ink)'}}>{fmtINR(r.stcg)}</td>
+                  <td style={{padding:'16px 18px',textAlign:'right',fontFamily:'var(--font-mono)',fontSize:13,fontWeight:500,borderBottom:i<a.length-1?'1px solid var(--border)':'none',color:'var(--ink)'}}>{fmtINR(r.ltcg+r.stcg)}</td>
+                  <td style={{padding:'16px 18px',textAlign:'right',fontFamily:'var(--font-mono)',fontSize:13,borderBottom:i<a.length-1?'1px solid var(--border)':'none',color:'var(--ink)'}}>{fmtINR(r.tax)}</td>
+                  <td style={{padding:'16px 18px',borderBottom:i<a.length-1?'1px solid var(--border)':'none'}}>
+                    <button style={{padding:'5px 12px',borderRadius:8,border:'1px solid var(--border)',background:'transparent',color:'var(--ink-2)',fontSize:12,cursor:'pointer'}}>Details</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
-

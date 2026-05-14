@@ -1,366 +1,131 @@
-﻿"use client";
+'use client';
+import { useState } from 'react';
+import AppLayout from '@/components/AppLayout';
 
-import { useState } from "react";
-import { MessageSquare,  Brain, Search, Home, LayoutDashboard, Upload, User, Sparkles, X, TrendingUp, Shield, DollarSign, BarChart3, ArrowRight, Star } from "lucide-react";
-import Link from "next/link";
-
-interface Fund {
-  name: string;
-  category: string;
-  returns1Y: string;
-  returns3Y: string;
-  risk: string;
-  aum: string;
-  rating: number;
-  expense: string;
-  fundManager: string;
-  description: string;
-  topHoldings: string[];
-  minInvestment: string;
-  sipAvailable: boolean;
-}
-
-const funds: Fund[] = [
-  {
-    name: "Axis Bluechip Fund",
-    category: "Equity: Large Cap",
-    returns1Y: "15.2%",
-    returns3Y: "12.8%",
-    risk: "Moderate",
-    aum: "₹2,450 Cr",
-    rating: 5,
-    expense: "1.2%",
-    fundManager: "Shreyash Devalkar",
-    description: "A top-performing large-cap fund focusing on bluechip companies with consistent track record.",
-    topHoldings: ["Reliance Industries", "HDFC Bank", "ICICI Bank", "Infosys", "TCS"],
-    minInvestment: "₹500",
-    sipAvailable: true
-  },
-  {
-    name: "SBI Small Cap Fund",
-    category: "Equity: Small Cap",
-    returns1Y: "22.1%",
-    returns3Y: "18.5%",
-    risk: "High",
-    aum: "₹1,890 Cr",
-    rating: 4,
-    expense: "1.5%",
-    fundManager: "R. Srinivasan",
-    description: "High-growth potential fund investing in emerging small-cap companies.",
-    topHoldings: ["Elgi Equipments", "JK Cement", "Timken India", "V-Guard Industries", "NAVIN FLUORINE"],
-    minInvestment: "₹500",
-    sipAvailable: true
-  },
-  {
-    name: "HDFC Corporate Bond",
-    category: "Debt: Corporate Bond",
-    returns1Y: "8.5%",
-    returns3Y: "7.2%",
-    risk: "Low",
-    aum: "₹3,120 Cr",
-    rating: 4,
-    expense: "0.8%",
-    fundManager: "Anil Bamboli",
-    description: "Stable returns through investment in high-quality corporate bonds.",
-    topHoldings: ["HDFC Ltd", "LIC Housing Finance", "Power Finance Corp", "REC Ltd", "NHAI"],
-    minInvestment: "₹100",
-    sipAvailable: true
-  },
-  {
-    name: "ICICI Pru Balanced Advantage",
-    category: "Hybrid: Balanced Advantage",
-    returns1Y: "12.8%",
-    returns3Y: "10.5%",
-    risk: "Moderate",
-    aum: "₹1,560 Cr",
-    rating: 4,
-    expense: "1.1%",
-    fundManager: "Sankaran Naren",
-    description: "Dynamic allocation between equity and debt based on market conditions.",
-    topHoldings: ["ICICI Bank", "Reliance Industries", "HDFC Bank", "Infosys", "TCS"],
-    minInvestment: "₹100",
-    sipAvailable: true
-  },
-  {
-    name: "Tata ELSS Tax Saver",
-    category: "Equity: ELSS",
-    returns1Y: "14.3%",
-    returns3Y: "11.2%",
-    risk: "Moderate",
-    aum: "₹980 Cr",
-    rating: 3,
-    expense: "1.3%",
-    fundManager: "Tejas Desai",
-    description: "Tax-saving fund with 3-year lock-in period and equity exposure.",
-    topHoldings: ["Tata Motors", "HDFC Bank", "Reliance Industries", "Infosys", "ICICI Bank"],
-    minInvestment: "₹500",
-    sipAvailable: true
-  },
-  {
-    name: "Nifty 50 Index Fund",
-    category: "Index: Large Cap",
-    returns1Y: "13.1%",
-    returns3Y: "11.8%",
-    risk: "Moderate",
-    aum: "₹4,200 Cr",
-    rating: 4,
-    expense: "0.2%",
-    fundManager: "Index Tracking",
-    description: "Low-cost passive fund tracking Nifty 50 index with minimal tracking error.",
-    topHoldings: ["Reliance Industries", "HDFC Bank", "ICICI Bank", "Infosys", "TCS"],
-    minInvestment: "₹100",
-    sipAvailable: true
-  }
+const fmtPct=(n:number,d=1)=>(n>=0?'+':'')+n.toFixed(d)+'%';
+const CATS=[
+  {key:'large',label:'Large Cap',desc:'Stable blue-chips',ret:'14-18%',count:42,tone:'#0f3d2e'},
+  {key:'flexi',label:'Flexi Cap',desc:'Adaptive market cap',ret:'16-22%',count:34,tone:'#1f6b50'},
+  {key:'mid',label:'Mid Cap',desc:'Growth & risk mix',ret:'18-26%',count:28,tone:'#c89a3a'},
+  {key:'small',label:'Small Cap',desc:'High-growth potential',ret:'22-38%',count:31,tone:'#c1392b'},
+  {key:'index',label:'Index',desc:'Track market passively',ret:'12-16%',count:18,tone:'#2952ff'},
+  {key:'intl',label:'International',desc:'Geographic diversification',ret:'8-20%',count:24,tone:'#7a3ec1'},
 ];
+const FUNDS=[
+  {id:'qnte',name:'Quant Small Cap Fund',cat:'Small Cap',amc:'Quant',logo:'QT',tone:'#c1392b',rating:5,aum:21340,ret1:38.4,ret3:42.1,ret5:35.2,exp:0.62,risk:'Very High'},
+  {id:'nipi',name:'Nippon India Large Cap',cat:'Large Cap',amc:'Nippon',logo:'NP',tone:'#0d4a7d',rating:5,aum:24180,ret1:24.1,ret3:21.4,ret5:18.2,exp:0.74,risk:'Moderate'},
+  {id:'hdmi',name:'HDFC Mid-Cap Opportunities',cat:'Mid Cap',amc:'HDFC',logo:'HD',tone:'#2952ff',rating:5,aum:62210,ret1:32.8,ret3:28.1,ret5:24.6,exp:0.81,risk:'High'},
+  {id:'mela',name:'Motilal Oswal Large & Midcap',cat:'L&M',amc:'Motilal',logo:'MO',tone:'#7a3ec1',rating:4,aum:6420,ret1:34.2,ret3:25.7,ret5:21.4,exp:0.69,risk:'High'},
+  {id:'tata',name:'Tata Digital India',cat:'Sectoral',amc:'Tata',logo:'TT',tone:'#1f6b50',rating:5,aum:11420,ret1:42.6,ret3:24.8,ret5:28.9,exp:0.32,risk:'Very High'},
+  {id:'inde',name:'Bandhan Nifty 50 Index',cat:'Index',amc:'Bandhan',logo:'BN',tone:'#1f8a5b',rating:4,aum:1240,ret1:21.4,ret3:18.4,ret5:15.2,exp:0.10,risk:'Moderate'},
+];
+function Logo({logo,tone,size=36}:{logo:string;tone:string;size?:number}){
+  return <div style={{width:size,height:size,borderRadius:size*.3,background:tone,display:'inline-flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:size*.33,color:'white',flexShrink:0}}>{logo}</div>;
+}
+function Stars({n}:{n:number}){return <span style={{color:'var(--accent)',letterSpacing:1}}>{'★'.repeat(n)}<span style={{color:'var(--ink-4)'}}>{'★'.repeat(5-n)}</span></span>;}
 
-export default function ExplorePage() {
-  const [selectedFund, setSelectedFund] = useState<Fund | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredFunds = funds.filter(fund => 
-    fund.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    fund.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const navItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Upload", href: "/upload", icon: Upload },
-    { name: "Explore", href: "/explore", icon: Search, active: true },
-    { name: "AI Insights", href: "/intelligence", icon: Brain },{ name: "Profile", href: "/profile", icon: User },
-  ];
-
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-slate-900">FolioIQ</span>
-              </Link>
+export default function ExplorePage(){
+  const [cat,setCat]=useState('all');
+  const [search,setSearch]=useState('');
+  const visible=FUNDS.filter(f=>(cat==='all'||f.cat===cat)&&(!search||f.name.toLowerCase().includes(search.toLowerCase())));
+  return(
+    <AppLayout>
+      <div style={{padding:'28px 40px 80px'}}>
+        <div style={{marginBottom:36}}>
+          <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.14em',color:'var(--ink-3)',fontWeight:500,marginBottom:10}}>Explore</div>
+          <h1 style={{fontFamily:'var(--font-serif)',fontSize:'clamp(40px,5.5vw,80px)',lineHeight:.98,letterSpacing:'-0.03em',fontWeight:400,margin:0,color:'var(--ink)'}}>Discover funds worth your time</h1>
+          <div style={{marginTop:14,fontSize:15,color:'var(--ink-2)',lineHeight:1.55,maxWidth:600}}>Filter 1,840+ mutual funds by category, risk, and historical returns. Add to your watchlist or invest directly.</div>
+        </div>
+        {/* Search */}
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:20,padding:18,marginBottom:24}}>
+          <div style={{display:'flex',gap:12,alignItems:'center'}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,flex:1,padding:'10px 14px',borderRadius:12,background:'var(--surface-2)',border:'1px solid var(--border)'}}>
+              <span style={{color:'var(--ink-3)',fontSize:16}}>🔍</span>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Try 'best small cap', 'low expense ratio', 'HDFC Mid Cap'…" style={{flex:1,border:'none',outline:'none',background:'transparent',fontSize:14,color:'var(--ink)'}}/>
             </div>
-            <div className="flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    item.active
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.name}
-                </Link>
-              ))}
-            </div>
+            <button style={{padding:'10px 16px',borderRadius:12,border:'1px solid var(--border)',background:'var(--surface-2)',color:'var(--ink)',cursor:'pointer',fontSize:13}}>⊞ Filters</button>
+            <button style={{padding:'10px 16px',borderRadius:12,border:'none',background:'var(--brand)',color:'var(--bg-deep)',fontWeight:600,cursor:'pointer',fontSize:13}}>✦ AI screen</button>
+          </div>
+          <div style={{display:'flex',gap:6,marginTop:14,flexWrap:'wrap'}}>
+            {['5★ rated','Low expense','Beats benchmark','Tax saver ELSS','Direct plan','New launches'].map(t=>(
+              <button key={t} style={{padding:'5px 12px',borderRadius:999,fontSize:12,border:'1px solid var(--border)',background:'var(--surface-2)',color:'var(--ink-2)',cursor:'pointer'}}>{t}</button>
+            ))}
           </div>
         </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-slate-900 mb-3">Explore Funds</h1>
-          <p className="text-slate-600">Discover top-performing mutual funds across categories</p>
+        {/* Category grid */}
+        <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.14em',color:'var(--ink-3)',fontWeight:500,marginBottom:8}}>Browse by category</div>
+        <h2 style={{fontFamily:'var(--font-serif)',fontSize:32,letterSpacing:'-0.02em',fontWeight:400,margin:'0 0 20px',color:'var(--ink)'}}>What kind of fund?</h2>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:32}}>
+          {CATS.map(c=>(
+            <button key={c.key} onClick={()=>setCat(cat===c.key?'all':c.key)} style={{padding:20,background:'var(--surface)',border:`1px solid ${cat===c.key?'var(--brand)':'var(--border)'}`,borderRadius:20,textAlign:'left',cursor:'pointer',display:'flex',flexDirection:'column',gap:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                <div style={{width:40,height:40,borderRadius:12,background:`color-mix(in oklab,${c.tone} 16%,var(--surface))`,color:c.tone,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>◈</div>
+                <span style={{padding:'4px 10px',borderRadius:999,fontSize:11,border:'1px solid var(--border)',background:'var(--surface-2)',color:'var(--ink-2)'}}>{c.count} funds</span>
+              </div>
+              <div>
+                <div style={{fontSize:16,fontWeight:500,marginBottom:4,color:'var(--ink)'}}>{c.label}</div>
+                <div style={{fontSize:12,color:'var(--ink-3)'}}>{c.desc}</div>
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginTop:'auto'}}>
+                <div>
+                  <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'0.12em',color:'var(--ink-3)',fontWeight:500,marginBottom:2}}>5-yr CAGR</div>
+                  <div style={{fontFamily:'var(--font-mono)',fontSize:14,fontWeight:500,color:'var(--ink)'}}>{c.ret}</div>
+                </div>
+                <span style={{fontSize:16,color:'var(--ink-3)'}}>→</span>
+              </div>
+            </button>
+          ))}
         </div>
-
-        {/* Search Bar */}
-        <div className="max-w-2xl mx-auto mb-10">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search funds by name or category..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+        {/* Fund cards */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <div>
+            <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.14em',color:'var(--ink-3)',fontWeight:500,marginBottom:4}}>Top picks for you</div>
+            <h2 style={{fontFamily:'var(--font-serif)',fontSize:28,letterSpacing:'-0.02em',fontWeight:400,margin:0,color:'var(--ink)'}}>Curated by Folio AI</h2>
           </div>
         </div>
-
-        {/* Quick Navigation */}
-        <div className="flex gap-3 mb-8 justify-center">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
-            <LayoutDashboard className="w-4 h-4" />
-            Dashboard
-          </Link>
-          <Link href="/upload" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
-            <Upload className="w-4 h-4" />
-            Upload
-          </Link>
-          <Link href="/profile" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
-            <User className="w-4 h-4" />
-            Profile
-          </Link>
-        </div>
-
-        {/* Funds Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredFunds.map((fund) => (
-            <div key={fund.name} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:16}}>
+          {visible.map(f=>(
+            <div key={f.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:20,padding:20}}>
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:14}}>
+                <div style={{display:'flex',gap:12}}>
+                  <Logo logo={f.logo} tone={f.tone} size={44}/>
                   <div>
-                    <h3 className="font-semibold text-slate-900">{fund.name}</h3>
-                    <p className="text-sm text-slate-500">{fund.category}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    {Array.from({ length: fund.rating }).map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    ))}
+                    <div style={{fontSize:14.5,fontWeight:500,color:'var(--ink)'}}>{f.name}</div>
+                    <div style={{fontSize:11.5,color:'var(--ink-3)',marginTop:2}}>{f.cat} · {f.amc}</div>
+                    <div style={{marginTop:6,display:'flex',gap:6,alignItems:'center'}}>
+                      <Stars n={f.rating}/>
+                      <span style={{fontSize:10.5,color:'var(--ink-3)'}}>· {f.risk} risk</span>
+                    </div>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">1Y Returns</p>
-                    <p className="text-lg font-bold text-green-600">{fund.returns1Y}</p>
+                <button style={{padding:6,borderRadius:8,border:'none',background:'transparent',color:'var(--ink-3)',cursor:'pointer',fontSize:14}}>👁</button>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,padding:'14px 0',borderTop:'1px solid var(--border)',borderBottom:'1px solid var(--border)'}}>
+                {[['1Y',f.ret1],['3Y',f.ret3],['5Y',f.ret5]].map(([l,v]:any,i)=>(
+                  <div key={i}>
+                    <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'0.12em',color:'var(--ink-3)',fontWeight:500,marginBottom:2}}>{l}</div>
+                    <div style={{fontSize:13,fontWeight:500,fontFamily:'var(--font-mono)',color:v>0?'var(--up)':'var(--down)'}}>{fmtPct(v)}</div>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">Risk</p>
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                      fund.risk === "Low" ? "bg-green-100 text-green-700" :
-                      fund.risk === "Moderate" ? "bg-yellow-100 text-yellow-700" :
-                      "bg-red-100 text-red-700"
-                    }`}>
-                      {fund.risk}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">AUM</p>
-                    <p className="text-sm font-semibold text-slate-900">{fund.aum}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">Expense</p>
-                    <p className="text-sm font-semibold text-slate-900">{fund.expense}</p>
-                  </div>
+                ))}
+                <div>
+                  <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'0.12em',color:'var(--ink-3)',fontWeight:500,marginBottom:2}}>Expense</div>
+                  <div style={{fontSize:13,fontWeight:500,fontFamily:'var(--font-mono)',color:'var(--ink)'}}>{f.exp.toFixed(2)}%</div>
                 </div>
-
-                <button
-                  onClick={() => setSelectedFund(fund)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                >
-                  View Details
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+              </div>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:14}}>
+                <div>
+                  <div style={{fontSize:10.5,color:'var(--ink-3)'}}>AUM</div>
+                  <div style={{fontFamily:'var(--font-mono)',fontSize:12,color:'var(--ink)'}}>₹{(f.aum/1000).toFixed(1)}K Cr</div>
+                </div>
+                <div style={{display:'flex',gap:6}}>
+                  <button style={{padding:'6px 12px',borderRadius:8,fontSize:12,border:'1px solid var(--border)',background:'transparent',color:'var(--ink-2)',cursor:'pointer'}}>Watch</button>
+                  <button style={{padding:'6px 12px',borderRadius:8,fontSize:12,border:'none',background:'var(--brand)',color:'var(--bg-deep)',fontWeight:600,cursor:'pointer'}}>Invest</button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
-
-      {/* Fund Details Modal */}
-      {selectedFund && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">{selectedFund.name}</h2>
-                <p className="text-sm text-slate-500">{selectedFund.category}</p>
-              </div>
-              <button
-                onClick={() => setSelectedFund(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100"
-              >
-                <X className="w-5 h-5 text-slate-500" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Key Metrics */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-green-50 rounded-xl p-4 text-center">
-                  <TrendingUp className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-green-600">{selectedFund.returns1Y}</p>
-                  <p className="text-xs text-slate-600">1Y Returns</p>
-                </div>
-                <div className="bg-blue-50 rounded-xl p-4 text-center">
-                  <BarChart3 className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-blue-600">{selectedFund.returns3Y}</p>
-                  <p className="text-xs text-slate-600">3Y Returns</p>
-                </div>
-                <div className="bg-purple-50 rounded-xl p-4 text-center">
-                  <DollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-purple-600">{selectedFund.aum}</p>
-                  <p className="text-xs text-slate-600">AUM</p>
-                </div>
-              </div>
-
-              {/* Details */}
-              <div className="space-y-4">
-                <div className="flex justify-between py-3 border-b border-slate-100">
-                  <span className="text-slate-600">Fund Manager</span>
-                  <span className="font-medium text-slate-900">{selectedFund.fundManager}</span>
-                </div>
-                <div className="flex justify-between py-3 border-b border-slate-100">
-                  <span className="text-slate-600">Expense Ratio</span>
-                  <span className="font-medium text-slate-900">{selectedFund.expense}</span>
-                </div>
-                <div className="flex justify-between py-3 border-b border-slate-100">
-                  <span className="text-slate-600">Risk Level</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    selectedFund.risk === "Low" ? "bg-green-100 text-green-700" :
-                    selectedFund.risk === "Moderate" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-red-100 text-red-700"
-                  }`}>{selectedFund.risk}</span>
-                </div>
-                <div className="flex justify-between py-3 border-b border-slate-100">
-                  <span className="text-slate-600">Min Investment</span>
-                  <span className="font-medium text-slate-900">{selectedFund.minInvestment}</span>
-                </div>
-                <div className="flex justify-between py-3 border-b border-slate-100">
-                  <span className="text-slate-600">SIP Available</span>
-                  <span className="font-medium text-green-600">{selectedFund.sipAvailable ? "Yes" : "No"}</span>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <h4 className="font-semibold text-slate-900 mb-2">About Fund</h4>
-                <p className="text-sm text-slate-600">{selectedFund.description}</p>
-              </div>
-
-              {/* Top Holdings */}
-              <div>
-                <h4 className="font-semibold text-slate-900 mb-2">Top Holdings</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedFund.topHoldings.map((holding) => (
-                    <span key={holding} className="px-3 py-1 bg-slate-100 rounded-full text-sm text-slate-700">
-                      {holding}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                  Add to Watchlist
-                </button>
-                <button className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
-                  Start SIP
-                </button>
-                <button 
-                  onClick={() => setSelectedFund(null)}
-                  className="px-4 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </AppLayout>
   );
 }
-
-
-
-
