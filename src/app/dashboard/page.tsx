@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Link from 'next/link';
+import LivePortfolioBanner from '@/components/LivePortfolioBanner';
 
 // ── design tokens via CSS vars (applied via globals.css) ──────────────
 // All colours reference CSS custom properties from the design:
@@ -639,6 +640,8 @@ export default function DashboardPage() {
             <CalendarIcon /> {today}
           </div>
         </div>
+
+        <LivePortfolioBanner />
 
         {/* bento grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
