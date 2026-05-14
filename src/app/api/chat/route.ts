@@ -46,7 +46,15 @@ VOICE:
 - 2-3 sentence paragraphs. Use **bold** for fund names and rupee impacts.
 - Always show after-tax view (Budget 2024: LTCG 12.5% above ₹1.25L, STCG 20% on equity).
 - Lead with the answer, then the reasoning.
-- For recommendations: give 2-3 specific alternatives with WHY each beats the alternative.
+
+CRITICAL RULE — ALWAYS GIVE ALTERNATIVES:
+- Whenever you recommend selling, exiting, or pausing ANY fund, you MUST suggest 2 specific replacement funds.
+- For each alternative, name the fund, the AMC, and explain in 1 line WHY it's better (alpha, expense ratio, consistency, AMC track record, etc).
+- Example format:
+  **Switch from ICICI Pru Technology to:**
+  1. **Axis Multicap Fund** — +6.8% alpha, 0.6% lower expense ratio, broader sector exposure cushions tech downturns.
+  2. **Parag Parikh Flexi Cap** — best-in-class consistency, 21.4% XIRR vs your current 14.2%, lower beta.
+- Never recommend selling without offering 2 named alternatives. This is non-negotiable.
 
 ALWAYS USE THE PORTFOLIO CONTEXT BELOW. Never give generic answers — every response should reference Aarav's actual funds, allocation, XIRR, or tax position.
 
@@ -55,6 +63,8 @@ ${PORTFOLIO_CONTEXT}
 When asked about market events, Indian fund flows, or recent moves, be specific (e.g. SEBI's small-cap disclosure norms, recent rate decisions).
 Never recommend products you can't name. Never give SEBI-restricted advice (no buy/sell verdicts on direct equity).
 End complex answers with ONE actionable next step.`;
+
+type ChatMsg = { role: string; content: string };
 
 export async function POST(req: NextRequest) {
   try {
@@ -71,14 +81,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Build message history for Claude API (filter + map)
-    const priorMessages = Array.isArray(history)
+    // ── Sanitize history into a valid Anthropic message sequence ──────
+    // Rules:
+    // 1. Each message must have role 'user' or 'assistant' and non-empty string content.
+    // 2. The sequence must START with a 'user' message.
+    // 3. Roles must alternate (no consecutive same-role messages).
+    // Strip any extra fields (like `time`) that the UI carries.
+    const raw: ChatMsg[] = Array.isArray(history)
       ? history
-          .filter((m: { role: string; content: string }) => m && m.content && (m.role === 'user' || m.role === 'assistant'))
-          .map((m: { role: string; content: string }) => ({ role: m.role, content: m.content }))
+          .filter((m: unknown): m is ChatMsg =>
+            !!m && typeof m === 'object' &&
+            'role' in m && 'content' in m &&
+            (m as ChatMsg).content != null &&
+            typeof (m as ChatMsg).content === 'string' &&
+            (m as ChatMsg).content.trim().length > 0 &&
+            ((m as ChatMsg).role === 'user' || (m as ChatMsg).role === 'assistant')
+          )
+          .map((m: ChatMsg) => ({ role: m.role, content: m.content }))
       : [];
 
-    const messages = [...priorMessages, { role: 'user', content: message }];
+    // Drop the leading assistant greeting(s) — Anthropic requires first message to be user.
+    let cleaned = raw.slice();
+    while (cleaned.length > 0 && cleaned[0].role === 'assistant') {
+      cleaned.shift();
+    }
+
+    // Merge consecutive same-role messages (just in case)
+    const merged: ChatMsg[] = [];
+    for (const m of cleaned) {
+      const last = merged[merged.length - 1];
+      if (last && last.role === m.role) {
+        last.content = last.content + '\n\n' + m.content;
+      } else {
+        merged.push({ ...m });
+      }
+    }
+
+    const messages = [...merged, { role: 'user', content: message }];
 
     const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -89,7 +128,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5-20251001',
-        max_tokens: 1200,
+        max_tokens: 1400,
         system: SYSTEM_PROMPT,
         messages,
       }),
