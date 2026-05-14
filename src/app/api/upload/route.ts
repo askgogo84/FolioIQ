@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Parse the CAS file (your existing parser)
-    const parsedData = await parseCASFile(file);
+    const parsedData = await parseCASFile(file) as any;
     
     console.log("? Parsed funds:", (parsedData as any)?.funds?.length || 0);
 
