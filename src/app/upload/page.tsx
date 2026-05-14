@@ -57,11 +57,20 @@ export default function UploadCASPage() {
       fd.append('file', files[0]);
       fd.append('userId', userId);
 
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      // Detect NJ Wealth reports by reading the first ~2KB as text
+      // NJ PDFs contain "NJ India" or "NJ Wealth" or "Valuation Report" in the filename
+      const isNJ = files[0].name.toLowerCase().includes('nj') ||
+                   files[0].name.toLowerCase().includes('val_rpt') ||
+                   files[0].name.toLowerCase().includes('valuation');
+
+      const endpoint = isNJ ? '/api/upload/nj' : '/api/upload';
+      const res = await fetch(endpoint, { method: 'POST', body: fd });
       const data = await res.json();
 
-      if (res.ok) {
-        setStatus({ type: 'success', message: `✓ Parsed successfully — ${data.fundsCount ?? 'your'} funds detected. Redirecting to dashboard…` });
+      if (res.ok && data.success) {
+        const count = data.fundCount ?? data.fundsCount ?? 'your';
+        const val = data.totalValue ? ` · ₹${(data.totalValue / 100000).toFixed(2)} L current` : '';
+        setStatus({ type: 'success', message: `✓ Parsed ${count} funds${val}. Redirecting to dashboard…` });
         setTimeout(() => router.push('/dashboard'), 2000);
       } else {
         setStatus({ type: 'error', message: data.error || 'Upload failed. Please try again.' });
@@ -84,7 +93,7 @@ export default function UploadCASPage() {
             Bring your <em style={{ color: 'var(--brand)', fontStyle: 'italic' }}>entire</em> portfolio<br />in 30 seconds.
           </h1>
           <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.6, maxWidth: 580 }}>
-            Drop a CAMS or KFintech statement — we&apos;ll parse 100% of your transactions, holdings, and SIPs across all AMCs. End-to-end encrypted. We never see your password.
+            Drop a CAMS or KFintech statement — we&apos;ll parse 100% of your transactions, holdings, and SIPs across all AMCs. <strong>NJ Wealth valuation reports also supported.</strong> End-to-end encrypted.
           </p>
         </div>
 
@@ -125,7 +134,7 @@ export default function UploadCASPage() {
                 Drop your CAS PDF here
               </div>
               <div style={{ color: 'var(--ink-3)', fontSize: 14, marginBottom: 28, maxWidth: 420, margin: '0 auto 28px' }}>
-                Or click to browse. We support CAMS, KFintech, and NSDL statements.
+                Or click to browse. We support CAMS, KFintech, NSDL CAS — and NJ Wealth valuation PDFs.
               </div>
 
               <input
@@ -269,9 +278,30 @@ export default function UploadCASPage() {
                   </a>
                 ))}
               </div>
-            </div>
 
-            {/* How it works */}
+              {/* NJ Wealth section */}
+              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>
+                  OR — NJ WEALTH CLIENTS
+                </div>
+                <div style={{
+                  display: 'flex', gap: 14, padding: '14px 16px', borderRadius: 14,
+                  background: 'var(--brand-soft)', border: '1px solid var(--border)',
+                  alignItems: 'flex-start',
+                }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: '#c1392b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>NJ</div>
+                  <div>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Upload your NJ Valuation Report PDF</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                      1. Login at <strong>njindiaonline.in</strong><br />
+                      2. Go to <strong>Consolidated → Valuation Report</strong><br />
+                      3. Set date range → click <strong>Mail Back</strong> or print to PDF<br />
+                      4. Drop the PDF here — we detect it automatically
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div style={{
               background: 'var(--surface)', border: '1px solid var(--border)',
               borderRadius: 24, padding: 28,
