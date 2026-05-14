@@ -131,7 +131,7 @@ export default function UploadCASPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.csv,.xls,.xlsx"
+                accept=".pdf"
                 style={{ display: 'none' }}
                 onChange={e => handleFiles(e.target.files)}
               />
@@ -158,7 +158,7 @@ export default function UploadCASPage() {
               </div>
 
               <div style={{ marginTop: 16, fontSize: 11.5, color: 'var(--ink-4)' }}>
-                PDF, CSV, Excel · Max 10MB
+                PDF only (CAMS / KFintech CAS) · Max 10MB
               </div>
             </div>
 

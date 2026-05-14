@@ -123,16 +123,20 @@ export default function AppLayout({
     localStorage.setItem('folioiq-theme', next);
   };
 
-  // Live ticker
+  // Live ticker — normalize API {name,value,change,up} → {sym,val,chg}
+  const normTicker = (d: any[]) => d.map(t => ({
+    sym: t.sym ?? t.name ?? '',
+    val: t.val ?? t.value ?? '',
+    chg: typeof t.chg === 'number' ? t.chg
+       : typeof t.change === 'string' ? parseFloat(t.change.replace('%',''))
+       : t.up === true ? 0.01 : -0.01,
+  }));
   useEffect(() => {
-    fetch('/api/market').then(r => r.json()).then(d => {
-      if (Array.isArray(d) && d.length) setTickers(d);
+    const load = () => fetch('/api/market').then(r => r.json()).then(d => {
+      if (Array.isArray(d) && d.length) setTickers(normTicker(d));
     }).catch(() => {});
-    const iv = setInterval(() => {
-      fetch('/api/market').then(r => r.json()).then(d => {
-        if (Array.isArray(d) && d.length) setTickers(d);
-      }).catch(() => {});
-    }, 5 * 60 * 1000);
+    load();
+    const iv = setInterval(load, 5 * 60 * 1000);
     return () => clearInterval(iv);
   }, []);
 
