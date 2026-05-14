@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
 
 const PREFERENCES = [
   { label: 'Risk Profile', value: 'Aggressive', desc: 'Equity-heavy · 12+ year horizon' },
@@ -17,23 +18,41 @@ const SECTIONS = [
   { key: 'plan',        label: 'Plan & Billing' },
 ];
 
+const BLANK_USER = {
+  name: '',
+  email: '',
+  phone: '',
+  pan: '',
+  dob: '',
+  city: 'Bengaluru',
+  risk: 'Moderate',
+  horizon: '10+ years',
+};
+
 export default function ProfilePage() {
   const [tab, setTab] = useState<string>('overview');
   const [editing, setEditing] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // editable user state — in a real app this would come from / sync to Supabase
-  const [user, setUser] = useState({
-    name: 'Aarav Sharma',
-    email: 'aarav@folioiq.in',
-    phone: '+91 ••••• 84210',
-    pan: 'AAAPS1234K',
-    dob: '1988-03-22',
-    city: 'Bengaluru',
-    risk: 'Aggressive',
-    horizon: '12+ years',
-  });
-  const [draft, setDraft] = useState(user);
+  const [user, setUser] = useState(BLANK_USER);
+  const [draft, setDraft] = useState(BLANK_USER);
+
+  // Fetch real user from Supabase on mount
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data?.user;
+      if (!u) { setLoading(false); return; }
+      const name  = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || '';
+      const email = u.email || '';
+      const phone = u.user_metadata?.phone || u.phone || '';
+      const filled = { ...BLANK_USER, name, email, phone };
+      setUser(filled);
+      setDraft(filled);
+      setLoading(false);
+    });
+  }, []);
 
   const stats = [
     { label: 'YEARS INVESTING', value: '4.8', sub: '' },
@@ -42,7 +61,9 @@ export default function ProfilePage() {
     { label: 'XIRR', value: '18.4%', sub: 'lifetime', tone: 'up' as const },
   ];
 
-  const initials = user.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  const initials = user.name
+    ? user.name.trim().split(/\s+/).map((p: string) => p[0]).join('').slice(0, 2).toUpperCase()
+    : '…';
 
   const handleSave = () => {
     setUser(draft);
@@ -89,10 +110,10 @@ export default function ProfilePage() {
               MEMBER SINCE · AUG 2021
             </div>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(40px, 5.5vw, 64px)', lineHeight: 0.95, letterSpacing: '-0.03em', fontWeight: 400, margin: 0, color: 'var(--ink)' }}>
-              {user.name}
+              {loading ? <span style={{ opacity: 0.3 }}>Loading…</span> : (user.name || 'Investor')}
             </h2>
             <div style={{ marginTop: 10, fontSize: 13, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)' }}>
-              {user.email} · {user.phone}
+              {loading ? '—' : user.email}{user.phone ? ` · ${user.phone}` : ''}
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
               <Badge tone="up">✓ KYC verified</Badge>
@@ -203,7 +224,21 @@ export default function ProfilePage() {
             <div style={{ marginTop: 24, display: 'grid', gap: 14 }}>
               <Field label="Full Name" value={draft.name}  onChange={v => setDraft({ ...draft, name: v })} />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <Field label="Email"  value={draft.email} onChange={v => setDraft({ ...draft, email: v })} type="email" />
+                <div>
+                  <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 6 }}>EMAIL</div>
+                  <input
+                    type="email"
+                    value={draft.email}
+                    readOnly
+                    style={{
+                      width: '100%', padding: '11px 14px', borderRadius: 10, fontSize: 13.5,
+                      background: 'var(--surface-2)', color: 'var(--ink-3)',
+                      border: '1px solid var(--border)', outline: 'none',
+                      fontFamily: 'inherit', cursor: 'not-allowed',
+                    }}
+                  />
+                  <div style={{ fontSize: 10.5, color: 'var(--ink-4)', marginTop: 4 }}>Email changes require re-verification</div>
+                </div>
                 <Field label="Phone"  value={draft.phone} onChange={v => setDraft({ ...draft, phone: v })} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
