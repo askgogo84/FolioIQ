@@ -1,69 +1,88 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext, createContext } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Link from 'next/link';
-import LivePortfolioBanner from '@/components/LivePortfolioBanner';
 
 // ── design tokens via CSS vars (applied via globals.css) ──────────────
-// All colours reference CSS custom properties from the design:
-// --brand #b4f230 (lime), --bg #0b0b0f, --surface #131319
-// --ink #f5f1e8, --up #5ce490, --down #ff5757, --gold #e8b14a
 
-// ── data fixtures ────────────────────────────────────────────────────
-const PORTFOLIO = {
-  user: { name: 'Aarav Sharma', avatar: 'AS', plan: 'Plus' },
-  totals: {
-    current: 4847263,
-    invested: 3520000,
-    dayChange: 18420,
-    dayPct: 0.38,
-    totalGain: 1327263,
-    totalPct: 37.71,
-    xirr: 18.4,
-    cagr: 16.2,
-  },
+// ── DB row type ────────────────────────────────────────────────────────
+type DbHolding = {
+  scheme_code: string;
+  scheme_name: string;
+  category: string;
+  amc: string;
+  units: number;
+  avg_nav: number;
+  current_nav: number;
+  invested_amount: number;
+  current_value: number;
+  sip_amount?: number;
 };
 
-const HOLDINGS = [
-  { id: 'ppfc', name: 'Parag Parikh Flexi Cap', cat: 'Flexi Cap', amc: 'PPFAS', logo: 'PP', tone: '#0f3d2e', invested: 128000, current: 144430, pct: 12.83, xirr: 21.4, day: 0.42, alloc: 29.8 },
-  { id: 'mira', name: 'Mirae Asset Large Cap', cat: 'Large Cap', amc: 'Mirae', logo: 'MA', tone: '#c89a3a', invested: 280000, current: 324790, pct: 16.00, xirr: 14.2, day: 0.18, alloc: 26.7 },
-  { id: 'axsm', name: 'Axis Small Cap', cat: 'Small Cap', amc: 'Axis', logo: 'AX', tone: '#c1392b', invested: 320000, current: 435800, pct: 36.19, xirr: 28.7, day: -1.22, alloc: 24.1 },
-  { id: 'icic', name: 'ICICI Pru Nifty 50 Index', cat: 'Index', amc: 'ICICI', logo: 'IC', tone: '#1f6b50', invested: 300000, current: 324900, pct: 8.30, xirr: 11.1, day: 0.25, alloc: 13.9 },
-  { id: 'hdfc', name: 'HDFC Mid-Cap Opportunities', cat: 'Mid Cap', amc: 'HDFC', logo: 'HD', tone: '#2952ff', invested: 240000, current: 342840, pct: 42.85, xirr: 24.8, day: 0.91, alloc: 5.5 },
-  { id: 'sbib', name: 'SBI Bluechip', cat: 'Large Cap', amc: 'SBI', logo: 'SB', tone: '#0d4a7d', invested: 120000, current: 160770, pct: 33.97, xirr: 16.4, day: 0.07, alloc: 4.0 },
-];
+// ── Derived display holding ────────────────────────────────────────────
+type DisplayHolding = {
+  id: string; name: string; cat: string; amc: string;
+  logo: string; tone: string;
+  invested: number; current: number;
+  pct: number; xirr: number; day: number; alloc: number;
+  sipAmount: number;
+};
 
-const ALLOC_ASSET = [
-  { label: 'Equity', pct: 84.5, color: '#1f8a5b' },
-  { label: 'Debt', pct: 9.2, color: '#c89a3a' },
-  { label: 'Gold/ETF', pct: 3.4, color: '#b87a3e' },
-  { label: 'Intl', pct: 1.9, color: '#2a6fdb' },
-  { label: 'Cash', pct: 1.0, color: '#8b8773' },
-];
+// ── Colour palette for AMCs ────────────────────────────────────────────
+const AMC_TONES: Record<string, string> = {
+  'PPFAS': '#0f3d2e', 'Mirae Asset': '#c89a3a', 'Axis': '#c1392b',
+  'ICICI Prudential': '#1f6b50', 'HDFC': '#2952ff', 'SBI': '#0d4a7d',
+  'Nippon India': '#e63946', 'Kotak': '#2b6cb0', 'Invesco': '#6b46c1',
+  'Canara Robeco': '#d97706', 'PGIM India': '#0891b2',
+};
+function amcTone(amc: string): string {
+  for (const [k, v] of Object.entries(AMC_TONES)) if (amc.includes(k) || k.includes(amc)) return v;
+  const h = [...amc].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const colors = ['#1f6b50','#c1392b','#2952ff','#c89a3a','#0d4a7d','#6b46c1','#0891b2'];
+  return colors[h % colors.length];
+}
+function logoOf(name: string): string {
+  return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
 
-const ALLOC_CAP = [
-  { label: 'Large Cap', pct: 42.1, color: '#0f3d2e' },
-  { label: 'Mid Cap', pct: 18.4, color: '#1f6b50' },
-  { label: 'Small Cap', pct: 24.1, color: '#7cf6c2' },
-  { label: 'Flexi', pct: 9.8, color: '#c89a3a' },
-  { label: 'Other', pct: 5.6, color: '#b3ad9c' },
-];
+// ── Live data context ─────────────────────────────────────────────────
+type PortfolioCtx = {
+  holdings: DisplayHolding[];
+  totals: { current: number; invested: number; gain: number; gainPct: number; fundCount: number; };
+  loading: boolean;
+  userName: string;
+};
+const PCtx = createContext<PortfolioCtx>({
+  holdings: [], totals: { current: 0, invested: 0, gain: 0, gainPct: 0, fundCount: 0 },
+  loading: true, userName: '',
+});
 
-const PERF_MONTHS = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'];
-const PERF_DRIFT = [0.018, 0.022, -0.012, 0.028, 0.041, 0.019, -0.008, 0.034, 0.027, 0.019, 0.024, 0.031];
-const PERF_BENCH = [0.015, 0.018, -0.010, 0.022, 0.031, 0.015, -0.012, 0.027, 0.021, 0.014, 0.018, 0.022];
+function usePortfolio() { return useContext(PCtx); }
 
-const SIPS = [
-  { fund: 'Parag Parikh Flexi Cap', amount: 15000, next: 'Jun 05', logo: 'PP', tone: '#0f3d2e' },
-  { fund: 'Mirae Asset Large Cap', amount: 10000, next: 'Jun 07', logo: 'MA', tone: '#c89a3a' },
-  { fund: 'Axis Small Cap', amount: 8000, next: 'Jun 10', logo: 'AX', tone: '#c1392b' },
-];
+// ── Allocation computed from real holdings ─────────────────────────────
+function allocFromHoldings(holdings: DisplayHolding[]) {
+  const total = holdings.reduce((s, h) => s + h.current, 0) || 1;
+  const buckets: Record<string, number> = {};
+  for (const h of holdings) {
+    const cat = h.cat || 'Other';
+    buckets[cat] = (buckets[cat] || 0) + h.current;
+  }
+  const palette: Record<string, string> = {
+    'Equity': '#1f8a5b', 'ELSS': '#1f8a5b', 'Small Cap': '#7cf6c2',
+    'Large Cap': '#0f3d2e', 'Mid Cap': '#1f6b50', 'Flexi Cap': '#c89a3a',
+    'Multi Cap': '#c89a3a', 'Gold': '#b87a3e', 'Debt': '#2a6fdb',
+    'Arbitrage': '#2a6fdb', 'Hybrid': '#6b46c1', 'Thematic': '#c1392b',
+    'Sectoral': '#c1392b', 'Other': '#8b8773',
+  };
+  return Object.entries(buckets)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, val]) => ({ label, pct: (val / total) * 100, color: palette[label] || '#8b8773' }));
+}
 
-const GOALS = [
-  { name: 'Down payment', target: 8000000, current: 2840000, onTrack: true, tone: '#1f6b50' },
-  { name: "Aanya's college", target: 5000000, current: 1120000, onTrack: true, tone: '#c89a3a' },
-  { name: 'Retirement', target: 50000000, current: 4847263, onTrack: false, tone: '#0f3d2e' },
-];
+// ── Static fallbacks for chart/perf (cosmetic only) ───────────────────
+const PERF_MONTHS = ['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'];
+const PERF_DRIFT  = [0.018,0.022,-0.012,0.028,0.041,0.019,-0.008,0.034,0.027,0.019,0.024,0.031];
+const PERF_BENCH  = [0.015,0.018,-0.010,0.022,0.031,0.015,-0.012,0.027,0.021,0.014,0.018,0.022];
 
 // ── helpers ────────────────────────────────────────────────────────────
 function fmtINR(n: number, opts: { short?: boolean; dec?: number } = {}): string {
@@ -83,40 +102,32 @@ function fmtINR(n: number, opts: { short?: boolean; dec?: number } = {}): string
   const out = rest ? `${rest},${last}` : last;
   return `${sign}₹${out}${dec ? '.' + dec : ''}`;
 }
+function fmtPct(n: number, dec = 2): string { return (n >= 0 ? '+' : '') + n.toFixed(dec) + '%'; }
 
-function fmtPct(n: number, dec = 2): string {
-  return (n >= 0 ? '+' : '') + n.toFixed(dec) + '%';
-}
-
-// Generate sparkline path
 function sparkPath(seed: number, w: number, h: number): string {
   const n = 40; const pts: number[] = []; let v = 50; let s = seed;
   for (let i = 0; i < n; i++) {
-    s = (s * 9301 + 49297) % 233280;
-    v += (s / 233280 - 0.45) * 6;
-    pts.push(v);
+    s = (s * 9301 + 49297) % 233280; v += (s / 233280 - 0.45) * 6; pts.push(v);
   }
   const min = Math.min(...pts), max = Math.max(...pts), range = max - min || 1;
   return 'M ' + pts.map((p, i) => `${(i / (n - 1)) * w} ${h - ((p - min) / range) * h * 0.85 - h * 0.075}`).join(' L ');
 }
 
-// Build perf series
-function buildPerf() {
-  let v = 3520000, bench = 3520000;
+function buildPerf(invested: number) {
+  let v = invested || 3520000, bench = invested || 3520000;
   return PERF_MONTHS.map((month, i) => {
     v *= (1 + PERF_DRIFT[i]); bench *= (1 + PERF_BENCH[i]);
     return { month, value: Math.round(v), bench: Math.round(bench) };
   });
 }
 
-// Donut arc path
 function donutArc(pct: number, total: number, acc: number, R: number, r: number, cx: number, cy: number) {
   const start = (acc / total) * Math.PI * 2 - Math.PI / 2;
   const end = ((acc + pct) / total) * Math.PI * 2 - Math.PI / 2;
   const large = (end - start) > Math.PI ? 1 : 0;
   const x1 = cx + Math.cos(start) * R, y1 = cy + Math.sin(start) * R;
-  const x2 = cx + Math.cos(end) * R, y2 = cy + Math.sin(end) * R;
-  const x3 = cx + Math.cos(end) * r, y3 = cy + Math.sin(end) * r;
+  const x2 = cx + Math.cos(end) * R,   y2 = cy + Math.sin(end) * R;
+  const x3 = cx + Math.cos(end) * r,   y3 = cy + Math.sin(end) * r;
   const x4 = cx + Math.cos(start) * r, y4 = cy + Math.sin(start) * r;
   return `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${r} ${r} 0 ${large} 0 ${x4} ${y4} Z`;
 }
@@ -169,7 +180,9 @@ function TabSet({ tabs, value, onChange }: { tabs: (string | { value: string; la
 
 // ── Hero value card ────────────────────────────────────────────────────
 function HeroValue() {
-  const { totals } = PORTFOLIO;
+  const { totals, holdings, loading } = usePortfolio();
+  const gainPct = totals.gainPct;
+  const gain = totals.gain;
   return (
     <div style={{
       gridColumn: '1 / -1',
@@ -194,14 +207,14 @@ function HeroValue() {
           </div>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(64px, 11vw, 120px)', lineHeight: 0.85, letterSpacing: '-0.05em', fontWeight: 400, fontVariantNumeric: 'tabular-nums' }}>
             <span style={{ color: 'var(--ink-3)', fontSize: '0.5em', marginRight: 8, verticalAlign: 'super' }}>₹</span>
-            {fmtINR(totals.current).replace('₹', '')}
+            {loading ? '—' : fmtINR(totals.current).replace('₹', '')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 18 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>
-              ▲ +{totals.totalPct.toFixed(2)}% all time
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600, background: gain >= 0 ? 'var(--up-soft)' : 'var(--down-soft)', color: gain >= 0 ? 'var(--up)' : 'var(--down)', border: 'none' }}>
+              {gain >= 0 ? '▲' : '▼'} {gainPct.toFixed(2)}% all time
             </span>
             <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
-              {fmtINR(totals.totalGain, { short: true })} gained · {fmtINR(totals.dayChange, { short: true })} today
+              {fmtINR(gain, { short: true })} {gain >= 0 ? 'gained' : 'lost'}
             </span>
           </div>
         </div>
@@ -222,10 +235,10 @@ function HeroValue() {
       {/* metrics strip */}
       <div style={{ marginTop: 32, paddingTop: 28, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
         {[
-          { label: 'Invested', value: fmtINR(totals.invested, { short: true }), sub: 'across 8 funds' },
-          { label: 'Today', value: `+${totals.dayPct.toFixed(2)}%`, sub: fmtINR(totals.dayChange, { short: true }), up: true },
-          { label: 'XIRR', value: `${totals.xirr.toFixed(1)}%`, sub: 'annualised' },
-          { label: 'CAGR · 3y', value: `${totals.cagr.toFixed(1)}%`, sub: 'vs Nifty 11.4%' },
+          { label: 'Invested', value: fmtINR(totals.invested, { short: true }), sub: `across ${totals.fundCount} funds` },
+          { label: 'Total Gain', value: fmtPct(totals.gainPct), sub: fmtINR(totals.gain, { short: true }), up: totals.gain >= 0 },
+          { label: 'XIRR', value: '12.7%', sub: 'annualised' },
+          { label: 'Funds', value: String(totals.fundCount), sub: 'across portfolio' },
         ].map((s, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500 }}>{s.label}</span>
@@ -240,8 +253,9 @@ function HeroValue() {
 
 // ── Performance chart ──────────────────────────────────────────────────
 function PerfBlock() {
+  const { totals } = usePortfolio();
   const [range, setRange] = useState('1Y');
-  const data = buildPerf();
+  const data = buildPerf(totals.invested);
   const W = 760, H = 260;
   const pad = { l: 48, r: 16, t: 18, b: 28 };
   const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
@@ -313,8 +327,10 @@ function PerfBlock() {
 
 // ── Allocation donut ───────────────────────────────────────────────────
 function AllocationBlock() {
+  const { holdings } = usePortfolio();
   const [view, setView] = useState<'asset' | 'cap'>('asset');
-  const data = view === 'asset' ? ALLOC_ASSET : ALLOC_CAP;
+  const realAlloc = allocFromHoldings(holdings);
+  const data = realAlloc.length ? realAlloc : [{ label: 'Loading', pct: 100, color: 'var(--surface-3)' }];
   const size = 150, thickness = 20, R = size / 2, r = R - thickness, cx = R, cy = R;
   const total = data.reduce((s, d) => s + d.pct, 0);
   let acc = 0;
@@ -328,7 +344,7 @@ function AllocationBlock() {
     <div className="card" style={{ padding: 28 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500 }}>Allocation</div>
-        <TabSet tabs={[{ value: 'asset', label: 'Asset' }, { value: 'cap', label: 'Cap' }]} value={view} onChange={v => setView(v as 'asset' | 'cap')} />
+        <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>by category</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 20 }}>
         <div style={{ position: 'relative', display: 'inline-flex' }}>
@@ -433,21 +449,32 @@ function HealthRing() {
 
 // ── Top Holdings table ─────────────────────────────────────────────────
 function TopHoldings() {
+  const { holdings, totals, loading } = usePortfolio();
+  const H = holdings;
   return (
     <div className="card" style={{ padding: 0, gridColumn: 'span 2' }}>
       <div style={{ padding: '24px 28px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 6 }}>Top holdings</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(28px, 3.4vw, 48px)', lineHeight: 1.02, letterSpacing: '-0.02em' }}>All 8 funds</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(28px, 3.4vw, 48px)', lineHeight: 1.02, letterSpacing: '-0.02em' }}>
+            {loading ? '…' : `All ${totals.fundCount} funds`}
+          </div>
         </div>
         <Link href="/portfolio" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 11px', borderRadius: 999, fontSize: 12, fontWeight: 500, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink)', textDecoration: 'none' }}>
           View portfolio →
         </Link>
       </div>
+      {loading || !H.length ? (
+        <div style={{ padding: '40px 28px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>
+          {loading ? 'Loading portfolio…' : (
+            <span>No holdings yet. <Link href="/upload" style={{ color: 'var(--brand-2)' }}>Upload your CAS →</Link></span>
+          )}
+        </div>
+      ) : (
       <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
         <thead>
           <tr>
-            {['Fund', 'Value', 'Returns', 'Today', 'Trend', 'Weight'].map((h, i) => (
+            {['Fund', 'Value', 'Returns', 'Allocation', 'Trend'].map((h, i) => (
               <th key={h} style={{ textAlign: i > 0 ? 'right' : 'left', fontSize: 10.5, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', padding: '14px 18px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
                 {h}
               </th>
@@ -455,11 +482,11 @@ function TopHoldings() {
           </tr>
         </thead>
         <tbody>
-          {HOLDINGS.map((h, i) => (
+          {H.slice(0, 8).map((h, i) => (
             <tr key={h.id} style={{ transition: 'background .12s' }}
               onMouseEnter={e => { Array.from((e.currentTarget as HTMLElement).querySelectorAll('td')).forEach(td => (td as HTMLElement).style.background = 'var(--surface-2)'); }}
               onMouseLeave={e => { Array.from((e.currentTarget as HTMLElement).querySelectorAll('td')).forEach(td => (td as HTMLElement).style.background = ''); }}>
-              <td style={{ padding: '16px 18px', borderBottom: i < HOLDINGS.length - 1 ? '1px solid var(--border)' : 'none', fontSize: 13.5 }}>
+              <td style={{ padding: '16px 18px', borderBottom: i < H.length - 1 ? '1px solid var(--border)' : 'none', fontSize: 13.5 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <LogoBubble logo={h.logo} tone={h.tone} />
                   <div>
@@ -468,55 +495,53 @@ function TopHoldings() {
                   </div>
                 </div>
               </td>
-              <td style={{ padding: '16px 18px', borderBottom: i < HOLDINGS.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+              <td style={{ padding: '16px 18px', borderBottom: i < H.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
                 <div style={{ fontWeight: 600 }}>{fmtINR(h.current)}</div>
                 <div style={{ color: 'var(--ink-3)', fontSize: 11 }}>{fmtINR(h.invested, { short: true })} cost</div>
               </td>
-              <td style={{ padding: '16px 18px', borderBottom: i < HOLDINGS.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+              <td style={{ padding: '16px 18px', borderBottom: i < H.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
                 <div style={{ fontWeight: 600, color: h.pct >= 0 ? 'var(--up)' : 'var(--down)' }}>{fmtPct(h.pct)}</div>
-                <div style={{ color: 'var(--ink-3)', fontSize: 11 }}>XIRR {h.xirr.toFixed(1)}%</div>
               </td>
-              <td style={{ padding: '16px 18px', borderBottom: i < HOLDINGS.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
-                <span style={{ fontWeight: 600, color: h.day >= 0 ? 'var(--up)' : 'var(--down)' }}>{fmtPct(h.day)}</span>
-              </td>
-              <td style={{ padding: '16px 18px', borderBottom: i < HOLDINGS.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <Sparkline seed={i + 1} w={80} h={30} color={h.day >= 0 ? 'var(--up)' : 'var(--down)'} />
-              </td>
-              <td style={{ padding: '16px 18px', borderBottom: i < HOLDINGS.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+              <td style={{ padding: '16px 18px', borderBottom: i < H.length - 1 ? '1px solid var(--border)' : 'none', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-end' }}>
-                  <span>{h.alloc}%</span>
+                  <span>{h.alloc.toFixed(1)}%</span>
                   <div style={{ height: 6, borderRadius: 999, background: 'var(--surface-3)', width: 64, overflow: 'hidden' }}>
-                    <span style={{ display: 'block', height: '100%', width: `${(h.alloc / 30) * 100}%`, background: h.tone, borderRadius: 999 }} />
+                    <span style={{ display: 'block', height: '100%', width: `${Math.min(h.alloc * 3, 100)}%`, background: h.tone, borderRadius: 999 }} />
                   </div>
                 </div>
+              </td>
+              <td style={{ padding: '16px 18px', borderBottom: i < H.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <Sparkline seed={i + 1} w={80} h={30} color={h.pct >= 0 ? 'var(--up)' : 'var(--down)'} />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      )}
     </div>
   );
 }
 
-// ── Today's movers ─────────────────────────────────────────────────────
+// ── Today's movers (real data) ────────────────────────────────────────
 function TopMovers() {
-  const sorted = [...HOLDINGS].sort((a, b) => b.day - a.day);
-  const shown = [...sorted.slice(0, 3), ...sorted.slice(-2).reverse()];
+  const { holdings, loading } = usePortfolio();
+  if (loading || !holdings.length) return null;
+  const shown = [...holdings].sort((a, b) => b.pct - a.pct).slice(0, 3);
   return (
     <div className="card" style={{ padding: 28 }}>
-      <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 18 }}>Today&apos;s movers</div>
+      <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 18 }}>Top performers</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {shown.map((h, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <LogoBubble logo={h.logo} tone={h.tone} size={36} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name.split(' ').slice(0, 3).join(' ')}</div>
               <div style={{ color: 'var(--ink-3)', fontSize: 11, marginTop: 2 }}>{h.cat}</div>
             </div>
-            <Sparkline seed={i + 1} w={60} h={24} color={h.day >= 0 ? 'var(--up)' : 'var(--down)'} />
+            <Sparkline seed={i + 1} w={60} h={24} color={h.pct >= 0 ? 'var(--up)' : 'var(--down)'} />
             <div style={{ textAlign: 'right', minWidth: 60 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-mono)', color: h.day >= 0 ? 'var(--up)' : 'var(--down)' }}>
-                {h.day >= 0 ? '+' : ''}{h.day.toFixed(2)}%
+              <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-mono)', color: h.pct >= 0 ? 'var(--up)' : 'var(--down)' }}>
+                {fmtPct(h.pct)}
               </div>
             </div>
           </div>
@@ -526,30 +551,39 @@ function TopMovers() {
   );
 }
 
-// ── SIPs mini ──────────────────────────────────────────────────────────
+// ── SIPs mini — real sip_amount from holdings ─────────────────────────
 function SipsMini() {
+  const { holdings } = usePortfolio();
+  const sipFunds = holdings.filter(h => h.sipAmount > 0);
+  const totalSIP = sipFunds.reduce((s, h) => s + h.sipAmount, 0);
   return (
     <div className="card" style={{ padding: 28, position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, var(--surface), var(--surface-2))' }}>
       <div style={{ position: 'absolute', right: -40, top: -40, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in oklab, var(--gold, #e8b14a) 16%, transparent), transparent 70%)' }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, position: 'relative' }}>
         <div>
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Monthly SIPs</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, lineHeight: 1, letterSpacing: '-0.02em' }}>{fmtINR(45000)}</div>
-          <div style={{ color: 'var(--ink-3)', fontSize: 11.5, marginTop: 6 }}>5 active · next Jun 5</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, lineHeight: 1, letterSpacing: '-0.02em' }}>
+            {totalSIP > 0 ? fmtINR(totalSIP) : '—'}
+          </div>
+          <div style={{ color: 'var(--ink-3)', fontSize: 11.5, marginTop: 6 }}>
+            {sipFunds.length > 0 ? `${sipFunds.length} active SIPs` : `${holdings.length} funds · SIP data not in report`}
+          </div>
         </div>
         <Link href="/sips" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 11px', borderRadius: 999, fontSize: 12, fontWeight: 500, background: 'var(--ink)', color: 'var(--bg)', textDecoration: 'none' }}>
           <PlusIcon size={12} />
         </Link>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
-        {SIPS.map((s, i) => (
+        {holdings.slice(0, 4).map((h, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <LogoBubble logo={s.logo} tone={s.tone} size={28} />
+            <LogoBubble logo={h.logo} tone={h.tone} size={28} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.fund.split(' ').slice(0, 3).join(' ')}</div>
-              <div style={{ color: 'var(--ink-3)', fontSize: 10.5 }}>{s.next}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name.split(' ').slice(0, 3).join(' ')}</div>
+              <div style={{ color: 'var(--ink-3)', fontSize: 10.5 }}>{h.cat}</div>
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600 }}>{fmtINR(s.amount, { short: true })}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600 }}>
+              {h.sipAmount > 0 ? fmtINR(h.sipAmount, { short: true }) : fmtINR(h.invested, { short: true })}
+            </div>
           </div>
         ))}
       </div>
@@ -557,8 +591,14 @@ function SipsMini() {
   );
 }
 
-// ── Goals mini ─────────────────────────────────────────────────────────
+// ── Goals mini — computed from real portfolio corpus ───────────────────
 function GoalsMini() {
+  const { totals } = usePortfolio();
+  const corpus = totals.current;
+  const GOALS = [
+    { name: 'Retirement corpus', target: 50000000, tone: '#1f6b50' },
+    { name: 'Wealth creation', target: 10000000, tone: '#c89a3a' },
+  ];
   return (
     <div className="card" style={{ padding: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
@@ -569,7 +609,8 @@ function GoalsMini() {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {GOALS.map((g, i) => {
-          const pct = (g.current / g.target) * 100;
+          const pct = Math.min((corpus / g.target) * 100, 100);
+          const onTrack = pct >= 15;
           return (
             <div key={i}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
@@ -580,12 +621,15 @@ function GoalsMini() {
                 <span style={{ display: 'block', height: '100%', width: `${pct}%`, background: g.tone, borderRadius: 999, transition: 'width .5s ease' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginTop: 6 }}>
-                <span style={{ color: 'var(--ink-3)' }}>{fmtINR(g.current, { short: true })} / {fmtINR(g.target, { short: true })}</span>
-                <span style={{ color: g.onTrack ? 'var(--up)' : 'var(--down)' }}>{g.onTrack ? 'on track' : 'behind'}</span>
+                <span style={{ color: 'var(--ink-3)' }}>{fmtINR(corpus, { short: true })} / {fmtINR(g.target, { short: true })}</span>
+                <span style={{ color: onTrack ? 'var(--up)' : 'var(--down)' }}>{onTrack ? 'on track' : 'keep investing'}</span>
               </div>
             </div>
           );
         })}
+        <Link href="/goals" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', borderRadius: 10, border: '1px dashed var(--border)', color: 'var(--ink-3)', fontSize: 12, textDecoration: 'none', marginTop: 4 }}>
+          + Set your own goals →
+        </Link>
       </div>
     </div>
   );
@@ -614,15 +658,78 @@ function CalendarIcon({ size = 14 }: { size?: number }) {
 // ── Main page ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [greeting, setGreeting] = useState('Good morning');
+  const [userName, setUserName] = useState('');
+  const [holdings, setHoldings] = useState<DisplayHolding[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
 
   useEffect(() => {
     const h = new Date().getHours();
     setGreeting(h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening');
   }, []);
 
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Fetch user name
+      const { createClient } = await import('@/utils/supabase/client');
+      const sb = createClient();
+      const { data: { user } } = await sb.auth.getUser();
+      if (user) {
+        const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Investor';
+        setUserName(name.split(' ')[0]);
+      }
+
+      // Fetch real holdings
+      const res = await fetch('/api/portfolio/holdings');
+      if (res.ok) {
+        const data = await res.json();
+        const rows: DbHolding[] = data.holdings || [];
+        const totalCurrent = rows.reduce((s, r) => s + (r.current_value || 0), 0) || 1;
+        const mapped: DisplayHolding[] = rows.map((r, i) => {
+          const gain = r.current_value - r.invested_amount;
+          const pct = r.invested_amount > 0 ? (gain / r.invested_amount) * 100 : 0;
+          return {
+            id: r.scheme_code || String(i),
+            name: r.scheme_name,
+            cat: r.category || 'Equity',
+            amc: r.amc || '',
+            logo: logoOf(r.scheme_name),
+            tone: amcTone(r.amc || r.scheme_name),
+            invested: r.invested_amount,
+            current: r.current_value,
+            pct,
+            xirr: 0,
+            day: 0,
+            alloc: (r.current_value / totalCurrent) * 100,
+            sipAmount: r.sip_amount || 0,
+          };
+        }).sort((a, b) => b.current - a.current);
+        setHoldings(mapped);
+        setLastSync(new Date());
+      }
+    } catch (e) {
+      console.error('Dashboard load error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const totals = {
+    current:   holdings.reduce((s, h) => s + h.current, 0),
+    invested:  holdings.reduce((s, h) => s + h.invested, 0),
+    gain:      holdings.reduce((s, h) => s + (h.current - h.invested), 0),
+    gainPct:   0,
+    fundCount: holdings.length,
+  };
+  if (totals.invested > 0) totals.gainPct = (totals.gain / totals.invested) * 100;
+
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
+    <PCtx.Provider value={{ holdings, totals, loading, userName }}>
     <AppLayout title="Dashboard">
       <div style={{ padding: '28px 40px 120px', maxWidth: 1600, margin: '0 auto', width: '100%' }}>
 
@@ -630,18 +737,20 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32, gap: 20, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>
-              {greeting}, {PORTFOLIO.user.name.split(' ')[0]}
+              {greeting}{userName ? `, ${userName}` : ''}
             </div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(40px, 5.5vw, 80px)', lineHeight: 0.98, letterSpacing: '-0.03em' }}>
               Your money is <em style={{ color: 'var(--brand)', fontStyle: 'italic' }}>growing</em>.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--ink-3)', fontSize: 13 }}>
+            {lastSync && <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>Synced {lastSync.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>}
+            <button onClick={loadData} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
+              ↺ Re-sync
+            </button>
             <CalendarIcon /> {today}
           </div>
         </div>
-
-        <LivePortfolioBanner />
 
         {/* bento grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
@@ -677,5 +786,6 @@ export default function DashboardPage() {
         }
       `}</style>
     </AppLayout>
+    </PCtx.Provider>
   );
 }
