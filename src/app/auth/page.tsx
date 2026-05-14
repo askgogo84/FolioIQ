@@ -1,127 +1,251 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { signInWithPopup, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+'use client';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function AuthPage() {
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
-  const [loading, setLoading] = useState<"google" | "apple" | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [checking, setChecking] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
-    // Check if already have a Supabase session
-    fetch("/api/auth/check").then(r => r.json()).then(d => {
-      if (d.loggedIn) router.push("/dashboard");
-      else setChecking(false);
-    }).catch(() => setChecking(false));
+    const saved = localStorage.getItem('folioiq-theme') as 'dark' | 'light' | null;
+    const t = saved || 'dark';
+    setTheme(t);
+    document.documentElement.setAttribute('data-theme', t);
   }, []);
 
-  const signIn = async (provider: any, type: "google" | "apple") => {
-    setLoading(type);
-    setError(null);
-    try {
-      const result = await signInWithPopup(auth, provider);
-      // Sync Firebase user to Supabase and get session URL
-      const res = await fetch("/api/auth/firebase-sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          uid: result.user.uid,
-          email: result.user.email,
-          name: result.user.displayName,
-          photo: result.user.photoURL,
-        }),
-      });
-      const data = await res.json();
-      if (data.sessionUrl) {
-        window.location.href = data.sessionUrl;
-      } else {
-        router.push("/dashboard");
-      }
-    } catch (e: any) {
-      if (e.code !== "auth/popup-closed-by-user") {
-        setError("Sign-in failed. Please try again.");
-      }
-      setLoading(null);
-    }
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('folioiq-theme', next);
   };
 
-  const googleProvider = new GoogleAuthProvider();
-  const appleProvider = new OAuthProvider("apple.com");
+  const handleGoogle = async () => {
+    setLoading(true); setError('');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) { setError(error.message); setLoading(false); }
+  };
 
-  if (checking) return (
-    <div className="min-h-screen bg-[#0B1221] flex items-center justify-center">
-      <div className="w-10 h-10 rounded-full border-4 border-gray-800 border-t-emerald-500 animate-spin"/>
-    </div>
-  );
+  const handleMagicLink = async () => {
+    if (!email) { setError('Please enter your email'); return; }
+    setLoading(true); setError('');
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) { setError(error.message); }
+    else { setSent(true); }
+    setLoading(false);
+  };
 
   return (
-    <div className="min-h-screen bg-[#0B1221] flex items-center justify-center p-4"
-      style={{ fontFamily: "'Inter var',system-ui,sans-serif" }}>
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"/>
-        <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"/>
-      </div>
-      <div className="relative w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-emerald-500/30">
-            <span className="text-white text-2xl font-black">F</span>
-          </div>
-          <h1 className="text-[24px] font-black text-white tracking-tight">FolioIQ</h1>
-          <p className="text-emerald-400 text-[13px] mt-1">AI-Powered Portfolio Intelligence</p>
+    <>
+      <style>{`
+        body::before {
+          content: '';
+          position: fixed;
+          top: 20vh; left: 50%;
+          transform: translateX(-50%);
+          width: 800px; height: 800px;
+          border-radius: 50%;
+          background: radial-gradient(circle, color-mix(in oklab, var(--brand) 14%, transparent), transparent 60%);
+          filter: blur(60px);
+          pointer-events: none;
+          z-index: 0;
+        }
+        body::after {
+          content: '';
+          position: fixed;
+          bottom: -200px; right: -100px;
+          width: 500px; height: 500px;
+          border-radius: 50%;
+          background: radial-gradient(circle, color-mix(in oklab, var(--accent) 8%, transparent), transparent 70%);
+          filter: blur(60px);
+          pointer-events: none;
+          z-index: 0;
+        }
+      `}</style>
+
+      {/* Header */}
+      <header style={{
+        position: 'relative', zIndex: 2,
+        padding: '20px 32px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 17, letterSpacing: '-0.02em' }}>
+          <span style={{
+            width: 32, height: 32, borderRadius: 10, background: 'var(--brand)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'var(--glow-brand)',
+          }}>
+            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--bg-deep)', fontStyle: 'italic', lineHeight: 1 }}>ƒ</span>
+          </span>
+          FolioIQ
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={toggleTheme} className="btn ghost" style={{ padding: 9, borderRadius: 999 }} aria-label="Toggle theme">
+            {theme === 'dark' ? (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            ) : (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+            )}
+          </button>
+          <Link href="/" style={{ padding: '8px 14px', borderRadius: 999, fontSize: 13.5, color: 'var(--ink-2)' }}>← Back to home</Link>
         </div>
-        <div className="bg-[#111827] border border-white/8 rounded-3xl p-7 shadow-2xl">
-          <h2 className="text-[18px] font-bold text-white mb-1 text-center">Sign in to FolioIQ</h2>
-          <p className="text-gray-500 text-[13px] text-center mb-7">One tap — no password, no OTP</p>
-          <button
-            onClick={() => signIn(googleProvider, "google")}
-            disabled={!!loading}
-            className="w-full flex items-center justify-center gap-3 px-5 py-3.5 bg-white hover:bg-gray-100 text-gray-800 rounded-2xl font-semibold text-[15px] transition-all mb-3 disabled:opacity-60 shadow-lg active:scale-[0.98]"
-          >
-            {loading === "google" ? (
-              <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin"/>
-            ) : (
-              <svg viewBox="0 0 24 24" width="20" height="20">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-            )}
-            Continue with Google
-          </button>
-          <button
-            onClick={() => signIn(appleProvider, "apple")}
-            disabled={!!loading}
-            className="w-full flex items-center justify-center gap-3 px-5 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-semibold text-[15px] transition-all mb-6 disabled:opacity-60 active:scale-[0.98]"
-          >
-            {loading === "apple" ? (
-              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"/>
-            ) : (
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-              </svg>
-            )}
-            Continue with Apple
-          </button>
-          {error && (
-            <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[13px] text-red-400 text-center">{error}</div>
-          )}
-          <div className="text-center">
-            <p className="text-[11px] text-gray-600 leading-relaxed">
-              By continuing, you agree to FolioIQ's Terms & Privacy Policy.<br/>
-              We never access your investments or trading account.
+      </header>
+
+      {/* Main */}
+      <main style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '40px 24px', position: 'relative', zIndex: 1, minHeight: 'calc(100vh - 140px)',
+      }}>
+        <div style={{ width: '100%', maxWidth: 420 }}>
+          {/* Brand hero */}
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: 20,
+              background: 'var(--brand)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 18px',
+              boxShadow: '0 0 0 1px var(--brand), 0 0 48px -8px color-mix(in oklab, var(--brand) 80%, transparent)',
+            }}>
+              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 44, color: 'var(--bg-deep)', fontStyle: 'italic', lineHeight: 1 }}>ƒ</span>
+            </div>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 44, lineHeight: 1, letterSpacing: '-0.03em', margin: '0 0 8px', fontWeight: 400 }}>
+              FolioIQ
+            </h1>
+            <div style={{ color: 'var(--brand)', fontSize: 13, letterSpacing: '0.02em' }}>
+              AI-Powered Portfolio Intelligence
+            </div>
+          </div>
+
+          {/* Auth card */}
+          <div style={{
+            background: 'color-mix(in oklab, var(--surface) 70%, transparent)',
+            backdropFilter: 'blur(20px) saturate(160%)',
+            border: '1px solid var(--border)',
+            borderRadius: 24, padding: '32px 28px',
+            boxShadow: '0 24px 60px -20px rgba(0,0,0,0.6)',
+          }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, lineHeight: 1.1, letterSpacing: '-0.02em', margin: '0 0 6px', fontWeight: 400, textAlign: 'center' }}>
+              {sent ? 'Check your inbox' : 'Sign in to FolioIQ'}
+            </h2>
+            <p style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 13, marginBottom: 24 }}>
+              {sent ? `We sent a magic link to ${email}` : 'One tap — no password, no OTP'}
             </p>
+
+            {!sent && (
+              <>
+                {/* Google */}
+                <button onClick={handleGoogle} disabled={loading} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+                  width: '100%', padding: '14px 18px', borderRadius: 14,
+                  fontSize: 14, fontWeight: 600,
+                  background: 'var(--ink)', color: 'var(--bg-deep)',
+                  border: '1px solid var(--ink)', marginBottom: 10,
+                  transition: 'transform .15s', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" fill="#34A853"/>
+                    <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18a11.05 11.05 0 0 0 0 9.86l3.66-2.83Z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.07l3.66 2.83C6.71 7.31 9.14 5.38 12 5.38Z" fill="#EA4335"/>
+                  </svg>
+                  Continue with Google
+                </button>
+
+                {/* Divider */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }}/>
+                  <span style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>or</span>
+                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }}/>
+                </div>
+
+                {/* Magic link */}
+                <input
+                  type="email"
+                  placeholder="aarav@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleMagicLink()}
+                  style={{
+                    width: '100%', padding: '14px 18px', borderRadius: 14,
+                    background: 'var(--surface-2)', border: '1px solid var(--border)',
+                    color: 'var(--ink)', fontFamily: 'inherit', fontSize: 14, outline: 'none',
+                  }}
+                  autoFocus
+                />
+                <button onClick={handleMagicLink} disabled={loading} style={{
+                  width: '100%', marginTop: 8, padding: 14, borderRadius: 14,
+                  background: 'var(--brand)', color: 'var(--bg-deep)',
+                  border: '1px solid var(--brand)', fontWeight: 600, fontSize: 14,
+                  cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
+                }}>
+                  {loading ? 'Sending…' : 'Send me a magic link'}
+                </button>
+
+                {error && (
+                  <p style={{ color: 'var(--down)', fontSize: 12.5, marginTop: 10, textAlign: 'center' }}>{error}</p>
+                )}
+
+                <p style={{ textAlign: 'center', marginTop: 18, fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.55 }}>
+                  By continuing, you agree to FolioIQ&apos;s <a href="#" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>Terms</a> &amp; <a href="#" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>Privacy Policy</a>.<br/>
+                  We never access your investments or trading account.
+                </p>
+              </>
+            )}
+
+            {sent && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
+                <p style={{ color: 'var(--ink-2)', fontSize: 14, lineHeight: 1.6 }}>
+                  Click the link in your email to sign in. The link expires in 10 minutes.
+                </p>
+                <button onClick={() => setSent(false)} style={{ marginTop: 20, color: 'var(--ink-3)', fontSize: 13, background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}>
+                  Use a different email
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Trust strip */}
+          <div style={{ display: 'flex', gap: 28, justifyContent: 'center', marginTop: 28, flexWrap: 'wrap' }}>
+            {[
+              { icon: '🛡', text: 'Read-only' },
+              { icon: '🇮🇳', text: 'India-hosted' },
+              { icon: '●', text: 'Free forever', pulse: true },
+            ].map((t, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--ink-2)' }}>
+                {t.pulse
+                  ? <span style={{ width: 6, height: 6, borderRadius: 99, background: 'var(--up)', animation: 'pulse-dot 2s infinite', display: 'inline-block' }}/>
+                  : <span>{t.icon}</span>
+                }
+                <strong style={{ fontWeight: 500 }}>{t.text}</strong>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="flex items-center justify-center gap-6 mt-6 text-[11px] text-gray-600">
-          <span className="flex items-center gap-1"><span>🔒</span> Read-only</span>
-          <span className="flex items-center gap-1"><span>🇮🇳</span> India-hosted</span>
-          <span className="flex items-center gap-1"><span>🆓</span> Free forever</span>
+      </main>
+
+      {/* Footer */}
+      <footer style={{ padding: '24px 32px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 11.5, position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'inline-flex', gap: 16, marginBottom: 6 }}>
+          {['Terms', 'Privacy', 'Security', 'Contact'].map(l => (
+            <a key={l} href="#" style={{ color: 'var(--ink-2)' }}>{l}</a>
+          ))}
         </div>
-      </div>
-    </div>
+        <div>© 2026 FolioIQ · Made in 🇮🇳</div>
+      </footer>
+    </>
   );
 }
