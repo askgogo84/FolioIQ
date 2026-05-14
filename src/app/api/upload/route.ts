@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 // Service role client - bypasses RLS for server-side operations
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // 1. Parse the CAS file (your existing parser)
     const parsedData = await parseCASFile(file);
     
-    console.log("✅ Parsed funds:", parsedData.funds?.length || 0);
+    console.log("? Parsed funds:", (parsedData as any)?.funds?.length || 0);
 
     // 2. Prepare portfolio record with CORRECT structure
     const portfolioRecord = {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       invested_amount: parsedData.investedAmount || 0,
       current_returns: parsedData.currentReturns || 0,
       xirr: parsedData.xirr || 0,
-      fund_count: parsedData.funds?.length || 0,
+      fund_count: (parsedData as any)?.funds?.length || 0,
       funds: parsedData.funds || [], // Array of fund objects
       monthly_sip: parsedData.monthlySip || 0,
       sip_count: parsedData.sipCount || 0,
@@ -61,14 +61,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
-      console.error("❌ Supabase insert error:", insertError);
+      console.error("? Supabase insert error:", insertError);
       return NextResponse.json(
         { error: "Failed to save portfolio", details: insertError.message },
         { status: 500 }
       );
     }
 
-    console.log("✅ Saved to Supabase:", inserted.id);
+    console.log("? Saved to Supabase:", inserted.id);
 
     // 5. Also save individual fund records for detailed queries
     if (parsedData.funds?.length > 0) {
@@ -94,19 +94,19 @@ export async function POST(request: NextRequest) {
         .insert(fundRecords);
 
       if (fundsError) {
-        console.error("❌ Fund holdings insert error:", fundsError);
+        console.error("? Fund holdings insert error:", fundsError);
       }
     }
 
     return NextResponse.json({
       success: true,
       portfolioId: inserted.id,
-      fundCount: parsedData.funds?.length || 0,
+      fundCount: (parsedData as any)?.funds?.length || 0,
       redirectTo: "/dashboard"
     });
 
   } catch (error: any) {
-    console.error("❌ Upload API error:", error);
+    console.error("? Upload API error:", error);
     return NextResponse.json(
       { error: "Internal server error", details: error.message },
       { status: 500 }
