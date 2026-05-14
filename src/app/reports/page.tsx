@@ -59,7 +59,7 @@ export default function ReportsPage(){
                 <div style={{fontSize:11,color:'var(--ink-3)',marginTop:4}}>before harvesting</div>
                 <div style={{fontSize:12,color:'var(--ink-2)',marginTop:10,fontFamily:'var(--font-mono)'}}><span style={{color:'var(--ink-3)'}}>After harvest:</span> <span style={{color:'var(--up)'}}>₹0</span></div>
                 <div style={{fontSize:12,color:'var(--ink-2)',fontFamily:'var(--font-mono)'}}><span style={{color:'var(--ink-3)'}}>Savings:</span> <span style={{color:'var(--up)'}}>₹15,655</span></div>
-                <button style={{marginTop:10,width:'100%',padding:'8px 12px',borderRadius:8,border:'none',background:'var(--brand)',color:'var(--bg-deep)',fontSize:12,fontWeight:600,cursor:'pointer'}}>✦ Run harvest plan</button>
+                <a href="/tax-harvesting" style={{marginTop:10,width:'100%',padding:'8px 12px',borderRadius:8,border:'none',background:'var(--brand)',color:'var(--bg-deep)',fontSize:12,fontWeight:600,cursor:'pointer',textDecoration:'none',display:'block',textAlign:'center'}}>✦ Run harvest plan</a>
               </div>
             </div>
           </div>
@@ -90,22 +90,24 @@ export default function ReportsPage(){
         <h2 style={{fontFamily:'var(--font-serif)',fontSize:28,letterSpacing:'-0.02em',fontWeight:400,margin:'0 0 16px',color:'var(--ink)'}}>Reports library</h2>
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
           {[
-            {name:'Account statement',desc:'All transactions, units, NAVs',date:'Updated daily',icon:'📄'},
-            {name:'Capital gains report',desc:'LTCG & STCG itemised for IT filing',date:'FY 25-26',icon:'📈'},
-            {name:'P&L statement',desc:'Realised and unrealised gains',date:'YTD',icon:'💰'},
-            {name:'Form 26AS reconciliation',desc:'Matches AIS / Form 26AS',date:'Quarterly',icon:'🛡'},
-            {name:'ELSS lock-in tracker',desc:'When each ELSS unlocks',date:'5 plans',icon:'📅'},
-            {name:'Dividend statement',desc:'Dividend received by fund',date:'YTD ₹3,640',icon:'✦'},
+            {name:'Account statement',desc:'All transactions, units, NAVs',date:'Updated daily',icon:'📄',href:'/transactions'},
+            {name:'Capital gains report',desc:'LTCG & STCG itemised for IT filing',date:'FY 25-26',icon:'📈',href:'/capital-gains'},
+            {name:'P&L statement',desc:'Realised and unrealised gains',date:'YTD',icon:'💰',href:'/capital-gains'},
+            {name:'Form 26AS reconciliation',desc:'Matches AIS / Form 26AS',date:'Quarterly',icon:'🛡',href:'/capital-gains'},
+            {name:'ELSS lock-in tracker',desc:'When each ELSS unlocks',date:'5 plans',icon:'📅',href:'/portfolio'},
+            {name:'Dividend statement',desc:'Dividend received by fund',date:'YTD ₹3,640',icon:'✦',href:'/transactions'},
           ].map((r,i)=>(
-            <div key={i} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:20}}>
+            <a key={i} href={r.href} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:16,padding:20,textDecoration:'none',display:'block',cursor:'pointer',transition:'border-color .15s,box-shadow .15s'}}
+              onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--ink)';(e.currentTarget as HTMLElement).style.boxShadow='0 4px 20px -4px rgba(0,0,0,0.12)';}}
+              onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--border)';(e.currentTarget as HTMLElement).style.boxShadow='none';}}>
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:14}}>
                 <div style={{width:40,height:40,borderRadius:11,background:'var(--surface-3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{r.icon}</div>
-                <button style={{padding:6,borderRadius:8,border:'none',background:'transparent',color:'var(--ink-3)',cursor:'pointer',fontSize:16}}>↓</button>
+                <span style={{padding:6,borderRadius:8,color:'var(--ink-3)',fontSize:16}}>↓</span>
               </div>
               <div style={{fontSize:14,fontWeight:500,marginBottom:4,color:'var(--ink)'}}>{r.name}</div>
               <div style={{fontSize:12,color:'var(--ink-3)',marginBottom:14,lineHeight:1.5}}>{r.desc}</div>
               <div style={{fontSize:10.5,textTransform:'uppercase',letterSpacing:'0.12em',color:'var(--ink-3)',fontWeight:500}}>{r.date}</div>
-            </div>
+            </a>
           ))}
         </div>
 
@@ -137,7 +139,7 @@ export default function ReportsPage(){
                   <td style={{padding:'16px 18px',textAlign:'right',fontFamily:'var(--font-mono)',fontSize:13,fontWeight:500,borderBottom:i<a.length-1?'1px solid var(--border)':'none',color:'var(--ink)'}}>{fmtINR(r.ltcg+r.stcg)}</td>
                   <td style={{padding:'16px 18px',textAlign:'right',fontFamily:'var(--font-mono)',fontSize:13,borderBottom:i<a.length-1?'1px solid var(--border)':'none',color:'var(--ink)'}}>{fmtINR(r.tax)}</td>
                   <td style={{padding:'16px 18px',borderBottom:i<a.length-1?'1px solid var(--border)':'none'}}>
-                    <button style={{padding:'5px 12px',borderRadius:8,border:'1px solid var(--border)',background:'transparent',color:'var(--ink-2)',fontSize:12,cursor:'pointer'}}>Details</button>
+                    <a href="/capital-gains" style={{padding:'5px 12px',borderRadius:8,border:'1px solid var(--border)',background:'transparent',color:'var(--ink-2)',fontSize:12,cursor:'pointer',textDecoration:'none'}}>Details →</a>
                   </td>
                 </tr>
               ))}
