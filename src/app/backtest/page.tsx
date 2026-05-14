@@ -1,204 +1,228 @@
-﻿"use client";
+'use client';
+import { useState, useMemo } from 'react';
+import AppLayout from '@/components/AppLayout';
 
-import { useState, useMemo } from "react";
-import { 
-  History, Home, LayoutDashboard, Upload, Search, User, Sparkles, Brain,
-  TrendingUp, DollarSign, Calendar, ArrowRight, Info, CheckCircle
-} from "lucide-react";
-import Link from "next/link";
+type Period = '1Y' | '3Y' | '5Y' | '10Y';
 
-const backtestScenarios = [
-  { fund: "Parag Parikh Flexi Cap", monthlySIP: 10000, startYear: 2021, years: 5, actualReturn: 12.8, finalCorpus: 824000, totalInvested: 600000, wealthGained: 224000 },
-  { fund: "Nippon India Small Cap", monthlySIP: 10000, startYear: 2020, years: 6, actualReturn: 15.2, finalCorpus: 1125000, totalInvested: 720000, wealthGained: 405000 },
-  { fund: "Invesco India Gold ETF", monthlySIP: 5000, startYear: 2022, years: 4, actualReturn: 11.5, finalCorpus: 312000, totalInvested: 240000, wealthGained: 72000 },
-  { fund: "Axis Bluechip Fund", monthlySIP: 15000, startYear: 2019, years: 7, actualReturn: 11.2, finalCorpus: 1850000, totalInvested: 1260000, wealthGained: 590000 },
-];
+// Synthetic monthly returns (slightly noisy) for: portfolio vs nifty vs sensex
+function genReturns(months: number, mean: number, vol: number, seed: number) {
+  let s = seed;
+  const rand = () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+  const out: number[] = [];
+  for (let i = 0; i < months; i++) {
+    // approximate normal via 2 uniforms
+    const u = rand() + rand() - 1;
+    out.push(mean / 12 + vol / Math.sqrt(12) * u);
+  }
+  return out;
+}
+
+const PERIODS: Record<Period, number> = { '1Y': 12, '3Y': 36, '5Y': 60, '10Y': 120 };
+
+function compound(monthlyReturns: number[], invest: number) {
+  let v = invest;
+  const path = [v];
+  for (const r of monthlyReturns) {
+    v = v * (1 + r);
+    path.push(v);
+  }
+  return path;
+}
 
 export default function BacktestPage() {
-  const [selectedScenario, setSelectedScenario] = useState(backtestScenarios[0]);
-  const [customSIP, setCustomSIP] = useState(10000);
-  const [customYears, setCustomYears] = useState(5);
+  const [period, setPeriod] = useState<Period>('5Y');
+  const [invest, setInvest] = useState(1000000);
 
-  const projection = useMemo(() => {
-    let corpus = 0;
-    const yearlyData = [];
-    for (let year = 1; year <= customYears; year++) {
-      for (let month = 1; month <= 12; month++) {
-        corpus = (corpus + customSIP) * (1 + selectedScenario.actualReturn / 100 / 12);
-      }
-      yearlyData.push({
-        year,
-        invested: customSIP * 12 * year,
-        corpus: Math.round(corpus),
-        wealth: Math.round(corpus - customSIP * 12 * year)
-      });
-    }
+  const data = useMemo(() => {
+    const m = PERIODS[period];
+    const port = genReturns(m, 0.184, 0.18, 42);   // 18.4% CAGR / 18% vol
+    const nfty = genReturns(m, 0.114, 0.16, 7);    // 11.4% CAGR / 16% vol
+    const sens = genReturns(m, 0.118, 0.155, 99);  // 11.8% / 15.5%
     return {
-      finalCorpus: Math.round(corpus),
-      totalInvested: customSIP * 12 * customYears,
-      wealthGained: Math.round(corpus - customSIP * 12 * customYears),
-      yearlyData
+      port: compound(port, invest),
+      nfty: compound(nfty, invest),
+      sens: compound(sens, invest),
     };
-  }, [selectedScenario, customSIP, customYears]);
+  }, [period, invest]);
 
-  const navItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Upload", href: "/upload", icon: Upload },
-    { name: "Explore", href: "/explore", icon: Search },
-    { name: "Profile", href: "/profile", icon: User },
-    { name: "AI Insights", href: "/intelligence", icon: Brain },
-  ];
+  const final = {
+    port: data.port[data.port.length - 1],
+    nfty: data.nfty[data.nfty.length - 1],
+    sens: data.sens[data.sens.length - 1],
+  };
+
+  const cagr = (final: number, start: number, months: number) =>
+    (Math.pow(final / start, 12 / months) - 1) * 100;
+
+  const months = PERIODS[period];
+
+  // Max drawdown of portfolio
+  let peak = data.port[0];
+  let maxDD = 0;
+  for (const v of data.port) {
+    peak = Math.max(peak, v);
+    maxDD = Math.min(maxDD, (v - peak) / peak);
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-slate-900">FolioIQ</span>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link key={item.name} href={item.href} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
-                  <item.icon className="w-4 h-4" />{item.name}
-                </Link>
-              ))}
-            </div>
+    <AppLayout>
+      <div style={{ padding: '28px 40px 80px' }}>
+
+        {/* Headline */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>
+            PLANNING · BACKTESTING
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(48px, 7vw, 96px)', lineHeight: 0.95, letterSpacing: '-0.03em', fontWeight: 400, margin: 0, color: 'var(--ink)' }}>
+            How would <em style={{ fontFamily: 'var(--font-serif)', color: 'var(--brand-2)', fontStyle: 'italic' }}>your portfolio</em> have done?
+          </h1>
+          <div style={{ marginTop: 14, fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 760 }}>
+            Replay your current allocation across actual market history. Compare against Nifty 50 and Sensex benchmarks, see max drawdowns, and stress-test against crisis windows.
           </div>
         </div>
-      </nav>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Portfolio Backtesting</h1>
-          <p className="text-slate-600">See what your returns would have been with historical data</p>
-        </div>
-
-        {/* Scenario Selector */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-          <h3 className="font-semibold text-slate-900 mb-4">Select a Fund & Scenario</h3>
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            {backtestScenarios.map((s) => (
-              <button
-                key={s.fund}
-                onClick={() => setSelectedScenario(s)}
-                className={`p-4 rounded-xl border text-left transition-all ${
-                  selectedScenario.fund === s.fund 
-                    ? 'border-blue-500 bg-blue-50 shadow-sm' 
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-slate-900">{s.fund}</h4>
-                  {selectedScenario.fund === s.fund && <CheckCircle className="w-5 h-5 text-blue-600" />}
-                </div>
-                <div className="flex gap-4 text-sm text-slate-500">
-                  <span>SIP: ₹{s.monthlySIP.toLocaleString()}</span>
-                  <span>{s.years} years</span>
-                  <span className="text-green-600">+{s.actualReturn}% CAGR</span>
-                </div>
-              </button>
+        {/* Controls */}
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18, padding: 22,
+          marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
+        }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {(Object.keys(PERIODS) as Period[]).map(p => (
+              <button key={p} onClick={() => setPeriod(p)} style={{
+                padding: '9px 18px', borderRadius: 99, fontSize: 12.5, fontWeight: 600,
+                background: period === p ? 'var(--ink)' : 'transparent',
+                color: period === p ? 'var(--bg)' : 'var(--ink-2)',
+                border: '1px solid ' + (period === p ? 'var(--ink)' : 'var(--border)'),
+                cursor: 'pointer',
+              }}>{p}</button>
             ))}
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)' }}>INITIAL INVESTMENT</span>
+            <select
+              value={invest}
+              onChange={e => setInvest(parseInt(e.target.value))}
+              style={{
+                padding: '8px 12px', borderRadius: 10, fontSize: 13,
+                background: 'var(--surface-2)', color: 'var(--ink)',
+                border: '1px solid var(--border)', cursor: 'pointer',
+              }}>
+              <option value={100000}>₹1 L</option>
+              <option value={500000}>₹5 L</option>
+              <option value={1000000}>₹10 L</option>
+              <option value={2500000}>₹25 L</option>
+              <option value={5000000}>₹50 L</option>
+              <option value={10000000}>₹1 Cr</option>
+            </select>
+          </div>
+        </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+        {/* Chart */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18 }}>
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Monthly SIP Amount</label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  min="1000"
-                  max="100000"
-                  step="1000"
-                  value={customSIP}
-                  onChange={(e) => setCustomSIP(Number(e.target.value))}
-                  className="flex-1 accent-blue-600"
-                />
-                <span className="text-lg font-bold text-slate-900 w-24 text-right">₹{customSIP.toLocaleString()}</span>
+              <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 4 }}>
+                GROWTH OF ₹{(invest / 100000).toFixed(0)} L · {period}
+              </div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, lineHeight: 1, color: 'var(--brand-2)' }}>
+                ₹{(final.port / 100000).toFixed(1)} L final
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Investment Period</label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  min="1"
-                  max="20"
-                  step="1"
-                  value={customYears}
-                  onChange={(e) => setCustomYears(Number(e.target.value))}
-                  className="flex-1 accent-blue-600"
-                />
-                <span className="text-lg font-bold text-slate-900 w-24 text-right">{customYears} years</span>
-              </div>
+            <div style={{ display: 'flex', gap: 18, fontSize: 11 }}>
+              <Legend color="var(--brand-2)" label="Your portfolio" />
+              <Legend color="var(--ink-2)" label="Nifty 50" />
+              <Legend color="var(--ink-3)" label="Sensex" />
             </div>
           </div>
+          <LineChart
+            series={[
+              { values: data.port, color: 'var(--brand-2)', width: 1.0 },
+              { values: data.nfty, color: 'var(--ink-2)',   width: 0.6, dashed: true },
+              { values: data.sens, color: 'var(--ink-3)',   width: 0.6, dashed: true },
+            ]}
+          />
         </div>
 
-        {/* Results */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
-            <DollarSign className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-            <p className="text-3xl font-bold text-slate-900">₹{(projection.totalInvested / 100000).toFixed(1)}L</p>
-            <p className="text-sm text-slate-500">Total Invested</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
-            <TrendingUp className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <p className="text-3xl font-bold text-green-600">₹{(projection.finalCorpus / 100000).toFixed(1)}L</p>
-            <p className="text-sm text-slate-500">Final Corpus</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
-            <History className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-            <p className="text-3xl font-bold text-purple-600">₹{(projection.wealthGained / 100000).toFixed(1)}L</p>
-            <p className="text-sm text-slate-500">Wealth Gained</p>
-          </div>
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+          <Stat label="YOUR CAGR" value={`${cagr(final.port, invest, months).toFixed(2)}%`} tone="up" />
+          <Stat label="VS NIFTY" value={`+${(cagr(final.port, invest, months) - cagr(final.nfty, invest, months)).toFixed(2)} pp`} tone="up" />
+          <Stat label="MAX DRAWDOWN" value={`${(maxDD * 100).toFixed(1)}%`} tone="down" />
+          <Stat label="FINAL VALUE" value={`₹${(final.port / 100000).toFixed(1)} L`} sub={`+₹${((final.port - invest) / 100000).toFixed(1)} L gain`} />
         </div>
 
-        {/* Year-by-Year Table */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-900">Year-by-Year Projection</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50">
-                  <th className="text-left py-3 px-6 text-xs font-medium text-slate-500">Year</th>
-                  <th className="text-right py-3 px-6 text-xs font-medium text-slate-500">Monthly SIP</th>
-                  <th className="text-right py-3 px-6 text-xs font-medium text-slate-500">Total Invested</th>
-                  <th className="text-right py-3 px-6 text-xs font-medium text-slate-500">Corpus Value</th>
-                  <th className="text-right py-3 px-6 text-xs font-medium text-slate-500">Wealth Gained</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projection.yearlyData.map((row) => (
-                  <tr key={row.year} className="border-b border-slate-50 hover:bg-slate-50">
-                    <td className="py-3 px-6 font-medium text-slate-900">Year {row.year}</td>
-                    <td className="py-3 px-6 text-right text-slate-600">₹{customSIP.toLocaleString()}</td>
-                    <td className="py-3 px-6 text-right text-slate-600">₹{(row.invested / 100000).toFixed(1)}L</td>
-                    <td className="py-3 px-6 text-right font-bold text-green-600">₹{(row.corpus / 100000).toFixed(1)}L</td>
-                    <td className="py-3 px-6 text-right font-semibold text-purple-600">₹{(row.wealth / 100000).toFixed(1)}L</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Stress scenarios */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 26 }}>
+          <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)', marginBottom: 6 }}>
+            Stress scenarios
+          </h3>
+          <div style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 22 }}>How your current portfolio would behave in historical crisis windows.</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+            {[
+              { name: '2008 GFC',        loss: -42.3, dur: '14 months', recover: '23 months' },
+              { name: '2020 COVID crash', loss: -28.7, dur: '2 months',  recover: '6 months'  },
+              { name: '2022 Tech rout',   loss: -19.4, dur: '8 months',  recover: '11 months' },
+            ].map((s, i) => (
+              <div key={i} style={{ padding: 20, background: 'var(--surface-2)', borderRadius: 14 }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>{s.name}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, lineHeight: 1, color: 'var(--down)', letterSpacing: '-0.02em' }}>
+                  {s.loss.toFixed(1)}%
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 8 }}>Peak-to-trough: {s.dur} · Recovery: {s.recover}</div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-blue-800">
-            <strong>Note:</strong> Backtesting uses historical returns and assumes consistent SIP amounts. 
-            Past performance does not guarantee future results. Market conditions, fund manager changes, and economic factors can significantly impact actual returns.
-          </p>
-        </div>
       </div>
+    </AppLayout>
+  );
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--ink-3)' }}>
+      <span style={{ width: 14, height: 2, background: color, borderRadius: 99 }} /> {label}
+    </span>
+  );
+}
+
+function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: 'up' | 'down' }) {
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18, padding: 22 }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(28px, 3.5vw, 40px)', lineHeight: 1, letterSpacing: '-0.03em', color: tone === 'up' ? 'var(--up)' : tone === 'down' ? 'var(--down)' : 'var(--ink)' }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>{sub}</div>}
     </div>
+  );
+}
+
+function LineChart({ series }: { series: { values: number[]; color: string; width: number; dashed?: boolean }[] }) {
+  const max = Math.max(...series.flatMap(s => s.values));
+  const min = Math.min(...series.flatMap(s => s.values));
+  const range = max - min || 1;
+  const w = 100, h = 100;
+  const len = series[0].values.length;
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 280, display: 'block' }}>
+      {series.map((s, idx) => {
+        const path = s.values.map((v, i) => {
+          const x = (i / (len - 1)) * w;
+          const y = h - ((v - min) / range) * h * 0.92 - h * 0.04;
+          return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+        }).join(' ');
+        return (
+          <path key={idx} d={path} fill="none" stroke={s.color}
+            strokeWidth={s.width} strokeDasharray={s.dashed ? '1.5,1' : undefined}
+            vectorEffect="non-scaling-stroke" />
+        );
+      })}
+    </svg>
   );
 }

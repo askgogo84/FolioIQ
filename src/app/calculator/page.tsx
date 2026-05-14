@@ -1,114 +1,194 @@
+'use client';
+import { useState, useMemo } from 'react';
+import AppLayout from '@/components/AppLayout';
 
-"use client";
-import { useState, useMemo } from "react";
-import AppLayout from "@/components/AppLayout";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+const fmtINR = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
+const fmtCr = (n: number) => n >= 10000000
+  ? '₹' + (n / 10000000).toFixed(2) + ' Cr'
+  : '₹' + (n / 100000).toFixed(2) + ' L';
 
-const fmt = (v: number) => v>=10000000?`₹${(v/10000000).toFixed(2)}Cr`:v>=100000?`₹${(v/100000).toFixed(2)}L`:`₹${Math.round(v).toLocaleString()}`;
-
-export default function Calculator() {
-  const [sip, setSip] = useState(10000);
-  const [rate, setRate] = useState(12);
+export default function CalculatorPage() {
+  const [monthly, setMonthly] = useState(15000);
   const [years, setYears] = useState(15);
-  const [mode, setMode] = useState<"sip"|"lumpsum">("sip");
-  const [lump, setLump] = useState(100000);
+  const [rate, setRate] = useState(12);
+  const [stepUp, setStepUp] = useState(0); // % annual step-up
 
-  const data = useMemo(()=>{
-    const pts = [];
-    for (let y=1; y<=years; y++) {
-      let corpus, invested;
-      if (mode==="sip") {
-        const n = y*12; const r = rate/12/100;
-        corpus = sip * (Math.pow(1+r,n)-1)/r * (1+r);
-        invested = sip * n;
-      } else {
-        corpus = lump * Math.pow(1+rate/100,y);
-        invested = lump;
+  const { invested, future, gain, year_by_year } = useMemo(() => {
+    let bal = 0;
+    let inv = 0;
+    let sip = monthly;
+    const r = rate / 100 / 12;
+    const points: { year: number; invested: number; value: number }[] = [];
+    for (let y = 1; y <= years; y++) {
+      for (let m = 0; m < 12; m++) {
+        bal = bal * (1 + r) + sip;
+        inv += sip;
       }
-      pts.push({ year:`Y${y}`, corpus:Math.round(corpus), invested:Math.round(invested), gain:Math.round(corpus-invested) });
+      points.push({ year: y, invested: inv, value: bal });
+      sip = sip * (1 + stepUp / 100);
     }
-    return pts;
-  },[sip,rate,years,mode,lump]);
-
-  const final = data[data.length-1];
-  const invested = mode==="sip"?sip*years*12:lump;
+    return { invested: inv, future: bal, gain: bal - inv, year_by_year: points };
+  }, [monthly, years, rate, stepUp]);
 
   return (
-    <AppLayout title="SIP Calculator" subtitle="Project your wealth with different SIP and lumpsum scenarios">
-      <div className="px-5 sm:px-6 py-6 space-y-5">
+    <AppLayout>
+      <div style={{ padding: '28px 40px 80px' }}>
 
-        {/* Result */}
-        <div className="bg-gray-900 rounded-2xl p-6">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            {[
-              { l:"Invested", v:fmt(invested), c:"text-white" },
-              { l:"Est. Corpus", v:fmt(final?.corpus||0), c:"text-emerald-400" },
-              { l:"Wealth Gain", v:fmt((final?.gain)||0), c:"text-emerald-400" },
-            ].map((k,i)=>(
-              <div key={i}>
-                <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">{k.l}</div>
-                <div className={`text-[18px] sm:text-[24px] font-black tracking-tight ${k.c}`}>{k.v}</div>
-              </div>
-            ))}
+        {/* Headline */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>
+            PLANNING · SIP CALCULATOR
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(50px, 7vw, 96px)', lineHeight: 0.95, letterSpacing: '-0.03em', fontWeight: 400, margin: 0, color: 'var(--ink)' }}>
+            What if you invested <em style={{ fontFamily: 'var(--font-serif)', color: 'var(--brand-2)', fontStyle: 'italic' }}>{fmtINR(monthly)}</em> a month?
+          </h1>
+          <div style={{ marginTop: 14, fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 720 }}>
+            Model SIPs with monthly step-ups, varying return assumptions, and time horizons up to 30 years. The math is straightforward — what compounds isn&apos;t.
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 24 }}>
+
           {/* Controls */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-5 space-y-5">
-            {/* Mode toggle */}
-            <div className="flex bg-gray-100 rounded-xl p-1">
-              {["sip","lumpsum"].map(m=>(
-                <button key={m} onClick={()=>setMode(m as any)}
-                  className={`flex-1 py-2 text-[12px] font-semibold rounded-lg transition-all capitalize ${mode===m?"bg-white shadow-sm text-gray-900":"text-gray-400 hover:text-gray-600"}`}>
-                  {m==="sip"?"SIP":"Lumpsum"}
-                </button>
-              ))}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 26 }}>
+            <Slider
+              label="MONTHLY SIP"
+              value={monthly}
+              onChange={setMonthly}
+              min={500} max={200000} step={500}
+              display={fmtINR(monthly)}
+            />
+            <Slider
+              label="DURATION (YEARS)"
+              value={years}
+              onChange={setYears}
+              min={1} max={40} step={1}
+              display={`${years} years`}
+            />
+            <Slider
+              label="EXPECTED ANNUAL RETURN"
+              value={rate}
+              onChange={setRate}
+              min={4} max={20} step={0.5}
+              display={`${rate}% CAGR`}
+            />
+            <Slider
+              label="ANNUAL STEP-UP"
+              value={stepUp}
+              onChange={setStepUp}
+              min={0} max={20} step={1}
+              display={`${stepUp}% / year`}
+            />
+
+            <div style={{ marginTop: 26, padding: 16, background: 'var(--brand-soft)', borderRadius: 14, fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+              <strong style={{ color: 'var(--ink)' }}>Tip:</strong> A 10% annual step-up doubles your final corpus over 20 years compared to a flat SIP. Try it.
+            </div>
+          </div>
+
+          {/* Result */}
+          <div>
+            <div style={{
+              background: 'linear-gradient(135deg, var(--brand-soft), var(--surface))',
+              border: '1px solid var(--border)', borderRadius: 24, padding: 36, marginBottom: 18,
+            }}>
+              <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 14 }}>
+                PROJECTED VALUE AT YEAR {years}
+              </div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(60px, 9vw, 120px)', lineHeight: 0.92, letterSpacing: '-0.04em', color: 'var(--brand-2)' }}>
+                {fmtCr(future)}
+              </div>
+              <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+                <Result label="YOU INVEST" value={fmtCr(invested)} sub={`${fmtINR(monthly)} × ${years * 12} months`} />
+                <Result label="MARKET ADDS" value={fmtCr(gain)} sub={`${((gain / invested) * 100).toFixed(0)}% wealth gain`} tone="up" />
+              </div>
             </div>
 
-            {[
-              ...(mode==="sip"?[{ label:"Monthly SIP", val:sip, set:setSip, min:500, max:200000, step:500, fmt:"₹" }]:[
-                { label:"Lumpsum Amount", val:lump, set:setLump, min:1000, max:10000000, step:1000, fmt:"₹" }
-              ]),
-              { label:"Expected Return (XIRR %)", val:rate, set:setRate, min:4, max:30, step:0.5, fmt:"%" },
-              { label:"Time Horizon (years)", val:years, set:setYears, min:1, max:40, step:1, fmt:"yr" },
-            ].map((s,i)=>(
-              <div key={i}>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-[12px] font-semibold text-gray-700">{s.label}</label>
-                  <span className="text-[13px] font-black text-gray-900">{s.fmt==="₹"?`₹${s.val.toLocaleString()}`:s.val+s.fmt}</span>
+            {/* Growth chart */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18 }}>
+                <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500 }}>
+                  YEAR-BY-YEAR GROWTH
                 </div>
-                <input type="range" min={s.min} max={s.max} step={s.step} value={s.val}
-                  onChange={e=>s.set(Number(e.target.value))}
-                  className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-gray-900"/>
-                <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-                  <span>{s.fmt==="₹"?`₹${s.min.toLocaleString()}`:s.min+s.fmt}</span>
-                  <span>{s.fmt==="₹"?`₹${s.max.toLocaleString()}`:s.max+s.fmt}</span>
+                <div style={{ display: 'flex', gap: 14, fontSize: 11 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--ink-3)' }}>
+                    <span style={{ width: 10, height: 10, background: 'var(--border-strong)', borderRadius: 3 }} /> Invested
+                  </span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--ink-3)' }}>
+                    <span style={{ width: 10, height: 10, background: 'var(--brand-2)', borderRadius: 3 }} /> Value
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Chart */}
-          <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 p-5">
-            <div className="text-[13px] font-bold text-gray-900 mb-4">Growth Projection</div>
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={data} margin={{top:4,right:4,bottom:0,left:-20}}>
-                <defs>
-                  <linearGradient id="gC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#16a34a" stopOpacity={0.2}/><stop offset="100%" stopColor="#16a34a" stopOpacity={0}/></linearGradient>
-                  <linearGradient id="gI" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#94a3b8" stopOpacity={0.15}/><stop offset="100%" stopColor="#94a3b8" stopOpacity={0}/></linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-                <XAxis dataKey="year" fontSize={10} tick={{fill:"#94a3b8"}} tickLine={false} axisLine={false}/>
-                <YAxis fontSize={10} tick={{fill:"#94a3b8"}} tickLine={false} axisLine={false} tickFormatter={v=>v>=100000?`${(v/100000).toFixed(0)}L`:`${v}`}/>
-                <Tooltip contentStyle={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:12,fontSize:12}} formatter={(v:number,n:string)=>[fmt(v),n==="corpus"?"Corpus":"Invested"]}/>
-                <Area type="monotone" dataKey="corpus" stroke="#16a34a" fill="url(#gC)" strokeWidth={2} name="corpus" dot={false}/>
-                <Area type="monotone" dataKey="invested" stroke="#cbd5e1" fill="url(#gI)" strokeWidth={1.5} name="invested" dot={false} strokeDasharray="4 4"/>
-              </AreaChart>
-            </ResponsiveContainer>
+              <Chart points={year_by_year} years={years} />
+            </div>
           </div>
         </div>
+
       </div>
     </AppLayout>
+  );
+}
+
+function Slider({ label, value, onChange, min, max, step, display }: {
+  label: string; value: number; onChange: (n: number) => void;
+  min: number; max: number; step: number; display: string;
+}) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+        <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500 }}>{label}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--ink)', fontWeight: 600 }}>{display}</span>
+      </div>
+      <input
+        type="range"
+        min={min} max={max} step={step}
+        value={value}
+        onChange={e => onChange(parseFloat(e.target.value))}
+        style={{ width: '100%', accentColor: 'var(--brand-2)' }}
+      />
+    </div>
+  );
+}
+
+function Result({ label, value, sub, tone }: { label: string; value: string; sub: string; tone?: 'up' }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 30, lineHeight: 1, letterSpacing: '-0.02em', color: tone === 'up' ? 'var(--up)' : 'var(--ink)' }}>{value}</div>
+      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>{sub}</div>
+    </div>
+  );
+}
+
+function Chart({ points, years }: { points: { year: number; invested: number; value: number }[]; years: number }) {
+  const max = Math.max(...points.map(p => p.value));
+  const w = 100, h = 100;
+  const xStep = w / years;
+
+  const valPath = points.map((p, i) => {
+    const x = (i + 1) * xStep;
+    const y = h - (p.value / max) * h * 0.9;
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+
+  const invPath = points.map((p, i) => {
+    const x = (i + 1) * xStep;
+    const y = h - (p.invested / max) * h * 0.9;
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+
+  const areaPath = valPath + ` L ${years * xStep} ${h} L ${xStep} ${h} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 240, display: 'block' }}>
+      <defs>
+        <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--brand-2)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="var(--brand-2)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill="url(#grad)" />
+      <path d={invPath} fill="none" stroke="var(--border-strong)" strokeWidth="0.5" strokeDasharray="1.5,1" vectorEffect="non-scaling-stroke" />
+      <path d={valPath} fill="none" stroke="var(--brand-2)" strokeWidth="0.8" vectorEffect="non-scaling-stroke" />
+    </svg>
   );
 }

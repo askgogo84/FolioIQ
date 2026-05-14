@@ -1,264 +1,208 @@
-﻿"use client";
+'use client';
+import { useState } from 'react';
+import AppLayout from '@/components/AppLayout';
+import Link from 'next/link';
 
-import { useState } from "react";
-import { Target, MessageSquare, Brain,  User, Settings, Bell, Shield, Home, LayoutDashboard, Upload, Search, Sparkles, Wallet, TrendingUp, PiggyBank, Activity, ArrowRight, LogOut, ChevronRight } from "lucide-react";
-import Link from "next/link";
+const STATS = [
+  { label: 'YEARS INVESTING', value: '4.8', sub: '' },
+  { label: 'TOTAL INVESTED', value: '₹35.20', unit: 'L', sub: '' },
+  { label: 'FUNDS HELD', value: '8', sub: 'across 4 AMCs' },
+  { label: 'XIRR', value: '18.4%', sub: 'lifetime', tone: 'up' as const },
+];
+
+const PREFERENCES = [
+  { label: 'Risk Profile', value: 'Aggressive', desc: 'Equity-heavy · 12+ year horizon' },
+  { label: 'Investment Style', value: 'Active + Index Mix', desc: '6 active funds · 1 index · 1 sectoral' },
+  { label: 'Tax Bracket', value: '30% slab', desc: 'New regime · FY 2025-26' },
+  { label: 'Goal Focus', value: 'Wealth Creation', desc: 'Long-term equity compounding' },
+];
+
+const SECTIONS = [
+  { key: 'overview',    label: 'Overview' },
+  { key: 'preferences', label: 'Preferences' },
+  { key: 'security',    label: 'Security' },
+  { key: 'plan',        label: 'Plan & Billing' },
+];
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState("overview");
-
-  const navItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Upload", href: "/upload", icon: Upload },
-    { name: "Explore", href: "/explore", icon: Search },
-    { name: "AI Insights", href: "/intelligence", icon: Brain },{ name: "Profile", href: "/profile", icon: User, active: true },
-  ];
-
-  const portfolioSummary = [
-    {
-      title: "Portfolio Value",
-      value: "₹55,32,843",
-      change: "+12.5%",
-      changeType: "positive",
-      icon: Wallet,
-      color: "blue"
-    },
-    {
-      title: "Total Returns",
-      value: "₹8,42,156",
-      change: "+18.2%",
-      changeType: "positive",
-      icon: TrendingUp,
-      color: "green"
-    },
-    {
-      title: "Active SIPs",
-      value: "8 Plans",
-      change: "₹45,500/mo",
-      changeType: "neutral",
-      icon: PiggyBank,
-      color: "purple"
-    },
-    {
-      title: "Portfolio XIRR",
-      value: "14.8%",
-      change: "Since 2020",
-      changeType: "positive",
-      icon: Activity,
-      color: "orange"
-    }
-  ];
-
-  const settingsItems = [
-    { icon: User, label: "Personal Information", description: "Update your name, email, and phone" },
-    { icon: Bell, label: "Notifications", description: "Manage alerts and reminders" },
-    { icon: Shield, label: "Security", description: "Password, 2FA, and login history" },
-    { icon: Settings, label: "Preferences", description: "Theme, language, and display settings" },
-  ];
+  const [tab, setTab] = useState<string>('overview');
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-slate-900">FolioIQ</span>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    item.active
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </nav>
+    <AppLayout>
+      <div style={{ padding: '28px 40px 80px' }}>
 
-      <div className="max-w-5xl mx-auto px-4 py-12">
-        {/* Profile Header */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-8">
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <User className="w-10 h-10 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Divya Goverdhan</h1>
-              <p className="text-slate-500">divya.goverdhan@email.com</p>
-              <div className="flex gap-3 mt-3">
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Premium Member</span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">KYC Verified</span>
-              </div>
-            </div>
+        {/* ── Headline ──────────────────────────────────────────── */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>
+            ACCOUNT
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 24 }}>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(56px, 8vw, 110px)', lineHeight: 0.92, letterSpacing: '-0.04em', fontWeight: 400, margin: 0, color: 'var(--ink)' }}>
+              Profile
+            </h1>
+            <button style={btnGhost}>↗ Share portfolio</button>
+          </div>
+          <div style={{ marginTop: 14, fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 720 }}>
+            Personal details, risk profile, and the data that powers your portfolio intelligence.
           </div>
         </div>
 
-        {/* Portfolio Summary Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {portfolioSummary.map((item) => (
-            <div key={item.title} className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-10 h-10 bg-${item.color}-100 rounded-lg flex items-center justify-center`}>
-                  <item.icon className={`w-5 h-5 text-${item.color}-600`} />
-                </div>
-                <span className={`text-xs font-medium ${
-                  item.changeType === "positive" ? "text-green-600" :
-                  item.changeType === "negative" ? "text-red-600" :
-                  "text-slate-500"
-                }`}>
-                  {item.change}
-                </span>
+        {/* ── Identity card ─────────────────────────────────────── */}
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 24,
+          padding: 32, marginBottom: 24,
+          display: 'flex', gap: 28, alignItems: 'center', flexWrap: 'wrap',
+        }}>
+          <div style={{
+            width: 124, height: 124, borderRadius: 22,
+            background: 'linear-gradient(135deg, #0891b2, #1f6b50)',
+            color: '#fff', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font-serif)', fontSize: 52, letterSpacing: '-0.04em',
+          }}>AS</div>
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 6 }}>
+              MEMBER SINCE · AUG 2021
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(40px, 5.5vw, 64px)', lineHeight: 0.95, letterSpacing: '-0.03em', fontWeight: 400, margin: 0, color: 'var(--ink)' }}>
+              Aarav Sharma
+            </h2>
+            <div style={{ marginTop: 10, fontSize: 13, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)' }}>
+              aarav@folioiq.in · +91 ••••• 84210
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+              <Badge tone="up">✓ KYC verified</Badge>
+              <Badge tone="brand">Plus member</Badge>
+              <Badge tone="gold">Aggressive risk</Badge>
+              <Badge tone="violet">Top 18% returns</Badge>
+            </div>
+          </div>
+          <button style={btnPrimary}>Edit profile</button>
+        </div>
+
+        {/* ── Stat row ──────────────────────────────────────────── */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32,
+        }}>
+          {STATS.map((s, i) => (
+            <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18, padding: 22 }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>
+                {s.label}
               </div>
-              <h3 className="text-sm text-slate-500 mb-1">{item.title}</h3>
-              <p className="text-xl font-bold text-slate-900">{item.value}</p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(38px, 4.5vw, 56px)', lineHeight: 1, letterSpacing: '-0.03em', color: s.tone === 'up' ? 'var(--up)' : 'var(--ink)' }}>{s.value}</span>
+                {s.unit && <span style={{ fontSize: 14, color: 'var(--ink-3)' }}>{s.unit}</span>}
+              </div>
+              {s.sub && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 8 }}>{s.sub}</div>}
             </div>
           ))}
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-xl border border-slate-200 mb-8">
-          <div className="flex border-b border-slate-100">
-            <button
-              onClick={() => setActiveTab("overview")}
-              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
-                activeTab === "overview" ? "text-blue-600 border-b-2 border-blue-600" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
-                activeTab === "settings" ? "text-blue-600 border-b-2 border-blue-600" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Settings
-            </button>
-          </div>
-
-          <div className="p-6">
-            {activeTab === "overview" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Wallet className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-slate-900">Portfolio Overview</h3>
-                      <p className="text-sm text-slate-500">View detailed portfolio analytics</p>
-                    </div>
-                  </div>
-                  <Link href="/dashboard" className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
-                    <span className="text-sm font-medium">Go to Dashboard</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <PiggyBank className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-slate-900">SIP Tracker</h3>
-                      <p className="text-sm text-slate-500">Manage your systematic investments</p>
-                    </div>
-                  </div>
-                  <Link href="/dashboard" className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
-                    <span className="text-sm font-medium">View SIPs</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-slate-900">Goal Tracking</h3>
-                      <p className="text-sm text-slate-500">Monitor your financial goals</p>
-                    </div>
-                  </div>
-                  <button className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
-                    <span className="text-sm font-medium">Set Goals</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "settings" && (
-              <div className="space-y-4">
-                {settingsItems.map((item) => (
-                  <button
-                    key={item.label}
-                    className="w-full flex items-center justify-between p-4 hover:bg-slate-50 rounded-xl transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                        <item.icon className="w-5 h-5 text-slate-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-slate-900">{item.label}</h3>
-                        <p className="text-sm text-slate-500">{item.description}</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-slate-400" />
-                  </button>
-                ))}
-
-                <div className="pt-4 border-t border-slate-100">
-                  <button className="w-full flex items-center justify-center gap-2 p-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors">
-                    <LogOut className="w-5 h-5" />
-                    <span className="font-medium">Sign Out</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+        {/* ── Tab bar ───────────────────────────────────────────── */}
+        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 28 }}>
+          {SECTIONS.map(s => (
+            <button key={s.key} onClick={() => setTab(s.key)} style={{
+              padding: '12px 18px', fontSize: 13, fontWeight: 500,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: tab === s.key ? 'var(--ink)' : 'var(--ink-3)',
+              borderBottom: tab === s.key ? '2px solid var(--brand)' : '2px solid transparent',
+              marginBottom: -1,
+            }}>{s.label}</button>
+          ))}
         </div>
 
-        {/* Quick Links */}
-        <div className="grid md:grid-cols-3 gap-4">
-          <Link href="/dashboard" className="bg-blue-600 text-white rounded-xl p-6 hover:bg-blue-700 transition-colors">
-            <LayoutDashboard className="w-8 h-8 mb-3" />
-            <h3 className="font-semibold mb-1">Dashboard</h3>
-            <p className="text-sm text-blue-100">View your complete portfolio</p>
-          </Link>
-          <Link href="/explore" className="bg-purple-600 text-white rounded-xl p-6 hover:bg-purple-700 transition-colors">
-            <Search className="w-8 h-8 mb-3" />
-            <h3 className="font-semibold mb-1">Explore Funds</h3>
-            <p className="text-sm text-purple-100">Discover new investments</p>
-          </Link>
-          <Link href="/upload" className="bg-green-600 text-white rounded-xl p-6 hover:bg-green-700 transition-colors">
-            <Upload className="w-8 h-8 mb-3" />
-            <h3 className="font-semibold mb-1">Upload CAS</h3>
-            <p className="text-sm text-green-100">Update portfolio data</p>
-          </Link>
-        </div>
+        {/* ── Tab content ───────────────────────────────────────── */}
+        {tab === 'overview' && (
+          <div style={{ display: 'grid', gap: 14 }}>
+            <Row href="/dashboard" title="Portfolio Overview" desc="View detailed analytics and performance" cta="Go to Dashboard →" />
+            <Row href="/sips" title="SIP Tracker" desc="₹45,500/mo across 8 active plans" cta="View SIPs →" />
+            <Row href="/goals" title="Goal Planner" desc="3 active goals · ₹4.2 Cr target" cta="Manage Goals →" />
+            <Row href="/capital-gains" title="Tax Reports" desc="FY 2025-26 · Ready for ITR filing" cta="View Reports →" />
+          </div>
+        )}
+
+        {tab === 'preferences' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+            {PREFERENCES.map((p, i) => (
+              <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22 }}>
+                <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>{p.label}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: 8 }}>{p.value}</div>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{p.desc}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === 'security' && (
+          <div style={{ display: 'grid', gap: 14 }}>
+            <Row title="Password" desc="Last changed 2 months ago" cta="Update →" />
+            <Row title="Two-factor authentication" desc="✓ Enabled · Authenticator app" cta="Manage →" />
+            <Row title="Active sessions" desc="2 devices · Bengaluru, IN" cta="View →" />
+            <Row title="Login history" desc="Last 30 days · 47 logins" cta="View →" />
+          </div>
+        )}
+
+        {tab === 'plan' && (
+          <div style={{ background: 'linear-gradient(135deg, var(--brand-soft), var(--surface))', border: '1px solid var(--border)', borderRadius: 20, padding: 32 }}>
+            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>CURRENT PLAN</div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 42, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)' }}>Plus · ₹349/mo</h2>
+            <div style={{ marginTop: 16, fontSize: 14, color: 'var(--ink-2)' }}>
+              Unlimited Folio AI queries · CAS upload · Tax harvesting · Smart rebalance · Priority support.
+            </div>
+            <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+              <button style={btnPrimary}>Manage subscription</button>
+              <button style={btnGhost}>View invoices</button>
+            </div>
+          </div>
+        )}
+
       </div>
-    </div>
+    </AppLayout>
   );
 }
 
+// ── helpers ──────────────────────────────────────────────────────────────
+function Badge({ children, tone }: { children: React.ReactNode; tone: 'up' | 'brand' | 'gold' | 'violet' }) {
+  const map = {
+    up:     { bg: 'var(--up-soft)',    fg: 'var(--up)' },
+    brand:  { bg: 'var(--brand-soft)', fg: 'var(--brand-2)' },
+    gold:   { bg: '#f7e9c8',           fg: 'var(--gold)' },
+    violet: { bg: '#e8e0fa',           fg: 'var(--violet)' },
+  };
+  const { bg, fg } = map[tone];
+  return (
+    <span style={{ padding: '5px 11px', borderRadius: 99, background: bg, color: fg, fontSize: 11.5, fontWeight: 600 }}>
+      {children}
+    </span>
+  );
+}
 
+function Row({ href, title, desc, cta }: { href?: string; title: string; desc: string; cta: string }) {
+  const content = (
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16,
+      padding: '18px 22px',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16,
+      textDecoration: 'none', cursor: href ? 'pointer' : 'default',
+    }}>
+      <div>
+        <div style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>{title}</div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>{desc}</div>
+      </div>
+      <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--brand-2)' }}>{cta}</div>
+    </div>
+  );
+  return href ? <Link href={href} style={{ textDecoration: 'none' }}>{content}</Link> : content;
+}
 
+const btnGhost: React.CSSProperties = {
+  padding: '10px 18px', borderRadius: 99, fontSize: 12.5, fontWeight: 500,
+  background: 'transparent', color: 'var(--ink-2)', border: '1px solid var(--border)',
+  cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
+};
 
+const btnPrimary: React.CSSProperties = {
+  padding: '11px 20px', borderRadius: 99, fontSize: 12.5, fontWeight: 600,
+  background: 'var(--ink)', color: 'var(--bg)', border: 'none',
+  cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
+};

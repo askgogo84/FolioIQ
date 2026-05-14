@@ -1,223 +1,152 @@
+'use client';
+import { useState } from 'react';
+import AppLayout from '@/components/AppLayout';
 
-"use client";
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import AppLayout from "@/components/AppLayout";
-import Link from "next/link";
+const BROKERS = [
+  { id: 'zerodha',  name: 'Zerodha',  tag: 'Coin · MF', tone: '#387ed1', logo: 'Z', connected: false, type: 'broker' },
+  { id: 'groww',    name: 'Groww',    tag: 'MF · Stocks', tone: '#00c899', logo: 'G', connected: true,  type: 'broker' },
+  { id: 'kuvera',   name: 'Kuvera',   tag: 'Direct MF',   tone: '#7b3aed', logo: 'K', connected: false, type: 'broker' },
+  { id: 'paytm',    name: 'Paytm Money', tag: 'Stocks · MF', tone: '#00b9f1', logo: 'P', connected: false, type: 'broker' },
+  { id: 'icici',    name: 'ICICI Direct', tag: 'Full Service', tone: '#a51c30', logo: 'IC', connected: false, type: 'broker' },
+  { id: 'upstox',   name: 'Upstox',   tag: 'Discount', tone: '#7c4dff', logo: 'U', connected: false, type: 'broker' },
+];
 
-type Stage = "loading" | "ready" | "connecting" | "saving" | "success" | "error";
+const AAS = [
+  { id: 'onemoney', name: 'OneMoney',  desc: 'RBI-licensed AA · 11 banks',  tone: '#0f3d2e', logo: 'OM' },
+  { id: 'finvu',    name: 'Finvu',     desc: 'RBI-licensed AA · 14 banks',  tone: '#c89a3a', logo: 'FV' },
+  { id: 'cams',     name: 'CAMS FinServ', desc: 'RBI-licensed AA · MF + Banks', tone: '#1f6b50', logo: 'CA' },
+];
 
-export default function Connect() {
-  const router = useRouter();
-  const [stage, setStage] = useState<Stage>("loading");
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/casparser/token")
-      .then(r => r.json())
-      .then(d => {
-        if (d.access_token) {
-          setAccessToken(d.access_token);
-          setStage("ready");
-        } else {
-          setError(d.error || "Failed to initialize");
-          setStage("error");
-        }
-      })
-      .catch(e => {
-        setError(String(e));
-        setStage("error");
-      });
-  }, []);
-
-  const openWidget = useCallback(async () => {
-    if (!accessToken) return;
-    setStage("connecting");
-    setError(null);
-
-    try {
-      // Use the named export `open` from the SDK — correct v2.1 API
-      const { open } = await import("@cas-parser/connect");
-
-      const result = await open({
-        accessToken,
-        config: {
-          enableCdslFetch: true,
-          enableInbox: false,
-          enableGenerator: false,
-          homeLayout: "actions",
-
-        },
-      });
-
-      if (result.status === "closed") {
-        // User cancelled — go back to ready
-        setStage("ready");
-        return;
-      }
-
-      if (result.status === "error") {
-        setError(result.error?.message || "Import failed. Please try again.");
-        setStage("ready");
-        return;
-      }
-
-      // Success — save to FolioIQ
-      setStage("saving");
-      const saveRes = await fetch("/api/casparser/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: result.data, metadata: result.metadata }),
-      });
-      const saved = await saveRes.json();
-
-      if (saved.success) {
-        setResult({
-          fundCount: saved.fundCount,
-          totalValue: saved.totalValue,
-          totalInvested: saved.totalInvested,
-        });
-        setStage("success");
-        setTimeout(() => router.push("/dashboard"), 2000);
-      } else {
-        setError(saved.error || "Failed to save. Please try again.");
-        setStage("ready");
-      }
-    } catch (e: any) {
-      console.error("Widget error:", e);
-      setError(e?.message || "Something went wrong. Please try again.");
-      setStage("ready");
-    }
-  }, [accessToken, router]);
-
-  const fmt = (v: number) =>
-    v >= 100000 ? `₹${(v / 100000).toFixed(1)}L` : `₹${Math.round(v).toLocaleString("en-IN")}`;
-
-  if (stage === "success" && result) return (
-    <AppLayout title="Portfolio Connected!" subtitle="Your investments are now in FolioIQ">
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-5 text-center">
-        <div className="w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center text-4xl mb-5">✅</div>
-        <h2 className="text-[26px] font-black text-gray-900 mb-2">Portfolio Synced!</h2>
-        <p className="text-[15px] text-gray-500 mb-6">{result.fundCount} funds imported successfully</p>
-        <div className="flex gap-8 mb-8">
-          <div className="text-center">
-            <div className="text-[22px] font-black text-gray-900">{fmt(result.totalInvested)}</div>
-            <div className="text-[11px] text-gray-400 uppercase tracking-widest mt-1">Invested</div>
-          </div>
-          <div className="text-center">
-            <div className={`text-[22px] font-black ${result.totalValue >= result.totalInvested ? "text-emerald-600" : "text-red-600"}`}>{fmt(result.totalValue)}</div>
-            <div className="text-[11px] text-gray-400 uppercase tracking-widest mt-1">Current Value</div>
-          </div>
-        </div>
-        <p className="text-[12px] text-gray-400 mb-5">Redirecting to your dashboard...</p>
-        <Link href="/dashboard" className="px-8 py-3.5 bg-gray-900 text-white rounded-2xl font-bold text-[14px] hover:bg-gray-800 transition-colors">
-          View Dashboard →
-        </Link>
-      </div>
-    </AppLayout>
-  );
+export default function ConnectPage() {
+  const [connecting, setConnecting] = useState<string | null>(null);
 
   return (
-    <AppLayout title="Connect Portfolio" subtitle="Import from any Indian mutual fund platform — one time, then auto-syncs">
-      <div className="px-4 sm:px-8 py-5 max-w-5xl">
+    <AppLayout>
+      <div style={{ padding: '28px 40px 80px' }}>
 
-        {/* Hero dark card */}
-        <div className="bg-gray-900 rounded-2xl p-5 sm:p-7 mb-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"/>
-          <div className="relative flex items-start gap-4">
-            <div className="w-11 h-11 bg-emerald-500 rounded-xl flex items-center justify-center text-xl flex-shrink-0 shadow-lg shadow-emerald-500/30">🔗</div>
-            <div>
-              <h2 className="text-[16px] font-black text-white mb-1">Powered by CASParser</h2>
-              <p className="text-gray-400 text-[12px] leading-relaxed mb-3">
-                Trusted by Scripbox, Dezerv & AngelOne. PDF upload, Gmail import, and CDSL live fetch — all in one.
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {["NJ Wealth","Groww","Zerodha","ET Money","CAMS","KFintech","CDSL","NSDL"].map(p=>(
-                  <span key={p} className="px-2 py-0.5 bg-white/5 border border-white/10 text-gray-400 text-[10px] rounded-md">{p}</span>
-                ))}
-              </div>
-            </div>
+        {/* ── Headline ──────────────────────────────────────────── */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>
+            ⚡ AUTO-CONNECT · ACCOUNT AGGREGATOR
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(50px, 7vw, 96px)', lineHeight: 0.95, letterSpacing: '-0.03em', fontWeight: 400, margin: 0, color: 'var(--ink)' }}>
+            Skip the upload. <em style={{ fontFamily: 'var(--font-serif)', color: 'var(--brand-2)', fontStyle: 'italic' }}>Sync everything.</em>
+          </h1>
+          <div style={{ marginTop: 14, fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 720 }}>
+            Link your brokers and demat through India&apos;s RBI-licensed Account Aggregator network. Read-only, consent-based, revocable in one tap. No screen scraping. No password sharing.
           </div>
         </div>
 
-        {/* Feature cards - horizontal scroll on mobile */}
-        <div className="flex gap-3 overflow-x-auto pb-2 mb-5 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3">
-          {[
-            { icon:"📄", title:"PDF Upload", desc:"CAMS, KFintech, CDSL or NSDL CAS PDF. Drag & drop.", badge:"Instant" },
-            { icon:"🏦", title:"CDSL OTP", desc:"16-digit Demat ID + OTP = real-time holdings.", badge:"No PDF" },
-            { icon:"📧", title:"Gmail Import", desc:"Read-only OAuth. Auto-finds CAS emails.", badge:"Auto-sync" },
-          ].map((m,i)=>(
-            <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex-shrink-0 w-[190px] sm:w-auto">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xl">{m.icon}</span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">{m.badge}</span>
-              </div>
-              <h3 className="text-[13px] font-black text-gray-900 mb-1">{m.title}</h3>
-              <p className="text-[11px] text-gray-500 leading-relaxed">{m.desc}</p>
+        {/* ── Status banner ─────────────────────────────────────── */}
+        <div style={{
+          background: 'linear-gradient(135deg, var(--brand-soft), var(--surface))',
+          border: '1px solid var(--border)', borderRadius: 20, padding: 24,
+          marginBottom: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap',
+        }}>
+          <div>
+            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 6 }}>CURRENT STATUS</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 36, lineHeight: 1, letterSpacing: '-0.02em', color: 'var(--ink)' }}>
+              1 broker connected · <span style={{ color: 'var(--up)' }}>auto-sync on</span>
             </div>
-          ))}
+            <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 8 }}>
+              Last sync: 4 minutes ago · Next: in 2 hours · Frequency: every 4 hours
+            </div>
+          </div>
+          <button style={btnPrimary}>Sync now</button>
         </div>
 
-        {/* Main CTA card */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8 shadow-sm text-center mb-4">
-          {(stage === "connecting" || stage === "saving") ? (
-            <div className="py-4">
-              <div className="w-12 h-12 rounded-full border-4 border-gray-200 border-t-emerald-500 animate-spin mx-auto mb-4"/>
-              <p className="text-[15px] font-bold text-gray-700">
-                {stage === "saving" ? "Saving your portfolio..." : "Opening import widget..."}
-              </p>
-              <p className="text-[12px] text-gray-400 mt-1">
-                {stage === "saving" ? "Fetching latest NAVs from AMFI" : "Please wait a moment"}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="text-5xl mb-4">📊</div>
-              <h3 className="text-[20px] font-black text-gray-900 mb-2">Import your complete portfolio</h3>
-              <p className="text-[14px] text-gray-500 mb-2 max-w-sm mx-auto leading-relaxed">
-                One click opens the import widget. Choose PDF upload, CDSL OTP, or Gmail — whichever works for you.
-              </p>
-              <p className="text-[12px] text-gray-400 mb-5">Takes under 2 minutes · Works with all AMCs</p>
-
-              {error && (
-                <div className="mb-4 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-[13px] text-red-700 max-w-sm mx-auto">
-                  {error}
-                </div>
-              )}
-
-              <button
-                onClick={openWidget}
-                disabled={stage === "loading" || !accessToken}
-                className="inline-flex items-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-2xl font-black text-[15px] hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg w-full sm:w-auto justify-center"
-              >
-                {stage === "loading" ? (
-                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/><span>Initializing...</span></>
-                ) : (
-                  <><span>🔗</span><span>Connect My Portfolio</span></>
+        {/* ── Brokers ───────────────────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 34, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)' }}>Brokers & platforms</h2>
+            <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)' }}>6 supported</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+            {BROKERS.map(b => (
+              <div key={b.id} style={{
+                background: 'var(--surface)', border: '1px solid ' + (b.connected ? 'var(--up)' : 'var(--border)'),
+                borderRadius: 18, padding: 20, position: 'relative', overflow: 'hidden',
+              }}>
+                {b.connected && (
+                  <div style={{ position: 'absolute', top: 12, right: 12, fontSize: 10, fontWeight: 700, color: 'var(--up)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>● Connected</div>
                 )}
-              </button>
-
-              <p className="text-[11px] text-gray-400 mt-4">
-                🔒 Read-only · India-hosted · TLS encrypted · No trading access ever
-              </p>
-            </>
-          )}
-        </div>
-
-        {/* Upload file fallback */}
-        <div className="flex items-center gap-3 px-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl">
-          <span className="text-xl">📄</span>
-          <div className="flex-1">
-            <div className="text-[13px] font-bold text-gray-900">Already have your CAS/XLS file?</div>
-            <div className="text-[12px] text-gray-500">Upload directly — works without CASParser</div>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12, background: b.tone, color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 15, fontWeight: 700, marginBottom: 14, letterSpacing: '-0.02em',
+                }}>{b.logo}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>{b.name}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginBottom: 16 }}>{b.tag}</div>
+                <button
+                  onClick={() => setConnecting(b.id)}
+                  disabled={b.connected}
+                  style={{
+                    width: '100%', padding: '9px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+                    background: b.connected ? 'transparent' : 'var(--ink)',
+                    color: b.connected ? 'var(--ink-3)' : 'var(--bg)',
+                    border: '1px solid ' + (b.connected ? 'var(--border)' : 'var(--ink)'),
+                    cursor: b.connected ? 'default' : 'pointer',
+                  }}>
+                  {b.connected ? 'Manage' : (connecting === b.id ? 'Opening AA…' : 'Connect')}
+                </button>
+              </div>
+            ))}
           </div>
-          <Link href="/upload" className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-[13px] font-bold hover:border-gray-900 transition-colors flex-shrink-0">
-            Upload →
-          </Link>
         </div>
+
+        {/* ── Account Aggregators ───────────────────────────────── */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 34, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)' }}>Account Aggregators</h2>
+            <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)' }}>RBI-licensed</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+            {AAS.map(a => (
+              <div key={a.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18, padding: 22 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12, background: a.tone, color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 700, marginBottom: 14, letterSpacing: '-0.02em',
+                }}>{a.logo}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>{a.name}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginBottom: 16 }}>{a.desc}</div>
+                <button style={{ ...btnGhost, width: '100%' }}>Connect via {a.name}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── How it works ──────────────────────────────────────── */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 28 }}>
+          <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)', marginBottom: 18 }}>How Auto-Connect works</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            {[
+              { n: '01', t: 'Pick your AA', d: 'Choose any RBI-licensed Account Aggregator.' },
+              { n: '02', t: 'Verify with bank', d: 'Authorise via your registered mobile number.' },
+              { n: '03', t: 'Grant consent',  d: 'Select read-only access for 1–12 months.' },
+              { n: '04', t: 'Auto-sync',       d: 'We pull data every 4 hours. Revoke anytime.' },
+            ].map(s => (
+              <div key={s.n}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 36, color: 'var(--brand-2)', lineHeight: 1, letterSpacing: '-0.02em' }}>{s.n}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginTop: 8 }}>{s.t}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, lineHeight: 1.5 }}>{s.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </AppLayout>
   );
 }
+
+const btnGhost: React.CSSProperties = {
+  padding: '9px 14px', borderRadius: 10, fontSize: 12, fontWeight: 500,
+  background: 'transparent', color: 'var(--ink-2)', border: '1px solid var(--border)',
+  cursor: 'pointer',
+};
+
+const btnPrimary: React.CSSProperties = {
+  padding: '11px 22px', borderRadius: 99, fontSize: 13, fontWeight: 600,
+  background: 'var(--ink)', color: 'var(--bg)', border: 'none', cursor: 'pointer',
+};
