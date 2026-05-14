@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { auth, googleProvider } from '@/lib/firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 export default function AuthPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -29,11 +31,43 @@ export default function AuthPage() {
 
   const handleGoogle = async () => {
     setLoading(true); setError('');
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) { setError(error.message); setLoading(false); }
+    try {
+      // 1. Firebase Google popup — works with your existing Firebase config
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      // 2. Sync to Supabase via firebase-sync route — creates the user there
+      //    and returns a magic-link URL to set the Supabase session cookie
+      const res = await fetch('/api/auth/firebase-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          name: user.displayName,
+          photo: user.photoURL,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Sync failed');
+      }
+
+      // 3. If we got a session URL (magic link token), navigate to it
+      //    — the /auth/callback route will verify and set the Supabase cookie,
+      //      then redirect to /dashboard or /onboarding based on holdings count.
+      if (data.sessionUrl) {
+        window.location.href = data.sessionUrl;
+      } else {
+        // Fallback: just go to dashboard (user already exists in Supabase)
+        router.push('/dashboard');
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Google sign-in failed. Please try again.';
+      setError(msg);
+      setLoading(false);
+    }
   };
 
   const handleMagicLink = async () => {
