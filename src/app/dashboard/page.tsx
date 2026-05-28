@@ -86,21 +86,21 @@ const PERF_BENCH  = [0.015,0.018,-0.010,0.022,0.031,0.015,-0.012,0.027,0.021,0.0
 
 // ΓöÇΓöÇ helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function fmtINR(n: number, opts: { short?: boolean; dec?: number } = {}): string {
-  if (!n && n !== 0) return 'ΓÇö';
+  if (!n && n !== 0) return '—';
   const abs = Math.abs(n);
-  const sign = n < 0 ? 'ΓêÆ' : '';
+  const sign = n < 0 ? '−' : '';
   if (opts.short) {
-    if (abs >= 1e7) return `${sign}Γé╣${(abs / 1e7).toFixed(2)} Cr`;
-    if (abs >= 1e5) return `${sign}Γé╣${(abs / 1e5).toFixed(2)} L`;
-    if (abs >= 1e3) return `${sign}Γé╣${(abs / 1e3).toFixed(1)}K`;
-    return `${sign}Γé╣${abs.toFixed(0)}`;
+    if (abs >= 1e7) return `${sign}₹${(abs / 1e7).toFixed(2)} Cr`;
+    if (abs >= 1e5) return `${sign}₹${(abs / 1e5).toFixed(2)} L`;
+    if (abs >= 1e3) return `${sign}₹${(abs / 1e3).toFixed(1)}K`;
+    return `${sign}₹${abs.toFixed(0)}`;
   }
   const s = abs.toFixed(opts.dec ?? 0);
   const [whole, dec] = s.split('.');
   let last = whole.slice(-3), rest = whole.slice(0, -3);
   if (rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
   const out = rest ? `${rest},${last}` : last;
-  return `${sign}Γé╣${out}${dec ? '.' + dec : ''}`;
+  return `${sign}₹${out}${dec ? '.' + dec : ''}`;
 }
 function fmtPct(n: number, dec = 2): string { return (n >= 0 ? '+' : '') + n.toFixed(dec) + '%'; }
 
@@ -199,15 +199,15 @@ function HeroValue() {
       <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'flex-start' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-            <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500 }}>Net worth ┬╖ all accounts</span>
+            <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500 }}>Net worth · all accounts</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>
               <span style={{ width: 6, height: 6, borderRadius: 99, background: 'var(--up)', animation: 'pulse-dot 2s infinite', display: 'inline-block' }} />
-              Live ┬╖ synced 2 min ago
+              Live · synced 2 min ago
             </span>
           </div>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(64px, 11vw, 120px)', lineHeight: 0.85, letterSpacing: '-0.05em', fontWeight: 400, fontVariantNumeric: 'tabular-nums' }}>
-            <span style={{ color: 'var(--ink-3)', fontSize: '0.5em', marginRight: 8, verticalAlign: 'super' }}>Γé╣</span>
-            {loading ? 'ΓÇö' : fmtINR(totals.current).replace('Γé╣', '')}
+            <span style={{ color: 'var(--ink-3)', fontSize: '0.5em', marginRight: 8, verticalAlign: 'super' }}>₹</span>
+            {loading ? '—' : fmtINR(totals.current).replace('₹', '')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 18 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600, background: gain >= 0 ? 'var(--up-soft)' : 'var(--down-soft)', color: gain >= 0 ? 'var(--up)' : 'var(--down)', border: 'none' }}>
@@ -271,7 +271,7 @@ function PerfBlock() {
     <div className="card" style={{ padding: 28, gridColumn: 'span 2' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
         <div>
-          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Performance ┬╖ You vs Nifty 50</div>
+          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Performance · You vs Nifty 50</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 42, lineHeight: 1, letterSpacing: '-0.02em' }}>+37.71%</div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>Γû▓ +6.4pp vs bench</span>
@@ -388,13 +388,13 @@ function AIPromo() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, position: 'relative' }}>
         <div style={{ flex: 1, maxWidth: 540 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 99, background: 'var(--brand)', color: 'var(--bg)', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', marginBottom: 18 }}>
-            <SparkleIcon size={11} /> FOLIO AI ┬╖ 4 NEW INSIGHTS
+            <SparkleIcon size={11} /> FOLIO AI · 4 NEW INSIGHTS
           </div>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(40px, 5.5vw, 80px)', lineHeight: 0.98, letterSpacing: '-0.03em', marginBottom: 14 }}>
             You&apos;re <em style={{ color: 'var(--brand)', fontStyle: 'italic' }}>over-weight</em><br />on small caps.
           </div>
           <div style={{ color: 'var(--ink-3)', fontSize: 14, lineHeight: 1.55, marginBottom: 18, maxWidth: 480 }}>
-            A 4pp rotation into flexi-cap drops your beta from 0.96 ΓåÆ 0.88 with minimal return drag. Want to see the rebalance plan?
+            A 4pp rotation into flexi-cap drops your beta from 0.96 → 0.88 with minimal return drag. Want to see the rebalance plan?
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 99, background: 'var(--ink)', color: 'var(--bg)', fontSize: 13, fontWeight: 600 }}>
             Open Folio AI <ArrowRightIcon />
@@ -457,17 +457,17 @@ function TopHoldings() {
         <div>
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 6 }}>Top holdings</div>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(28px, 3.4vw, 48px)', lineHeight: 1.02, letterSpacing: '-0.02em' }}>
-            {loading ? 'ΓÇª' : `All ${totals.fundCount} funds`}
+            {loading ? '…' : `All ${totals.fundCount} funds`}
           </div>
         </div>
         <Link href="/portfolio" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 11px', borderRadius: 999, fontSize: 12, fontWeight: 500, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink)', textDecoration: 'none' }}>
-          View portfolio ΓåÆ
+          View portfolio →
         </Link>
       </div>
       {loading || !H.length ? (
         <div style={{ padding: '40px 28px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>
-          {loading ? 'Loading portfolioΓÇª' : (
-            <span>No holdings yet. <Link href="/upload" style={{ color: 'var(--brand-2)' }}>Upload your CAS ΓåÆ</Link></span>
+          {loading ? 'Loading portfolio…' : (
+            <span>No holdings yet. <Link href="/upload" style={{ color: 'var(--brand-2)' }}>Upload your CAS →</Link></span>
           )}
         </div>
       ) : (
@@ -491,7 +491,7 @@ function TopHoldings() {
                   <LogoBubble logo={h.logo} tone={h.tone} />
                   <div>
                     <div style={{ fontWeight: 600 }}>{h.name}</div>
-                    <div style={{ color: 'var(--ink-3)', fontSize: 11, marginTop: 2 }}>{h.cat} ┬╖ {h.amc}</div>
+                    <div style={{ color: 'var(--ink-3)', fontSize: 11, marginTop: 2 }}>{h.cat} · {h.amc}</div>
                   </div>
                 </div>
               </td>
@@ -551,7 +551,7 @@ function TopMovers() {
   );
 }
 
-// ΓöÇΓöÇ SIPs mini ΓÇö real sip_amount from holdings ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ΓöÇΓöÇ SIPs mini — real sip_amount from holdings ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function SipsMini() {
   const { holdings } = usePortfolio();
   const sipFunds = holdings.filter(h => h.sipAmount > 0);
@@ -563,10 +563,10 @@ function SipsMini() {
         <div>
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Monthly SIPs</div>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, lineHeight: 1, letterSpacing: '-0.02em' }}>
-            {totalSIP > 0 ? fmtINR(totalSIP) : 'ΓÇö'}
+            {totalSIP > 0 ? fmtINR(totalSIP) : '—'}
           </div>
           <div style={{ color: 'var(--ink-3)', fontSize: 11.5, marginTop: 6 }}>
-            {sipFunds.length > 0 ? `${sipFunds.length} active SIPs` : `${holdings.length} funds ┬╖ SIP data not in report`}
+            {sipFunds.length > 0 ? `${sipFunds.length} active SIPs` : `${holdings.length} funds · SIP data not in report`}
           </div>
         </div>
         <Link href="/sips" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 11px', borderRadius: 999, fontSize: 12, fontWeight: 500, background: 'var(--ink)', color: 'var(--bg)', textDecoration: 'none' }}>
@@ -591,7 +591,7 @@ function SipsMini() {
   );
 }
 
-// ΓöÇΓöÇ Goals mini ΓÇö computed from real portfolio corpus ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ΓöÇΓöÇ Goals mini — computed from real portfolio corpus ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function GoalsMini() {
   const { totals } = usePortfolio();
   const corpus = totals.current;
@@ -628,7 +628,7 @@ function GoalsMini() {
           );
         })}
         <Link href="/goals" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', borderRadius: 10, border: '1px dashed var(--border)', color: 'var(--ink-3)', fontSize: 12, textDecoration: 'none', marginTop: 4 }}>
-          + Set your own goals ΓåÆ
+          + Set your own goals →
         </Link>
       </div>
     </div>
@@ -701,7 +701,7 @@ export default function DashboardPage() {
             pct,
             xirr: 0,
             day: 0,
-            alloc: (r.current_value / totalCurrent) * 100,
+            alloc: Math.round((r.current_value / totalCurrent) * 1000) / 10,
             sipAmount: r.sip_amount || 0,
           };
         }).sort((a, b) => b.current - a.current);
