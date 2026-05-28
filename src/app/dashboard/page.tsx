@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect, useContext, createContext } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Link from 'next/link';
@@ -682,6 +682,7 @@ export default function DashboardPage() {
 
       // Fetch real holdings
       const res = await fetch('/api/portfolio/holdings');
+      console.log('Holdings API status:', res.status);
       if (res.ok) {
         const data = await res.json();
         const rows: DbHolding[] = data.holdings || [];
@@ -715,7 +716,21 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    // Wait for Supabase session to be ready before fetching
+    const init = async () => {
+      const { createClient } = await import('@/utils/supabase/client');
+      const sb = createClient();
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        loadData();
+      } else {
+        // Try once more after a short delay (session may be hydrating)
+        setTimeout(loadData, 800);
+      }
+    };
+    init();
+  }, []);
 
   const totals = {
     current:   holdings.reduce((s, h) => s + h.current, 0),
