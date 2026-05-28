@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@cas-parser/connect": "^2.1.0",
-    "@clerk/nextjs": "^7.2.7",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.1",
     "csv-parser": "^3.2.0",
