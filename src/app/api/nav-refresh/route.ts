@@ -12,43 +12,92 @@ type HoldingRow = {
   current_value: number | string | null
 }
 
+type NavEntry = {
+  nav: number
+  date: string
+  name: string
+  code: string
+  isin1: string
+  isin2: string
+}
+
 function toNumber(v: unknown): number {
   const n = Number(v)
   return Number.isFinite(n) ? n : 0
 }
 
-async function fetchLatestNav(schemeCode: string): Promise<{ nav: number; date: string } | null> {
-  try {
-    const latestRes = await fetch(`https://api.mfapi.in/mf/${schemeCode}/latest`, {
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    })
+function normalise(v: string | null | undefined): string {
+  return String(v || '').trim().toUpperCase()
+}
 
-    if (latestRes.ok) {
-      const latestData = await latestRes.json()
-      const item = Array.isArray(latestData?.data) ? latestData.data[0] : latestData?.data
-      const nav = Number(item?.nav ?? latestData?.nav ?? 0)
-      const date = String(item?.date ?? latestData?.date ?? '')
-      if (Number.isFinite(nav) && nav > 0) return { nav, date }
-    }
+function parseAMFI(text: string): Record<string, NavEntry> {
+  const map: Record<string, NavEntry> = {}
 
-    const fullRes = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, {
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    })
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim()
+    if (!line || !line.includes(';')) continue
 
-    if (!fullRes.ok) return null
+    const parts = line.split(';').map(p => p.trim())
+    if (parts.length < 6) continue
 
-    const fullData = await fullRes.json()
-    const item = Array.isArray(fullData?.data) ? fullData.data[0] : null
-    const nav = Number(item?.nav ?? 0)
-    const date = String(item?.date ?? '')
+    const code = parts[0]
+    if (!/^\d+$/.test(code)) continue
 
-    if (Number.isFinite(nav) && nav > 0) return { nav, date }
-    return null
-  } catch {
-    return null
+    const isin1 = parts[1] || ''
+    const isin2 = parts[2] || ''
+    const name = parts[3] || ''
+
+    // AMFI usually: code;isin1;isin2;name;nav;date
+    // Keep this defensive in case order changes.
+    const p4 = Number(parts[4])
+    const p5 = Number(parts[5])
+    const nav = Number.isFinite(p4) && p4 > 0 ? p4 : p5
+    const date = Number.isFinite(p4) && p4 > 0 ? parts[5] : parts[4]
+
+    if (!Number.isFinite(nav) || nav <= 0) continue
+
+    const entry: NavEntry = { nav, date, name, code, isin1, isin2 }
+
+    map[normalise(code)] = entry
+    if (isin1) map[normalise(isin1)] = entry
+    if (isin2) map[normalise(isin2)] = entry
   }
+
+  return map
+}
+
+function findByName(navMap: Record<string, NavEntry>, schemeName: string | null): NavEntry | null {
+  const target = normalise(schemeName)
+    .replace(/\s+/g, ' ')
+    .replace(/\bREGULAR\b/g, 'REG')
+    .replace(/\bGROWTH\b/g, 'GR')
+
+  if (!target) return null
+
+  const entries = Object.values(navMap)
+
+  let match = entries.find(e => normalise(e.name) === target)
+  if (match) return match
+
+  match = entries.find(e => {
+    const n = normalise(e.name).replace(/\s+/g, ' ')
+    return n.includes(target) || target.includes(n)
+  })
+
+  return match || null
+}
+
+async function fetchAMFINavMap(): Promise<Record<string, NavEntry>> {
+  const res = await fetch('https://www.amfiindia.com/spages/NAVAll.txt', {
+    headers: { 'User-Agent': 'FolioKey/1.0 (https://foliokey.app)' },
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    throw new Error(`AMFI NAVAll fetch failed: ${res.status}`)
+  }
+
+  return parseAMFI(await res.text())
 }
 
 // POST: Refresh logged-in user's portfolio_holdings NAVs
@@ -76,23 +125,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No holdings found' }, { status: 404 })
     }
 
+    const navMap = await fetchAMFINavMap()
+
     let updated = 0
     let skipped = 0
-    const funds: Array<{ schemeCode: string; name: string; nav: number; value: number; navDate: string }> = []
+
+    const funds: Array<{
+      schemeCode: string
+      name: string
+      nav: number
+      value: number
+      navDate: string
+      matchedBy: string
+    }> = []
+
+    const skippedFunds: Array<{ schemeCode: string; name: string; reason: string }> = []
 
     for (const row of rows as HoldingRow[]) {
-      const schemeCode = row.scheme_code?.trim()
+      const schemeCode = normalise(row.scheme_code)
       const units = toNumber(row.units)
 
       if (!schemeCode || units <= 0) {
         skipped++
+        skippedFunds.push({
+          schemeCode,
+          name: row.scheme_name || '',
+          reason: !schemeCode ? 'missing scheme_code/ISIN' : 'missing units',
+        })
         continue
       }
 
-      const latest = await fetchLatestNav(schemeCode)
+      let latest = navMap[schemeCode]
+      let matchedBy = 'isin_or_code'
+
+      if (!latest) {
+        latest = findByName(navMap, row.scheme_name)
+        matchedBy = latest ? 'name' : 'none'
+      }
 
       if (!latest) {
         skipped++
+        skippedFunds.push({
+          schemeCode,
+          name: row.scheme_name || '',
+          reason: 'not found in AMFI NAVAll by ISIN/code/name',
+        })
         continue
       }
 
@@ -115,10 +192,11 @@ export async function POST(req: NextRequest) {
       updated++
       funds.push({
         schemeCode,
-        name: row.scheme_name || schemeCode,
+        name: row.scheme_name || latest.name || schemeCode,
         nav: latest.nav,
         value: currentValue,
         navDate: latest.date,
+        matchedBy,
       })
     }
 
@@ -138,8 +216,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      source: 'mfapi.in',
+      source: 'AMFI NAVAll.txt',
       refreshedAt: new Date().toISOString(),
+      navEntries: Object.keys(navMap).length,
       total: rows.length,
       updated,
       skipped,
@@ -148,6 +227,7 @@ export async function POST(req: NextRequest) {
       gain,
       gainPct,
       funds,
+      skippedFunds,
     })
   } catch (err) {
     console.error('NAV refresh error:', err)
@@ -155,7 +235,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET: Get current NAV for any scheme code
+// GET: public NAV lookup by ISIN/code/name
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
@@ -166,22 +246,25 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    if (code) {
-      const latest = await fetchLatestNav(code)
-      return NextResponse.json({
-        schemeCode: code,
-        nav: latest?.nav || 0,
-        date: latest?.date || '',
-      })
+    const navMap = await fetchAMFINavMap()
+
+    let entry: NavEntry | null = null
+    if (code) entry = navMap[normalise(code)] || null
+    if (!entry && name) entry = findByName(navMap, name)
+
+    if (!entry) {
+      return NextResponse.json({ error: 'NAV not found' }, { status: 404 })
     }
 
-    const searchRes = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(name!)}`, {
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
+    return NextResponse.json({
+      schemeCode: entry.code,
+      isin1: entry.isin1,
+      isin2: entry.isin2,
+      name: entry.name,
+      nav: entry.nav,
+      date: entry.date,
+      source: 'AMFI NAVAll.txt',
     })
-
-    const results = await searchRes.json()
-    return NextResponse.json({ results: Array.isArray(results) ? results.slice(0, 10) : [] })
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
   }
