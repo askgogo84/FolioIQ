@@ -17,6 +17,7 @@ type DbHolding = {
   invested_amount: number;
   current_value: number;
   sip_amount?: number;
+  purchase_date?: string | null;
 };
 
 // ΓöÇΓöÇ Derived display holding ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
@@ -26,6 +27,7 @@ type DisplayHolding = {
   invested: number; current: number;
   pct: number; xirr: number; day: number; alloc: number;
   sipAmount: number;
+  purchaseDate: string | null;
 };
 
 // ΓöÇΓöÇ Colour palette for AMCs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
@@ -48,12 +50,12 @@ function logoOf(name: string): string {
 // ΓöÇΓöÇ Live data context ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 type PortfolioCtx = {
   holdings: DisplayHolding[];
-  totals: { current: number; invested: number; gain: number; gainPct: number; fundCount: number; };
+  totals: { current: number; invested: number; gain: number; gainPct: number; fundCount: number; xirr: number | null; };
   loading: boolean;
   userName: string;
 };
 const PCtx = createContext<PortfolioCtx>({
-  holdings: [], totals: { current: 0, invested: 0, gain: 0, gainPct: 0, fundCount: 0 },
+  holdings: [], totals: { current: 0, invested: 0, gain: 0, gainPct: 0, fundCount: 0, xirr: null },
   loading: true, userName: '',
 });
 
@@ -103,6 +105,72 @@ function fmtINR(n: number, opts: { short?: boolean; dec?: number } = {}): string
   return `${sign}₹${out}${dec ? '.' + dec : ''}`;
 }
 function fmtPct(n: number, dec = 2): string { return (n >= 0 ? '+' : '') + n.toFixed(dec) + '%'; }
+
+function daysBetween(a: Date, b: Date): number {
+  return (b.getTime() - a.getTime()) / 86400000;
+}
+
+function calculatePortfolioXirr(holdings: DisplayHolding[]): number | null {
+  const today = new Date();
+  const flows: { amount: number; date: Date }[] = [];
+  let currentTotal = 0;
+  let oldestPurchase: Date | null = null;
+
+  for (const h of holdings) {
+    if (!h.purchaseDate || h.invested <= 0 || h.current <= 0) continue;
+
+    const purchaseDate = new Date(h.purchaseDate);
+    if (Number.isNaN(purchaseDate.getTime())) continue;
+
+    flows.push({ amount: -h.invested, date: purchaseDate });
+    currentTotal += h.current;
+
+    if (!oldestPurchase || purchaseDate < oldestPurchase) {
+      oldestPurchase = purchaseDate;
+    }
+  }
+
+  if (!flows.length || currentTotal <= 0 || !oldestPurchase) return null;
+
+  // Avoid showing misleading annualised XIRR for very new portfolios.
+  if (daysBetween(oldestPurchase, today) < 90) return null;
+
+  flows.push({ amount: currentTotal, date: today });
+
+  const startDate = flows[0].date;
+
+  const xnpv = (rate: number) =>
+    flows.reduce((sum, flow) => {
+      const years = daysBetween(startDate, flow.date) / 365;
+      return sum + flow.amount / Math.pow(1 + rate, years);
+    }, 0);
+
+  let rate = 0.12;
+
+  for (let i = 0; i < 100; i++) {
+    const value = xnpv(rate);
+    const epsilon = 1e-6;
+    const derivative = (xnpv(rate + epsilon) - value) / epsilon;
+
+    if (!Number.isFinite(value) || !Number.isFinite(derivative) || Math.abs(derivative) < 1e-10) {
+      return null;
+    }
+
+    const nextRate = rate - value / derivative;
+
+    if (!Number.isFinite(nextRate) || nextRate <= -0.9999 || nextRate > 100) {
+      return null;
+    }
+
+    if (Math.abs(nextRate - rate) < 1e-7) {
+      return nextRate * 100;
+    }
+
+    rate = nextRate;
+  }
+
+  return null;
+}
 
 function sparkPath(seed: number, w: number, h: number): string {
   const n = 40; const pts: number[] = []; let v = 50; let s = seed;
@@ -237,7 +305,11 @@ function HeroValue() {
         {[
           { label: 'Invested', value: fmtINR(totals.invested, { short: true }), sub: `across ${totals.fundCount} funds` },
           { label: 'Total Gain', value: fmtPct(totals.gainPct), sub: fmtINR(totals.gain, { short: true }), up: totals.gain >= 0 },
-          { label: 'XIRR', value: '12.7%', sub: 'annualised' },
+          {
+            label: 'XIRR',
+            value: totals.xirr === null ? '—' : fmtPct(totals.xirr, 1),
+            sub: totals.xirr === null ? 'needs 90+ days' : 'annualised',
+          },
           { label: 'Funds', value: String(totals.fundCount), sub: 'across portfolio' },
         ].map((s, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -703,6 +775,7 @@ export default function DashboardPage() {
             day: 0,
             alloc: Math.round((r.current_value / totalCurrent) * 1000) / 10,
             sipAmount: r.sip_amount || 0,
+            purchaseDate: r.purchase_date || null,
           };
         }).sort((a, b) => b.current - a.current);
         setHoldings(mapped);
@@ -723,6 +796,7 @@ export default function DashboardPage() {
     gain:      holdings.reduce((s, h) => s + (h.current - h.invested), 0),
     gainPct:   0,
     fundCount: holdings.length,
+    xirr:     calculatePortfolioXirr(holdings),
   };
   if (totals.invested > 0) totals.gainPct = (totals.gain / totals.invested) * 100;
 
