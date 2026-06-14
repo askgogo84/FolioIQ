@@ -83,8 +83,6 @@ function allocFromHoldings(holdings: DisplayHolding[]) {
 
 // ΓöÇΓöÇ Static fallbacks for chart/perf (cosmetic only) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const PERF_MONTHS = ['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'];
-const PERF_DRIFT  = [0.018,0.022,-0.012,0.028,0.041,0.019,-0.008,0.034,0.027,0.019,0.024,0.031];
-const PERF_BENCH  = [0.015,0.018,-0.010,0.022,0.031,0.015,-0.012,0.027,0.021,0.014,0.018,0.022];
 
 // ΓöÇΓöÇ helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function fmtINR(n: number, opts: { short?: boolean; dec?: number } = {}): string {
@@ -181,14 +179,20 @@ function sparkPath(seed: number, w: number, h: number): string {
   return 'M ' + pts.map((p, i) => `${(i / (n - 1)) * w} ${h - ((p - min) / range) * h * 0.85 - h * 0.075}`).join(' L ');
 }
 
-function buildPerf(invested: number) {
-  let v = invested || 3520000, bench = invested || 3520000;
+function buildPerf(invested: number, current: number) {
+  const start = invested > 0 ? invested : current;
+  const end = current > 0 ? current : start;
+  const steps = Math.max(PERF_MONTHS.length - 1, 1);
+
   return PERF_MONTHS.map((month, i) => {
-    v *= (1 + PERF_DRIFT[i]); bench *= (1 + PERF_BENCH[i]);
-    return { month, value: Math.round(v), bench: Math.round(bench) };
+    const t = i / steps;
+    return {
+      month,
+      value: Math.round(start + (end - start) * t),
+      bench: Math.round(start),
+    };
   });
 }
-
 function donutArc(pct: number, total: number, acc: number, R: number, r: number, cx: number, cy: number) {
   const start = (acc / total) * Math.PI * 2 - Math.PI / 2;
   const end = ((acc + pct) / total) * Math.PI * 2 - Math.PI / 2;
@@ -327,7 +331,7 @@ function HeroValue() {
 function PerfBlock() {
   const { totals } = usePortfolio();
   const [range, setRange] = useState('1Y');
-  const data = buildPerf(totals.invested);
+  const data = buildPerf(totals.invested, totals.current);
   const W = 760, H = 260;
   const pad = { l: 48, r: 16, t: 18, b: 28 };
   const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
@@ -343,10 +347,10 @@ function PerfBlock() {
     <div className="card" style={{ padding: 28, gridColumn: 'span 2' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
         <div>
-          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Performance · You vs Nifty 50</div>
+          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Performance · Real all-time return</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 42, lineHeight: 1, letterSpacing: '-0.02em' }}>+37.71%</div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>Γû▓ +6.4pp vs bench</span>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 42, lineHeight: 1, letterSpacing: '-0.02em' }}>{fmtPct(totals.gainPct)}</div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>real all-time</span>
           </div>
         </div>
         <TabSet tabs={['1M', '3M', '6M', '1Y', '3Y', 'All']} value={range} onChange={setRange} />
@@ -388,10 +392,10 @@ function PerfBlock() {
           <span style={{ width: 14, height: 2, background: 'var(--brand)', display: 'inline-block' }} />Your portfolio
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 14, display: 'inline-block', borderTop: '2px dashed var(--ink-4)' }} />Nifty 50 TRI
+          <span style={{ width: 14, display: 'inline-block', borderTop: '2px dashed var(--ink-4)' }} />Invested baseline
         </span>
         <span style={{ flex: 1 }} />
-        <span style={{ color: 'var(--ink-3)' }}>Updated 14 May 2026, 3:42 PM IST</span>
+        <span style={{ color: 'var(--ink-3)' }}>Estimated path from invested to current · historical NAV pending</span>
       </div>
     </div>
   );
