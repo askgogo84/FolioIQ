@@ -833,9 +833,17 @@ export default function DashboardPage() {
       // Optionally refresh live NAVs before fetching holdings
       if (refreshNav) {
         const navRes = await fetch('/api/nav-refresh', { method: 'POST', cache: 'no-store' });
+        const navJson = await navRes.json().catch(() => ({}));
+
+        const totalText = Number(navJson.totalCurrent || 0).toLocaleString('en-IN');
+        window.alert(
+          navRes.ok
+            ? `NAV refresh complete: ${navJson.updated || 0}/${navJson.total || 0} updated, ${navJson.skipped || 0} skipped. Total: INR ${totalText}`
+            : `NAV refresh failed (${navRes.status}): ${navJson.error || 'Unknown error'}`
+        );
+
         if (!navRes.ok) {
-          const navErr = await navRes.json().catch(() => ({}));
-          console.warn('NAV refresh skipped:', navErr);
+          console.warn('NAV refresh skipped:', navJson);
         }
       }
 
