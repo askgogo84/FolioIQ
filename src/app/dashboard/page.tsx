@@ -830,8 +830,17 @@ export default function DashboardPage() {
         setUserName(name.split(' ')[0]);
       }
 
+      // Optionally refresh live NAVs before fetching holdings
+      if (refreshNav) {
+        const navRes = await fetch('/api/nav-refresh', { method: 'POST', cache: 'no-store' });
+        if (!navRes.ok) {
+          const navErr = await navRes.json().catch(() => ({}));
+          console.warn('NAV refresh skipped:', navErr);
+        }
+      }
+
       // Fetch real holdings
-      const res = await fetch('/api/portfolio/holdings');
+      const res = await fetch('/api/portfolio/holdings', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         const rows: DbHolding[] = data.holdings || [];
