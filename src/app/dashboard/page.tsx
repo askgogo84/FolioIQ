@@ -818,7 +818,7 @@ export default function DashboardPage() {
     setGreeting(h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening');
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (refreshNav = false) => {
     setLoading(true);
     try {
       // Fetch user name
@@ -897,7 +897,7 @@ export default function DashboardPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--ink-3)', fontSize: 13 }}>
             {lastSync && <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>Synced {lastSync.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>}
-            <button onClick={loadData} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
+            <button onClick={() => loadData(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
               Γå║ Re-sync
             </button>
             <CalendarIcon /> {today}

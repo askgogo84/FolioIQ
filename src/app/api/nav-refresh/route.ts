@@ -2,156 +2,187 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/utils/supabase/admin'
 import { createClient } from '@/utils/supabase/server'
 
-// Parse AMFI NAV pipe-delimited format
-// Format: SchemeCode;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;SchemeName;NAV Date;NAV
-function parseAMFI(text: string): Record<string, { nav: number; date: string; name: string; isin: string }> {
-  const map: Record<string, { nav: number; date: string; name: string; isin: string }> = {}
-  let currentAMC = ''
-
-  for (const rawLine of text.split('\n')) {
-    const line = rawLine.trim()
-    if (!line) continue
-
-    // AMC header lines (not pipe-delimited)
-    if (!line.includes(';')) {
-      currentAMC = line
-      continue
-    }
-
-    const parts = line.split(';')
-    if (parts.length < 6) continue
-
-    const code = parts[0]?.trim()
-    if (!code || !/^\d+$/.test(code)) continue
-
-    const isin = parts[1]?.trim() || parts[2]?.trim() || ''
-    const name = parts[3]?.trim() || ''
-    const navDate = parts[4]?.trim() || ''
-    const navStr = parts[5]?.trim() || ''
-    const nav = parseFloat(navStr)
-
-    if (!isNaN(nav) && nav > 0) {
-      map[code] = { nav, date: navDate, name, isin }
-      // Also index by ISIN
-      if (isin && isin.startsWith('INF')) map[isin] = { nav, date: navDate, name, isin }
-    }
-  }
-  return map
+type HoldingRow = {
+  id: string
+  scheme_code: string | null
+  scheme_name: string | null
+  units: number | string | null
+  invested_amount: number | string | null
+  current_nav: number | string | null
+  current_value: number | string | null
 }
 
-// POST: Refresh a single user's portfolio NAVs
+function toNumber(v: unknown): number {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+async function fetchLatestNav(schemeCode: string): Promise<{ nav: number; date: string } | null> {
+  try {
+    const latestRes = await fetch(`https://api.mfapi.in/mf/${schemeCode}/latest`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
+
+    if (latestRes.ok) {
+      const latestData = await latestRes.json()
+      const item = Array.isArray(latestData?.data) ? latestData.data[0] : latestData?.data
+      const nav = Number(item?.nav ?? latestData?.nav ?? 0)
+      const date = String(item?.date ?? latestData?.date ?? '')
+      if (Number.isFinite(nav) && nav > 0) return { nav, date }
+    }
+
+    const fullRes = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
+
+    if (!fullRes.ok) return null
+
+    const fullData = await fullRes.json()
+    const item = Array.isArray(fullData?.data) ? fullData.data[0] : null
+    const nav = Number(item?.nav ?? 0)
+    const date = String(item?.date ?? '')
+
+    if (Number.isFinite(nav) && nav > 0) return { nav, date }
+    return null
+  } catch {
+    return null
+  }
+}
+
+// POST: Refresh logged-in user's portfolio_holdings NAVs
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-    const admin = createAdminClient()
-    const { data: pd } = await admin.from('portfolios').select('data').eq('user_id', user.id).maybeSingle()
-    
-    if (!pd?.data?.funds?.length) {
-      return NextResponse.json({ error: 'No portfolio with scheme codes found' }, { status: 404 })
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const funds = pd.data.funds as any[]
-    const hasCodes = funds.some((f: any) => f.schemeCode || f.isin)
-    
-    if (!hasCodes) {
-      return NextResponse.json({ 
-        message: 'Portfolio uploaded via XLS — scheme codes not available. Using current values.',
-        funds: funds.length 
+    const admin = createAdminClient()
+
+    const { data: rows, error } = await admin
+      .from('portfolio_holdings')
+      .select('id, scheme_code, scheme_name, units, invested_amount, current_nav, current_value')
+      .eq('user_id', user.id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (!rows?.length) {
+      return NextResponse.json({ error: 'No holdings found' }, { status: 404 })
+    }
+
+    let updated = 0
+    let skipped = 0
+    const funds: Array<{ schemeCode: string; name: string; nav: number; value: number; navDate: string }> = []
+
+    for (const row of rows as HoldingRow[]) {
+      const schemeCode = row.scheme_code?.trim()
+      const units = toNumber(row.units)
+
+      if (!schemeCode || units <= 0) {
+        skipped++
+        continue
+      }
+
+      const latest = await fetchLatestNav(schemeCode)
+
+      if (!latest) {
+        skipped++
+        continue
+      }
+
+      const currentValue = Number((units * latest.nav).toFixed(2))
+
+      const { error: updateError } = await admin
+        .from('portfolio_holdings')
+        .update({
+          current_nav: latest.nav,
+          current_value: currentValue,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', row.id)
+        .eq('user_id', user.id)
+
+      if (updateError) {
+        throw new Error(updateError.message)
+      }
+
+      updated++
+      funds.push({
+        schemeCode,
+        name: row.scheme_name || schemeCode,
+        nav: latest.nav,
+        value: currentValue,
+        navDate: latest.date,
       })
     }
 
-    // Fetch AMFI NAV
-    const navRes = await fetch('https://www.amfiindia.com/spages/NAVAll.txt', {
-      headers: { 'User-Agent': 'FolioIQ/2.0 (https://folio-iq.vercel.app)' },
-      cache: 'no-store',
-    })
+    const { data: refreshedRows, error: refreshedError } = await admin
+      .from('portfolio_holdings')
+      .select('invested_amount, current_value')
+      .eq('user_id', user.id)
 
-    if (!navRes.ok) throw new Error(`AMFI returned ${navRes.status}`)
-    const navText = await navRes.text()
-    const navMap = parseAMFI(navText)
+    if (refreshedError) {
+      return NextResponse.json({ error: refreshedError.message }, { status: 500 })
+    }
 
-    let updatedCount = 0
-    const updatedFunds = funds.map((f: any) => {
-      const entry = navMap[f.schemeCode] || navMap[f.isin]
-      if (!entry || !f.units) return f
-      
-      const newValue = entry.nav * f.units
-      updatedCount++
-      return {
-        ...f,
-        nav: entry.nav,
-        value: newValue,
-        navDate: entry.date,
-        returnsPercent: f.invested > 0 ? ((newValue - f.invested) / f.invested) * 100 : 0,
-        lastUpdated: new Date().toISOString(),
-      }
-    })
-
-    const totalCurrent = updatedFunds.reduce((s: number, f: any) => s + (f.value || 0), 0)
-    const totalInvested = updatedFunds.reduce((s: number, f: any) => s + (f.invested || 0), 0)
-
-    await admin.from('portfolios').update({
-      data: {
-        ...pd.data,
-        funds: updatedFunds,
-        totalCurrent,
-        totalInvested,
-        lastNavRefresh: new Date().toISOString(),
-        navSource: 'AMFI NAVAll.txt',
-      }
-    }).eq('user_id', user.id)
+    const totalCurrent = (refreshedRows || []).reduce((s, r) => s + toNumber(r.current_value), 0)
+    const totalInvested = (refreshedRows || []).reduce((s, r) => s + toNumber(r.invested_amount), 0)
+    const gain = totalCurrent - totalInvested
+    const gainPct = totalInvested > 0 ? (gain / totalInvested) * 100 : 0
 
     return NextResponse.json({
       success: true,
-      updated: updatedCount,
-      total: funds.length,
-      totalValue: totalCurrent,
-      gain: totalCurrent - totalInvested,
-      gainPct: ((totalCurrent - totalInvested) / totalInvested * 100).toFixed(2) + '%',
-      source: 'AMFI NAVAll.txt — updated daily by 5:30PM IST',
+      source: 'mfapi.in',
+      refreshedAt: new Date().toISOString(),
+      total: rows.length,
+      updated,
+      skipped,
+      totalCurrent,
+      totalInvested,
+      gain,
+      gainPct,
+      funds,
     })
   } catch (err) {
     console.error('NAV refresh error:', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
   }
 }
 
-// GET: Get current NAV for any scheme code or ISIN (public, no auth)
+// GET: Get current NAV for any scheme code
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
   const name = url.searchParams.get('name')
 
   if (!code && !name) {
-    return NextResponse.json({ error: 'Provide ?code= (scheme code) or ?name= (fund name)' }, { status: 400 })
+    return NextResponse.json({ error: 'Provide ?code= or ?name=' }, { status: 400 })
   }
 
   try {
-    // Use mfapi.in for single fund lookups (simpler than parsing full AMFI file)
     if (code) {
-      const res = await fetch(`https://api.mfapi.in/mf/${code}`, {
-        next: { revalidate: 3600 }
-      })
-      const data = await res.json()
+      const latest = await fetchLatestNav(code)
       return NextResponse.json({
         schemeCode: code,
-        name: data.meta?.scheme_name || '',
-        amc: data.meta?.fund_house || '',
-        category: data.meta?.scheme_category || '',
-        nav: parseFloat(data.data?.[0]?.nav || '0'),
-        date: data.data?.[0]?.date || '',
-        historicalNavs: data.data?.slice(0, 30) || [], // last 30 days
+        nav: latest?.nav || 0,
+        date: latest?.date || '',
       })
     }
 
-    // Search by name
-    const searchRes = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(name!)}`)
+    const searchRes = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(name!)}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
+
     const results = await searchRes.json()
-    return NextResponse.json({ results: results.slice(0, 10) })
+    return NextResponse.json({ results: Array.isArray(results) ? results.slice(0, 10) : [] })
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
   }
 }
