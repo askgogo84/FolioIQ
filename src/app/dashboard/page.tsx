@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect, useContext, createContext } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Link from 'next/link';
@@ -352,7 +352,7 @@ function AllocationBlock() {
             {arcs.map((a, i) => <path key={i} d={a.path} fill={a.color} />)}
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, lineHeight: 1 }}>{data[0].pct}%</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 24, lineHeight: 1 }}>{data[0].pct.toFixed(1)}%</div>
             <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginTop: 4 }}>{data[0].label}</div>
           </div>
         </div>
@@ -362,7 +362,7 @@ function AllocationBlock() {
           <div key={i} style={{ display: 'grid', gridTemplateColumns: '10px 1fr auto', gap: 10, alignItems: 'center', fontSize: 12.5 }}>
             <span style={{ width: 8, height: 8, borderRadius: 2, background: d.color, display: 'inline-block' }} />
             <span>{d.label}</span>
-            <span style={{ fontFamily: 'var(--font-mono)' }}>{d.pct}%</span>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>{d.pct.toFixed(1)}%</span>
           </div>
         ))}
       </div>
