@@ -448,47 +448,62 @@ function AllocationBlock() {
 
 // ΓöÇΓöÇ AI Promo card ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function AIPromo() {
+  const { holdings, loading } = usePortfolio();
+
+  const allocation = allocFromHoldings(holdings);
+  const top = allocation[0];
+  const second = allocation[1];
+
+  const title = loading
+    ? 'Analysing your portfolio.'
+    : !top
+      ? 'Upload CAS to unlock insights.'
+      : top.pct >= 65
+        ? `Your portfolio is concentrated in ${top.label}.`
+        : top.pct >= 45
+          ? `${top.label} is your largest allocation.`
+          : 'Your portfolio looks broadly diversified.';
+
+  const text = loading
+    ? 'Reading your live holdings and allocation mix...'
+    : !top
+      ? 'Connect or upload your CAS to generate live portfolio insights.'
+      : second
+        ? `${top.label} is ${top.pct.toFixed(1)}% of your portfolio, followed by ${second.label} at ${second.pct.toFixed(1)}%. Review whether this matches your risk profile.`
+        : `${top.label} is ${top.pct.toFixed(1)}% of your portfolio. Review whether this matches your risk profile.`;
+
   return (
-    <Link href="/chat" style={{
-      display: 'block', padding: 28, gridColumn: 'span 2', textAlign: 'left', cursor: 'pointer',
-      background: 'linear-gradient(135deg, var(--surface) 0%, color-mix(in oklab, var(--brand) 8%, var(--surface)) 100%)',
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--radius-lg)',
-      position: 'relative', overflow: 'hidden',
-      transition: 'transform .15s, box-shadow .15s',
-      textDecoration: 'none',
-    }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)'; }}>
-      <div style={{ position: 'absolute', right: -80, top: -80, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in oklab, var(--brand) 20%, transparent), transparent 70%)', filter: 'blur(20px)' }} />
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, position: 'relative' }}>
-        <div style={{ flex: 1, maxWidth: 540 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 99, background: 'var(--brand)', color: 'var(--bg)', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', marginBottom: 18 }}>
-            <SparkleIcon size={11} /> FOLIO AI · 4 NEW INSIGHTS
+    <div className="card" style={{ padding: 30, position: 'relative', overflow: 'hidden', minHeight: 260 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 85% 30%, color-mix(in oklab, var(--brand) 14%, transparent), transparent 38%)', pointerEvents: 'none' }} />
+
+      <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', gap: 24, alignItems: 'center' }}>
+        <div style={{ maxWidth: 620 }}>
+          <div className="pill" style={{ marginBottom: 18, background: 'var(--ink)', color: 'var(--surface)' }}>
+            ✦ Folio AI · live insights
           </div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(40px, 5.5vw, 80px)', lineHeight: 0.98, letterSpacing: '-0.03em', marginBottom: 14 }}>
-            You&apos;re <em style={{ color: 'var(--brand)', fontStyle: 'italic' }}>over-weight</em><br />on small caps.
+
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 54, lineHeight: 0.98, letterSpacing: '-0.03em', marginBottom: 18 }}>
+            {title}
           </div>
-          <div style={{ color: 'var(--ink-3)', fontSize: 14, lineHeight: 1.55, marginBottom: 18, maxWidth: 480 }}>
-            A 4pp rotation into flexi-cap drops your beta from 0.96 → 0.88 with minimal return drag. Want to see the rebalance plan?
-          </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 99, background: 'var(--ink)', color: 'var(--bg)', fontSize: 13, fontWeight: 600 }}>
-            Open Folio AI <ArrowRightIcon />
-          </div>
+
+          <p style={{ color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.6, maxWidth: 560, marginBottom: 20 }}>
+            {text}
+          </p>
+
+          <button style={{ border: 0, borderRadius: 999, background: 'var(--ink)', color: 'var(--surface)', padding: '10px 18px', fontWeight: 600, fontSize: 12 }}>
+            Open Folio AI →
+          </button>
         </div>
-        <div style={{ flexShrink: 0, width: 160, height: 160, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1px dashed var(--border-strong)' }} />
-          <div style={{ position: 'absolute', inset: 16, borderRadius: '50%', border: '1px dashed var(--border-strong)', opacity: 0.6 }} />
-          <div style={{ width: 90, height: 90, borderRadius: 24, background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 48px -8px color-mix(in oklab, var(--brand) 80%, transparent)' }}>
-            <SparkleIcon size={42} color="var(--bg)" />
+
+        <div className="orb" style={{ width: 132, height: 132, flexShrink: 0, display: 'grid', placeItems: 'center' }}>
+          <div style={{ width: 76, height: 76, borderRadius: 24, background: 'var(--ink)', color: 'var(--surface)', display: 'grid', placeItems: 'center', boxShadow: '0 22px 60px rgba(0,0,0,.18)' }}>
+            <span style={{ fontSize: 30, lineHeight: 1 }}>✦</span>
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
-
-// ΓöÇΓöÇ Portfolio health ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function HealthRing() {
   const { holdings, totals, loading } = usePortfolio();
 
