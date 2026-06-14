@@ -490,40 +490,99 @@ function AIPromo() {
 
 // ΓöÇΓöÇ Portfolio health ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function HealthRing() {
-  const value = 82, size = 120, R = size / 2 - 8, C = 2 * Math.PI * R;
+  const { holdings, totals, loading } = usePortfolio();
+
+  const allocation = allocFromHoldings(holdings);
+  const categoryCount = allocation.length;
+  const topWeight = allocation[0]?.pct ?? 0;
+
+  const fundScore = (Math.min(totals.fundCount, 12) / 12) * 35;
+  const categoryScore = (Math.min(categoryCount, 5) / 5) * 35;
+  const concentrationScore =
+    topWeight <= 0 ? 0 :
+    topWeight <= 35 ? 30 :
+    topWeight <= 50 ? 22 :
+    topWeight <= 65 ? 12 : 5;
+
+  const value = loading
+    ? 0
+    : Math.round(Math.max(0, Math.min(100, fundScore + categoryScore + concentrationScore)));
+
+  const status = loading
+    ? 'Loading'
+    : value >= 80 ? 'Strong'
+    : value >= 65 ? 'Good'
+    : value >= 50 ? 'Needs review'
+    : 'Concentrated';
+
+  const summary = loading
+    ? 'Checking live holdings...'
+    : totals.fundCount > 0
+      ? `${totals.fundCount} funds across ${categoryCount} categories. Largest category is ${topWeight.toFixed(1)}% of portfolio.`
+      : 'No holdings found yet. Upload CAS to calculate portfolio health.';
+
+  const size = 120;
+  const R = size / 2 - 8;
+  const C = 2 * Math.PI * R;
   const offset = C - (value / 100) * C;
+
   return (
     <div className="card" style={{ padding: 28, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in oklab, var(--brand) 14%, transparent), transparent 70%)' }} />
       <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 18 }}>Portfolio health</div>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, position: 'relative' }}>
         <div style={{ position: 'relative', display: 'inline-flex', width: size, height: size, flexShrink: 0 }}>
           <svg width={size} height={size}>
             <circle cx={size / 2} cy={size / 2} r={R} fill="none" stroke="var(--surface-3)" strokeWidth="10" />
-            <circle cx={size / 2} cy={size / 2} r={R} fill="none" stroke="var(--brand)" strokeWidth="10" strokeLinecap="round"
-              strokeDasharray={C} strokeDashoffset={offset} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={R}
+              fill="none"
+              stroke="var(--brand)"
+              strokeWidth="10"
+              strokeLinecap="round"
+              strokeDasharray={C}
+              strokeDashoffset={offset}
+              transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            />
           </svg>
+
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: size * 0.28, lineHeight: 1 }}>82</div>
-            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginTop: 4 }}>of 100</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: size * 0.28, lineHeight: 1 }}>
+              {loading ? '—' : value}
+            </div>
+            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginTop: 4 }}>
+              of 100
+            </div>
           </div>
         </div>
+
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 6 }}>Strong</div>
+          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 6 }}>{status}</div>
           <div style={{ color: 'var(--ink-3)', fontSize: 12, lineHeight: 1.5, marginBottom: 12 }}>
-            Diversified across 8 funds, 5 categories. Beating 78% of peers with similar risk.
+            {summary}
           </div>
+
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>Diversified</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--brand-soft)', color: 'var(--brand)', border: 'none' }}>Alpha +6.4%</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>
+              {totals.fundCount} funds
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--brand-soft)', color: 'var(--brand)', border: 'none' }}>
+              {categoryCount} categories
+            </span>
+            {topWeight > 0 && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--surface-2)', color: 'var(--ink-2)', border: '1px solid var(--border)' }}>
+                {topWeight.toFixed(1)}% top category
+              </span>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-// ΓöÇΓöÇ Top Holdings table ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function TopHoldings() {
   const { holdings, totals, loading } = usePortfolio();
   const H = holdings;
