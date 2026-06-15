@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Link from 'next/link';
 
-// â”€â”€ AMC colour palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  AMC colour palette 
 const AMC_TONES: Record<string, string> = {
   'PPFAS': '#0f3d2e', 'Mirae Asset': '#c89a3a', 'Axis': '#c1392b',
   'ICICI Prudential': '#1f6b50', 'HDFC': '#2952ff', 'SBI': '#0d4a7d',
@@ -21,7 +21,7 @@ function logoOf(name: string): string {
   return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
 }
 
-// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Types 
 type Holding = {
   id: string; name: string; cat: string; amc: string;
   logo: string; tone: string;
@@ -29,11 +29,11 @@ type Holding = {
   gain: number; gainPct: number; alloc: number;
 };
 
-// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const fmtINR = (n: number) => 'â‚¹' + Math.round(n).toLocaleString('en-IN');
-const fmtL   = (n: number) => 'â‚¹' + (n / 100000).toFixed(2) + ' L';
+//  Helpers 
+const fmtINR = (n: number) => 'INR ' + Math.round(n).toLocaleString('en-IN');
+const fmtL   = (n: number) => 'INR ' + (n / 100000).toFixed(2) + ' L';
 
-// â”€â”€ Allocation from holdings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Allocation from holdings 
 const CAT_PALETTE: Record<string, string> = {
   'Equity': '#1f8a5b', 'ELSS': '#1f8a5b', 'Small Cap': '#38b285',
   'Large Cap': '#0f3d2e', 'Mid Cap': '#1f6b50', 'Flexi Cap': '#c89a3a',
@@ -133,17 +133,17 @@ export default function PortfolioPage() {
           padding: '24px 28px', marginBottom: 28,
           display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24,
         }}>
-          <Stat label="FUNDS" big={loading ? 'â€”' : holdings.length.toString()} sub={`across ${amcCount} AMCs`} />
-          <Stat label="INVESTED" big={loading ? 'â€”' : fmtL(totals.invested)} />
-          <Stat label="CURRENT" big={loading ? 'â€”' : fmtL(totals.current)} />
-          <Stat label="UNREALISED GAIN" big={loading ? 'â€”' : fmtL(gain)} sub={gain >= 0 ? `+${gainPct.toFixed(2)}%` : `${gainPct.toFixed(2)}%`} tone={gain >= 0 ? 'up' : 'down'} />
-          <Stat label="XIRR" big="â€”" sub="needs 90+ days" />
+          <Stat label="FUNDS" big={loading ? '' : holdings.length.toString()} sub={`across ${amcCount} AMCs`} />
+          <Stat label="INVESTED" big={loading ? '' : fmtL(totals.invested)} />
+          <Stat label="CURRENT" big={loading ? '' : fmtL(totals.current)} />
+          <Stat label="UNREALISED GAIN" big={loading ? '' : fmtL(gain)} sub={gain >= 0 ? `+${gainPct.toFixed(2)}%` : `${gainPct.toFixed(2)}%`} tone={gain >= 0 ? 'up' : 'down'} />
+          <Stat label="XIRR" big="" sub="needs 90+ days" />
         </div>
 
         {/* Asset allocation treemap */}
         {!loading && alloc.length > 0 && (
           <div className="portfolio-asset-mix" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 28 }}>
-            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 14 }}>ASSET MIX Â· By category</div>
+            <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 14 }}>ASSET MIX - By category</div>
             <div style={{ display: 'flex', height: 64, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', marginBottom: 14 }}>
               {alloc.map((a, i) => (
                 <div key={i} title={`${a.label}: ${a.pct.toFixed(1)}%`} style={{
@@ -206,7 +206,7 @@ export default function PortfolioPage() {
 
           {loading && (
             <div style={{ padding: '48px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>
-              Loading your portfolioâ€¦
+              Loading your portfolio
             </div>
           )}
 
@@ -237,7 +237,7 @@ export default function PortfolioPage() {
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
                   <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
-                    {h.cat}{h.amc ? ` Â· ${h.amc}` : ''} Â· {h.alloc.toFixed(1)}% alloc
+                    {h.cat}{h.amc ? ` - ${h.amc}` : ''} - {h.alloc.toFixed(1)}% alloc
                   </div>
                 </div>
               </div>
@@ -256,7 +256,7 @@ export default function PortfolioPage() {
               <div className="portfolio-cell portfolio-cell-gain" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: h.gainPct >= 0 ? 'var(--up)' : 'var(--down)', fontWeight: 600 }}>
                 {h.gainPct >= 0 ? '+' : ''}{h.gainPct.toFixed(2)}%
                 <div style={{ fontSize: 10.5, fontWeight: 400, color: 'var(--ink-3)' }}>
-                  {h.gain >= 0 ? '+' : '-'}â‚¹{Math.abs(Math.round(h.gain)).toLocaleString('en-IN')}
+                  {h.gain >= 0 ? '+' : '-'}INR {Math.abs(Math.round(h.gain)).toLocaleString('en-IN')}
                 </div>
               </div>
 
@@ -280,7 +280,7 @@ export default function PortfolioPage() {
               background: 'var(--surface-2)',
             }}>
               <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>
-                Total Â· {filtered.length} fund{filtered.length !== 1 ? 's' : ''}
+                Total - {filtered.length} fund{filtered.length !== 1 ? 's' : ''}
               </div>
               <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>
                 {fmtINR(filtered.reduce((s, h) => s + h.invested, 0))}

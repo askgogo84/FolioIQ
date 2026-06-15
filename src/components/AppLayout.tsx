@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
-// ── Market ticker ─────────────────────────────────────────────────────
+//  Market ticker 
 const TICKER_FALLBACK = [
   { sym: 'NIFTY 50',   val: '23,412.60', chg: +0.14 },
   { sym: 'SENSEX',     val: '74,608.98', chg: +0.07 },
@@ -12,11 +12,11 @@ const TICKER_FALLBACK = [
   { sym: 'NIFTY IT',   val: '29,394.20', chg: +1.21 },
   { sym: 'INDIA VIX',  val: '19.42',     chg: +0.75 },
   { sym: 'USD/INR',    val: '95.71',     chg: +0.43 },
-  { sym: 'GOLD',       val: '₹1,62,010', chg: +4.52 },
+  { sym: 'GOLD',       val: 'INR 1,62,010', chg: +4.52 },
   { sym: 'BTC/USD',    val: '$79,547',   chg: -1.60 },
 ];
 
-// ── Navigation groups (matching design exactly) ───────────────────────
+//  Navigation groups (matching design exactly) 
 const NAV = [
   {
     label: 'PORTFOLIO',
@@ -24,7 +24,7 @@ const NAV = [
     items: [
       { href: '/dashboard',    label: 'Dashboard',    icon: Home },
       { href: '/upload',       label: 'Upload CAS',   icon: Upload },
-      { href: '/connect',      label: 'Auto-Connect', icon: Bolt, badge: '⚡' },
+      { href: '/connect',      label: 'Auto-Connect', icon: Bolt, badge: '' },
       { href: '/transactions', label: 'Transactions', icon: ArrowsUpDown },
       { href: '/portfolio',    label: 'Holdings',     icon: PieChart },
       { href: '/profile',      label: 'Profile',      icon: User },
@@ -62,7 +62,7 @@ const NAV = [
   },
 ];
 
-// ── Inline SVG icons ───────────────────────────────────────────────────
+//  Inline SVG icons 
 function Icon({ d, size = 16 }: { d: string; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -93,7 +93,7 @@ function Sun({ size = 16 }) { return <Icon size={size} d="M12 2v2M12 20v2M4.9 4.
 function Moon({ size = 16 }) { return <Icon size={size} d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />; }
 function Settings({ size = 16 }) { return <Icon size={size} d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />; }
 
-// ── AppLayout ─────────────────────────────────────────────────────────
+//  AppLayout 
 export default function AppLayout({
   children,
   title,
@@ -181,7 +181,7 @@ export default function AppLayout({
   return (
     <div className="folio-shell" data-mobile={isMobile ? 'true' : 'false'} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : collapsed ? '72px 1fr' : '244px 1fr', minHeight: '100vh', background: 'var(--bg)' }}>
 
-      {/* ── Sidebar ──────────────────────────────────────────────── */}
+      {/*  Sidebar  */}
       <aside style={{
         background: 'var(--bg-deep)',
         borderRight: '1px solid var(--border)',
@@ -203,7 +203,7 @@ export default function AppLayout({
             flexShrink: 0,
             boxShadow: '0 0 0 1px var(--brand), 0 0 22px -4px color-mix(in oklab, var(--brand) 60%, transparent)',
           }}>
-            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--bg-deep)', fontStyle: 'italic', lineHeight: 1 }}>ƒ</span>
+            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 22, color: 'var(--bg-deep)', fontStyle: 'italic', lineHeight: 1 }}></span>
           </Link>
           {!collapsed && (
             <div>
@@ -292,9 +292,9 @@ export default function AppLayout({
             {!collapsed && (
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {userName || 'Loading…'}
+                  {userName || 'Loading...'}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>Plus member · ⚙</div>
+                <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>Plus member - </div>
               </div>
             )}
           </Link>
@@ -315,12 +315,12 @@ export default function AppLayout({
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
-            {!collapsed && <span>{loggingOut ? 'Signing out…' : 'Sign out'}</span>}
+            {!collapsed && <span>{loggingOut ? 'Signing out...' : 'Sign out'}</span>}
           </button>
         </div>
       </aside>
 
-      {/* ── Main column ──────────────────────────────────────────── */}
+      {/*  Main column  */}
       <div className="folio-main-col" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
 
         {/* Topbar */}
@@ -362,8 +362,8 @@ export default function AppLayout({
               minWidth: 320, cursor: 'pointer',
             }}>
               <Search size={14} />
-              <span style={{ flex: 1 }}>Search funds, holdings, goals…</span>
-              <kbd style={{ fontSize: 10, padding: '2px 6px', borderRadius: 5, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--ink-3)' }}>⌘K</kbd>
+              <span style={{ flex: 1 }}>Search funds, holdings, goals...</span>
+              <kbd style={{ fontSize: 10, padding: '2px 6px', borderRadius: 5, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--ink-3)' }}>K</kbd>
             </div>
 
             <div style={{ flex: 1 }} />
@@ -371,7 +371,7 @@ export default function AppLayout({
             {/* NSE Live */}
             <div className="folio-live-badge" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 99, background: 'var(--up-soft)', color: 'var(--up)' }}>
               <span style={{ width: 6, height: 6, borderRadius: 99, background: 'var(--up)', animation: 'pulse-dot 2s infinite', display: 'inline-block' }} />
-              <span style={{ fontSize: 11, fontWeight: 500 }}>NSE · Live</span>
+              <span style={{ fontSize: 11, fontWeight: 500 }}>NSE - Live</span>
             </div>
 
             {/* Bell */}
@@ -385,7 +385,7 @@ export default function AppLayout({
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </button>
 
-            {/* Plus nudge — compact, non-intrusive */}
+            {/* Plus nudge - compact, non-intrusive */}
             <Link href="/pricing" style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
               padding: '6px 11px', borderRadius: 99,
@@ -394,7 +394,7 @@ export default function AppLayout({
               fontSize: 11, fontWeight: 600, color: 'var(--brand-2)',
               textDecoration: 'none', whiteSpace: 'nowrap',
             }}>
-              ✦ Try Plus free
+               Try Plus free
             </Link>
 
             {/* Ask Folio */}
