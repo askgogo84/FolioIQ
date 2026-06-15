@@ -114,7 +114,7 @@ function estimatedRangeGainPct(totalGainPct: number, range: PerfRange): number {
 
 function perfRangeNote(range: PerfRange): string {
   if (range === 'All') return 'Real all-time return from invested to current. Historical NAV path pending.';
-  return `${range} estimated view from invested to current. Historical NAV path pending.`;
+  return range + ' estimated view from invested to current. Historical NAV path pending.';
 }
 
 function donutArc(pct: number, total: number, acc: number, R: number, r: number, cx: number, cy: number) {
@@ -269,7 +269,7 @@ function PerfBlock() {
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Performance - Real all-time return</div>
           <div className="dashboard-performance-value-row" style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 42, lineHeight: 1, letterSpacing: '-0.02em' }}>{fmtPct(rangeGainPct)}</div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>{range === 'All' ? 'real all-time' : ${range} estimated}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>{range === 'All' ? 'real all-time' : range + ' estimated'}</span>
           </div>
         </div>
         <div className="dashboard-performance-tabs"><TabSet tabs={['1M', '3M', '6M', '1Y', '3Y', 'All']} value={range} onChange={(v) => setRange(v as PerfRange)} /></div>
