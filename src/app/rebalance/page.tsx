@@ -121,7 +121,7 @@ export default function RebalancePage() {
           </h1>
 
           <div style={{ marginTop: 14, fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 760 }}>
-            This page compares your live allocation against a default planning target. It does not execute trades or show fake fund recommendations.
+            This page compares your live allocation against a default planning target. It does not execute trades or show invented fund recommendations.
           </div>
         </div>
 
