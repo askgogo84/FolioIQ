@@ -68,6 +68,113 @@ function allocFromHoldings(holdings: DisplayHolding[]) {
     .sort((a, b) => b[1] - a[1])
     .map(([label, val]) => ({ label, pct: (val / total) * 100, color: palette[label] || '#8b8773' }));
 }
+
+function fmtINR(n: number, opts: { short?: boolean; dec?: number } = {}): string {
+  if (!n && n !== 0) return '';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+
+  if (opts.short) {
+    if (abs >= 1e7) return `${sign}INR ${(abs / 1e7).toFixed(2)} Cr`;
+    if (abs >= 1e5) return `${sign}INR ${(abs / 1e5).toFixed(2)} L`;
+    if (abs >= 1e3) return `${sign}INR ${(abs / 1e3).toFixed(1)}K`;
+    return `${sign}INR ${abs.toFixed(0)}`;
+  }
+
+  const s = abs.toFixed(opts.dec ?? 0);
+  const [whole, dec] = s.split('.');
+  let last = whole.slice(-3);
+  let rest = whole.slice(0, -3);
+  if (rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+  const out = rest ? `${rest},${last}` : last;
+  return `${sign}INR ${out}${dec ? '.' + dec : ''}`;
+}
+
+function fmtPct(n: number, dec = 2): string {
+  return (n >= 0 ? '+' : '') + n.toFixed(dec) + '%';
+}
+
+function daysBetween(a: Date, b: Date): number {
+  return (b.getTime() - a.getTime()) / 86400000;
+}
+
+function calculatePortfolioXirr(holdings: DisplayHolding[]): number | null {
+  const today = new Date();
+  const flows: { amount: number; date: Date }[] = [];
+  let currentTotal = 0;
+  let oldestPurchase: Date | null = null;
+
+  for (const h of holdings) {
+    if (!h.purchaseDate || h.invested <= 0 || h.current <= 0) continue;
+
+    const purchaseDate = new Date(h.purchaseDate);
+    if (Number.isNaN(purchaseDate.getTime())) continue;
+
+    flows.push({ amount: -h.invested, date: purchaseDate });
+    currentTotal += h.current;
+
+    if (!oldestPurchase || purchaseDate < oldestPurchase) {
+      oldestPurchase = purchaseDate;
+    }
+  }
+
+  if (!flows.length || currentTotal <= 0 || !oldestPurchase) return null;
+  if (daysBetween(oldestPurchase, today) < 90) return null;
+
+  flows.push({ amount: currentTotal, date: today });
+
+  const startDate = flows[0].date;
+  const xnpv = (rate: number) =>
+    flows.reduce((sum, flow) => {
+      const years = daysBetween(startDate, flow.date) / 365;
+      return sum + flow.amount / Math.pow(1 + rate, years);
+    }, 0);
+
+  let rate = 0.12;
+
+  for (let i = 0; i < 100; i++) {
+    const value = xnpv(rate);
+    const epsilon = 1e-6;
+    const derivative = (xnpv(rate + epsilon) - value) / epsilon;
+
+    if (!Number.isFinite(value) || !Number.isFinite(derivative) || Math.abs(derivative) < 1e-10) {
+      return null;
+    }
+
+    const nextRate = rate - value / derivative;
+
+    if (!Number.isFinite(nextRate) || nextRate <= -0.9999 || nextRate > 100) {
+      return null;
+    }
+
+    if (Math.abs(nextRate - rate) < 1e-7) {
+      return nextRate * 100;
+    }
+
+    rate = nextRate;
+  }
+
+  return null;
+}
+
+function sparkPath(seed: number, w: number, h: number): string {
+  const n = 40;
+  const pts: number[] = [];
+  let v = 50;
+  let s = seed;
+
+  for (let i = 0; i < n; i++) {
+    s = (s * 9301 + 49297) % 233280;
+    v += (s / 233280 - 0.45) * 6;
+    pts.push(v);
+  }
+
+  const min = Math.min(...pts);
+  const max = Math.max(...pts);
+  const range = max - min || 1;
+
+  return 'M ' + pts.map((p, i) => `${(i / (n - 1)) * w} ${h - ((p - min) / range) * h * 0.85 - h * 0.075}`).join(' L ');
+}
 type PerfRange = '1M' | '3M' | '6M' | '1Y' | '3Y' | 'All';
 
 const PERF_LABELS: Record<PerfRange, string[]> = {
