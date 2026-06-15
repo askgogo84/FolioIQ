@@ -994,3 +994,133 @@ button { font-family: inherit; cursor: pointer; }
     font-size: 12px !important;
   }
 }
+/* ── Dashboard performance/allocation final mobile fix ─────────────────── */
+@media (max-width: 1024px) {
+  .dashboard-performance-card {
+    grid-column: 1 / -1 !important;
+    padding: 18px !important;
+    overflow: hidden !important;
+    border-radius: 28px !important;
+  }
+
+  .dashboard-performance-head {
+    display: block !important;
+    margin-bottom: 14px !important;
+  }
+
+  .dashboard-performance-value-row {
+    display: grid !important;
+    grid-template-columns: auto minmax(72px, 96px) !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .dashboard-performance-value-row > div:first-child {
+    font-size: clamp(46px, 14vw, 62px) !important;
+    line-height: .9 !important;
+    white-space: nowrap !important;
+  }
+
+  .dashboard-performance-value-row > span {
+    display: inline-flex !important;
+    justify-content: center !important;
+    white-space: normal !important;
+    text-align: center !important;
+    line-height: 1.12 !important;
+    padding: 7px 10px !important;
+    font-size: 10px !important;
+  }
+
+  .dashboard-performance-tabs {
+    margin-top: 14px !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    padding-bottom: 2px !important;
+  }
+
+  .dashboard-performance-tabs > * {
+    min-width: max-content !important;
+  }
+
+  .dashboard-performance-chart {
+    margin-left: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-performance-chart svg {
+    height: 220px !important;
+    width: 100% !important;
+    display: block !important;
+  }
+
+  .dashboard-performance-chart text {
+    font-size: 9px !important;
+  }
+
+  .dashboard-performance-legend {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 12px !important;
+    align-items: start !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  .dashboard-performance-legend > span:last-child {
+    grid-column: 1 / -1 !important;
+  }
+
+  .dashboard-allocation-card {
+    display: grid !important;
+    grid-template-columns: 120px minmax(0, 1fr) !important;
+    column-gap: 16px !important;
+    row-gap: 12px !important;
+    padding: 18px !important;
+    border-radius: 28px !important;
+    min-height: auto !important;
+  }
+
+  .dashboard-allocation-head {
+    grid-column: 1 / -1 !important;
+    margin-bottom: 0 !important;
+    display: flex !important;
+  }
+
+  .dashboard-allocation-body {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  .dashboard-allocation-donut {
+    width: 112px !important;
+    height: 112px !important;
+    display: block !important;
+  }
+
+  .dashboard-allocation-donut svg {
+    width: 112px !important;
+    height: 112px !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-allocation-donut > div {
+    inset: 0 !important;
+  }
+
+  .dashboard-allocation-legend {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    align-self: center !important;
+    margin: 0 !important;
+    gap: 10px !important;
+  }
+
+  .dashboard-allocation-legend > div {
+    grid-template-columns: 10px 1fr auto !important;
+    font-size: 12px !important;
+  }
+}

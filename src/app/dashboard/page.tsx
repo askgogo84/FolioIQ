@@ -70,21 +70,21 @@ function allocFromHoldings(holdings: DisplayHolding[]) {
 }
 const PERF_MONTHS = ['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'];
 function fmtINR(n: number, opts: { short?: boolean; dec?: number } = {}): string {
-  if (!n && n !== 0) return '—';
+  if (!n && n !== 0) return 'â€”';
   const abs = Math.abs(n);
   const sign = n < 0 ? '-' : '';
   if (opts.short) {
-    if (abs >= 1e7) return `${sign}₹${(abs / 1e7).toFixed(2)} Cr`;
-    if (abs >= 1e5) return `${sign}₹${(abs / 1e5).toFixed(2)} L`;
-    if (abs >= 1e3) return `${sign}₹${(abs / 1e3).toFixed(1)}K`;
-    return `${sign}₹${abs.toFixed(0)}`;
+    if (abs >= 1e7) return `${sign}â‚¹${(abs / 1e7).toFixed(2)} Cr`;
+    if (abs >= 1e5) return `${sign}â‚¹${(abs / 1e5).toFixed(2)} L`;
+    if (abs >= 1e3) return `${sign}â‚¹${(abs / 1e3).toFixed(1)}K`;
+    return `${sign}â‚¹${abs.toFixed(0)}`;
   }
   const s = abs.toFixed(opts.dec ?? 0);
   const [whole, dec] = s.split('.');
   let last = whole.slice(-3), rest = whole.slice(0, -3);
   if (rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
   const out = rest ? `${rest},${last}` : last;
-  return `${sign}₹${out}${dec ? '.' + dec : ''}`;
+  return `${sign}â‚¹${out}${dec ? '.' + dec : ''}`;
 }
 function fmtPct(n: number, dec = 2): string { return (n >= 0 ? '+' : '') + n.toFixed(dec) + '%'; }
 
@@ -251,15 +251,15 @@ function HeroValue() {
       <div className="dashboard-hero-grid" style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'flex-start' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-            <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500 }}>Net worth · all accounts</span>
+            <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500 }}>Net worth Â· all accounts</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>
               <span style={{ width: 6, height: 6, borderRadius: 99, background: 'var(--up)', animation: 'pulse-dot 2s infinite', display: 'inline-block' }} />
-              Live · synced 2 min ago
+              Live Â· synced 2 min ago
             </span>
           </div>
           <div className="dashboard-networth-number" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(64px, 11vw, 120px)', lineHeight: 0.85, letterSpacing: '-0.05em', fontWeight: 400, fontVariantNumeric: 'tabular-nums' }}>
-            <span style={{ color: 'var(--ink-3)', fontSize: '0.5em', marginRight: 8, verticalAlign: 'super' }}>₹</span>
-            {loading ? '—' : fmtINR(totals.current).replace('₹', '')}
+            <span style={{ color: 'var(--ink-3)', fontSize: '0.5em', marginRight: 8, verticalAlign: 'super' }}>â‚¹</span>
+            {loading ? 'â€”' : fmtINR(totals.current).replace('â‚¹', '')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 18 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600, background: gain >= 0 ? 'var(--up-soft)' : 'var(--down-soft)', color: gain >= 0 ? 'var(--up)' : 'var(--down)', border: 'none' }}>
@@ -291,7 +291,7 @@ function HeroValue() {
           { label: 'Total Gain', value: fmtPct(totals.gainPct), sub: fmtINR(totals.gain, { short: true }), up: totals.gain >= 0 },
           {
             label: 'XIRR',
-            value: totals.xirr === null ? '—' : fmtPct(totals.xirr, 1),
+            value: totals.xirr === null ? 'â€”' : fmtPct(totals.xirr, 1),
             sub: totals.xirr === null ? 'needs 90+ days' : 'annualised',
           },
           { label: 'Funds', value: String(totals.fundCount), sub: 'across portfolio' },
@@ -325,16 +325,16 @@ function PerfBlock() {
     <div className="card dashboard-performance-card" style={{ padding: 28, gridColumn: 'span 2' }}>
       <div className="dashboard-performance-head" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
         <div>
-          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Performance · Real all-time return</div>
+          <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Performance Â· Real all-time return</div>
           <div className="dashboard-performance-value" style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 42, lineHeight: 1, letterSpacing: '-0.02em' }}>{fmtPct(totals.gainPct)}</div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>real all-time</span>
           </div>
         </div>
-        <TabSet tabs={['1M', '3M', '6M', '1Y', '3Y', 'All']} value={range} onChange={setRange} />
+        <div className="dashboard-performance-tabs"><TabSet tabs={['1M', '3M', '6M', '1Y', '3Y', 'All']} value={range} onChange={setRange} /></div>
       </div>
 
-      <div style={{ marginLeft: -12 }}>
+      <div className="dashboard-performance-chart" style={{ marginLeft: -12 }}>
         <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
           <defs>
             <linearGradient id="pg" x1="0" x2="0" y1="0" y2="1">
@@ -373,7 +373,7 @@ function PerfBlock() {
           <span style={{ width: 14, display: 'inline-block', borderTop: '2px dashed var(--ink-4)' }} />Invested baseline
         </span>
         <span style={{ flex: 1 }} />
-        <span style={{ color: 'var(--ink-3)' }}>Estimated path from invested to current · historical NAV pending</span>
+        <span style={{ color: 'var(--ink-3)' }}>Estimated path from invested to current Â· historical NAV pending</span>
       </div>
     </div>
   );
@@ -453,7 +453,7 @@ function AIPromo() {
       <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', gap: 24, alignItems: 'center' }}>
         <div style={{ maxWidth: 620 }}>
           <div className="pill" style={{ marginBottom: 18, background: 'var(--ink)', color: 'var(--surface)' }}>
-            ✦ Folio AI · live insights
+            âœ¦ Folio AI Â· live insights
           </div>
 
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 54, lineHeight: 0.98, letterSpacing: '-0.03em', marginBottom: 18 }}>
@@ -471,7 +471,7 @@ function AIPromo() {
 
         <div className="orb" style={{ width: 132, height: 132, flexShrink: 0, display: 'grid', placeItems: 'center' }}>
           <div style={{ width: 76, height: 76, borderRadius: 24, background: 'var(--ink)', color: 'var(--surface)', display: 'grid', placeItems: 'center', boxShadow: '0 22px 60px rgba(0,0,0,.18)' }}>
-            <span style={{ fontSize: 30, lineHeight: 1 }}>✦</span>
+            <span style={{ fontSize: 30, lineHeight: 1 }}>âœ¦</span>
           </div>
         </div>
       </div>
@@ -540,7 +540,7 @@ function HealthRing() {
 
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: size * 0.28, lineHeight: 1 }}>
-              {loading ? '—' : value}
+              {loading ? 'â€”' : value}
             </div>
             <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginTop: 4 }}>
               of 100
@@ -581,7 +581,7 @@ function TopHoldings() {
         <div>
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 6 }}>Top holdings</div>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(28px, 3.4vw, 48px)', lineHeight: 1.02, letterSpacing: '-0.02em' }}>
-            {loading ? '…' : `All ${totals.fundCount} funds`}
+            {loading ? 'â€¦' : `All ${totals.fundCount} funds`}
           </div>
         </div>
         <Link href="/portfolio" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 11px', borderRadius: 999, fontSize: 12, fontWeight: 500, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink)', textDecoration: 'none' }}>
@@ -590,7 +590,7 @@ function TopHoldings() {
       </div>
       {loading || !H.length ? (
         <div style={{ padding: '40px 28px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>
-          {loading ? 'Loading portfolio…' : (
+          {loading ? 'Loading portfolioâ€¦' : (
             <span>No holdings yet. <Link href="/upload" style={{ color: 'var(--brand-2)' }}>Upload your CAS</Link></span>
           )}
         </div>
@@ -615,7 +615,7 @@ function TopHoldings() {
                   <LogoBubble logo={h.logo} tone={h.tone} />
                   <div>
                     <div style={{ fontWeight: 600 }}>{h.name}</div>
-                    <div style={{ color: 'var(--ink-3)', fontSize: 11, marginTop: 2 }}>{h.cat} · {h.amc}</div>
+                    <div style={{ color: 'var(--ink-3)', fontSize: 11, marginTop: 2 }}>{h.cat} Â· {h.amc}</div>
                   </div>
                 </div>
               </td>
@@ -683,10 +683,10 @@ function SipsMini() {
         <div>
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Monthly SIPs</div>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 38, lineHeight: 1, letterSpacing: '-0.02em' }}>
-            {totalSIP > 0 ? fmtINR(totalSIP) : '—'}
+            {totalSIP > 0 ? fmtINR(totalSIP) : 'â€”'}
           </div>
           <div style={{ color: 'var(--ink-3)', fontSize: 11.5, marginTop: 6 }}>
-            {sipFunds.length > 0 ? `${sipFunds.length} active SIPs` : `${holdings.length} funds · SIP data not in report`}
+            {sipFunds.length > 0 ? `${sipFunds.length} active SIPs` : `${holdings.length} funds Â· SIP data not in report`}
           </div>
         </div>
         <Link href="/sips" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 11px', borderRadius: 999, fontSize: 12, fontWeight: 500, background: 'var(--ink)', color: 'var(--bg)', textDecoration: 'none' }}>
