@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -107,10 +107,18 @@ export default function AppLayout({
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [tickers, setTickers] = useState(TICKER_FALLBACK);
   const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [userName, setUserName] = useState('');
   const [userInitials, setUserInitials] = useState('?');
   const router = useRouter();
+
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth <= 768);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   // Fetch real logged-in user from Supabase
   useEffect(() => {
@@ -173,13 +181,13 @@ export default function AppLayout({
   const items = [...tickers, ...tickers, ...tickers];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: collapsed ? '72px 1fr' : '244px 1fr', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div className="folio-shell" data-mobile={isMobile ? 'true' : 'false'} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : collapsed ? '72px 1fr' : '244px 1fr', minHeight: '100vh', background: 'var(--bg)' }}>
 
       {/* ── Sidebar ──────────────────────────────────────────────── */}
       <aside style={{
         background: 'var(--bg-deep)',
         borderRight: '1px solid var(--border)',
-        display: 'flex', flexDirection: 'column',
+        display: isMobile ? 'none' : 'flex', flexDirection: 'column',
         position: 'sticky', top: 0, height: '100vh',
         overflow: 'hidden',
         padding: collapsed ? '16px 8px' : '16px 12px',
@@ -315,10 +323,10 @@ export default function AppLayout({
       </aside>
 
       {/* ── Main column ──────────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
+      <div className="folio-main-col" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
 
         {/* Topbar */}
-        <header style={{
+        <header className="folio-topbar" style={{
           position: 'sticky', top: 0, zIndex: 20,
           background: 'color-mix(in oklab, var(--bg) 92%, transparent)',
           backdropFilter: 'blur(16px) saturate(160%)',
@@ -416,7 +424,7 @@ export default function AppLayout({
         </header>
 
         {/* Page content */}
-        <main style={{ flex: 1 }}>
+        <main className="folio-main" style={{ flex: 1 }}>
           {children}
         </main>
       </div>
