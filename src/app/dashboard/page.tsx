@@ -322,11 +322,11 @@ function PerfBlock() {
   const areaPath = linePath('value') + ` L ${xs(data.length - 1).toFixed(1)} ${pad.t + cH} L ${xs(0).toFixed(1)} ${pad.t + cH} Z`;
 
   return (
-    <div className="card" style={{ padding: 28, gridColumn: 'span 2' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
+    <div className="card dashboard-performance-card" style={{ padding: 28, gridColumn: 'span 2' }}>
+      <div className="dashboard-performance-head" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
         <div>
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Performance · Real all-time return</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
+          <div className="dashboard-performance-value" style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 42, lineHeight: 1, letterSpacing: '-0.02em' }}>{fmtPct(totals.gainPct)}</div>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>real all-time</span>
           </div>
@@ -365,7 +365,7 @@ function PerfBlock() {
         </svg>
       </div>
 
-      <div style={{ display: 'flex', gap: 18, marginTop: 14, alignItems: 'center', fontSize: 11.5 }}>
+      <div className="dashboard-performance-legend" style={{ display: 'flex', gap: 18, marginTop: 14, alignItems: 'center', fontSize: 11.5 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span style={{ width: 14, height: 2, background: 'var(--brand)', display: 'inline-block' }} />Your portfolio
         </span>
@@ -400,7 +400,7 @@ function AllocationBlock() {
       </div>
       <div className="dashboard-allocation-body" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 20 }}>
         <div className="dashboard-allocation-donut" style={{ position: 'relative', display: 'inline-flex' }}>
-          <svg width={size} height={size}>
+          <svg className="dashboard-allocation-svg" width={size} height={size} viewBox={`0 0 ${size} ${size}`} preserveAspectRatio="xMidYMid meet">
             {arcs.map((a, i) => <path key={i} d={a.path} fill={a.color} />)}
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
@@ -522,7 +522,7 @@ function HealthRing() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, position: 'relative' }}>
         <div style={{ position: 'relative', display: 'inline-flex', width: size, height: size, flexShrink: 0 }}>
-          <svg width={size} height={size}>
+          <svg className="dashboard-allocation-svg" width={size} height={size} viewBox={`0 0 ${size} ${size}`} preserveAspectRatio="xMidYMid meet">
             <circle cx={size / 2} cy={size / 2} r={R} fill="none" stroke="var(--surface-3)" strokeWidth="10" />
             <circle
               cx={size / 2}
