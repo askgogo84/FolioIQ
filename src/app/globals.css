@@ -696,3 +696,151 @@ button { font-family: inherit; cursor: pointer; }
     color: var(--brand) !important;
   }
 }
+/* ── Dashboard mobile app polish ───────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .dashboard-page {
+    padding: 14px 12px 104px !important;
+    max-width: 480px !important;
+    margin: 0 auto !important;
+  }
+
+  .dashboard-header {
+    display: block !important;
+    margin-bottom: 18px !important;
+  }
+
+  .dashboard-header > div:first-child {
+    width: 100% !important;
+  }
+
+  .dashboard-header > div:first-child > div:last-child {
+    font-size: clamp(38px, 12vw, 54px) !important;
+    line-height: .95 !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  .dashboard-meta {
+    margin-top: 14px !important;
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: center !important;
+    gap: 10px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .dashboard-meta button {
+    justify-content: center !important;
+    min-height: 38px !important;
+  }
+
+  .dashboard-bento {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .dashboard-bento > * {
+    grid-column: auto !important;
+    width: 100% !important;
+  }
+
+  .dashboard-bento .card,
+  .dashboard-hero-card {
+    border-radius: 24px !important;
+    overflow: hidden !important;
+  }
+
+  .dashboard-hero-card {
+    padding: 24px 18px !important;
+  }
+
+  .dashboard-hero-grid {
+    display: block !important;
+  }
+
+  .dashboard-networth-number {
+    font-size: clamp(54px, 17vw, 72px) !important;
+    line-height: .86 !important;
+    letter-spacing: -0.055em !important;
+    white-space: nowrap !important;
+  }
+
+  .dashboard-hero-card span {
+    max-width: 100% !important;
+  }
+
+  .dashboard-hero-actions {
+    width: 100% !important;
+    margin-top: 22px !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+
+  .dashboard-hero-actions button {
+    width: 100% !important;
+    min-height: 44px !important;
+    justify-content: center !important;
+    padding: 11px 12px !important;
+    font-size: 12.5px !important;
+  }
+
+  .dashboard-hero-actions button:first-child {
+    grid-column: 1 / -1 !important;
+    min-height: 48px !important;
+    font-size: 14px !important;
+  }
+
+  .dashboard-metrics {
+    margin-top: 24px !important;
+    padding-top: 22px !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px 14px !important;
+  }
+
+  .dashboard-metrics > div {
+    min-width: 0 !important;
+  }
+
+  .dashboard-metrics span:nth-child(2) {
+    font-size: clamp(28px, 9vw, 38px) !important;
+    line-height: .95 !important;
+  }
+
+  .dashboard-bento .card {
+    padding: 20px !important;
+  }
+
+  .dashboard-bento .card [style*="font-size: 48px"],
+  .dashboard-bento .card [style*="font-size: 42px"],
+  .dashboard-bento .card [style*="font-size: 34px"] {
+    font-size: clamp(28px, 9vw, 40px) !important;
+    line-height: 1.02 !important;
+  }
+
+  .dashboard-bento .card [style*="display: flex"][style*="justify-content: space-between"] {
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .dashboard-bento table {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .dashboard-bento th,
+  .dashboard-bento td {
+    white-space: nowrap !important;
+  }
+
+  .dashboard-bento td:first-child,
+  .dashboard-bento th:first-child {
+    white-space: normal !important;
+    min-width: 220px !important;
+  }
+}

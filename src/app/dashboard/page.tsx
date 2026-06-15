@@ -256,7 +256,7 @@ function HeroValue() {
   const gainPct = totals.gainPct;
   const gain = totals.gain;
   return (
-    <div style={{
+    <div className="dashboard-hero-card" style={{
       gridColumn: '1 / -1',
       padding: '40px 40px 36px',
       borderRadius: 'var(--radius-xl)',
@@ -268,7 +268,7 @@ function HeroValue() {
       <div style={{ position: 'absolute', right: -120, top: -120, width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in oklab, var(--brand) 22%, transparent), transparent 65%)', pointerEvents: 'none', filter: 'blur(20px)' }} />
       <div style={{ position: 'absolute', left: -80, bottom: -100, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in oklab, var(--violet, #8c5cff) 18%, transparent), transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)' }} />
 
-      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'flex-start' }}>
+      <div className="dashboard-hero-grid" style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'flex-start' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
             <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500 }}>Net worth · all accounts</span>
@@ -277,13 +277,13 @@ function HeroValue() {
               Live · synced 2 min ago
             </span>
           </div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(64px, 11vw, 120px)', lineHeight: 0.85, letterSpacing: '-0.05em', fontWeight: 400, fontVariantNumeric: 'tabular-nums' }}>
+          <div className="dashboard-networth-number" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(64px, 11vw, 120px)', lineHeight: 0.85, letterSpacing: '-0.05em', fontWeight: 400, fontVariantNumeric: 'tabular-nums' }}>
             <span style={{ color: 'var(--ink-3)', fontSize: '0.5em', marginRight: 8, verticalAlign: 'super' }}>₹</span>
             {loading ? '—' : fmtINR(totals.current).replace('₹', '')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 18 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600, background: gain >= 0 ? 'var(--up-soft)' : 'var(--down-soft)', color: gain >= 0 ? 'var(--up)' : 'var(--down)', border: 'none' }}>
-              {gain >= 0 ? 'Γû▓' : 'Γû╝'} {gainPct.toFixed(2)}% all time
+              {gain >= 0 ? '▲' : '▼'} {gainPct.toFixed(2)}% all time
             </span>
             <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
               {fmtINR(gain, { short: true })} {gain >= 0 ? 'gained' : 'lost'}
@@ -291,7 +291,7 @@ function HeroValue() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
+        <div className="dashboard-hero-actions" style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
           <button style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 22px', borderRadius: 999, fontSize: 14, fontWeight: 600, background: 'var(--brand)', color: 'var(--bg)', border: 'none', cursor: 'pointer' }}>
             <PlusIcon /> Invest now
           </button>
@@ -305,7 +305,7 @@ function HeroValue() {
       </div>
 
       {/* metrics strip */}
-      <div style={{ marginTop: 32, paddingTop: 28, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+      <div className="dashboard-metrics" style={{ marginTop: 32, paddingTop: 28, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
         {[
           { label: 'Invested', value: fmtINR(totals.invested, { short: true }), sub: `across ${totals.fundCount} funds` },
           { label: 'Total Gain', value: fmtPct(totals.gainPct), sub: fmtINR(totals.gain, { short: true }), up: totals.gain >= 0 },
@@ -900,10 +900,10 @@ export default function DashboardPage() {
   return (
     <PCtx.Provider value={{ holdings, totals, loading, userName }}>
     <AppLayout title="Dashboard">
-      <div style={{ padding: '28px 40px 120px', maxWidth: 1600, margin: '0 auto', width: '100%' }}>
+      <div className="dashboard-page" style={{ padding: '28px 40px 120px', maxWidth: 1600, margin: '0 auto', width: '100%' }}>
 
         {/* page header */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32, gap: 20, flexWrap: 'wrap' }}>
+        <div className="dashboard-header" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32, gap: 20, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 10 }}>
               {greeting}{userName ? `, ${userName}` : ''}
@@ -912,17 +912,17 @@ export default function DashboardPage() {
               Your money is <em style={{ color: 'var(--brand)', fontStyle: 'italic' }}>growing</em>.
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--ink-3)', fontSize: 13 }}>
+          <div className="dashboard-meta" style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--ink-3)', fontSize: 13 }}>
             {lastSync && <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>Synced {lastSync.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>}
             <button onClick={() => loadData(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
-              Γå║ Re-sync
+              ↻ Re-sync
             </button>
             <CalendarIcon /> {today}
           </div>
         </div>
 
         {/* bento grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+        <div className="dashboard-bento" data-bento style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
           <HeroValue />
           <AIPromo />
           <HealthRing />
