@@ -114,7 +114,7 @@ export default function AppLayout({
   const router = useRouter();
 
   useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth <= 768);
+    const update = () => setIsMobile(window.innerWidth <= 1024);
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
@@ -356,7 +356,7 @@ export default function AppLayout({
           {/* Main toolbar */}
           <div style={{ padding: '12px 28px', display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* Search */}
-            <div style={{
+            <div className="folio-search-box" style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '9px 13px', borderRadius: 12,
               background: 'var(--surface)', border: '1px solid var(--border)',
@@ -371,19 +371,19 @@ export default function AppLayout({
             <div style={{ flex: 1 }} />
 
             {/* NSE Live */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 99, background: 'var(--up-soft)', color: 'var(--up)' }}>
+            <div className="folio-live-badge" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 99, background: 'var(--up-soft)', color: 'var(--up)' }}>
               <span style={{ width: 6, height: 6, borderRadius: 99, background: 'var(--up)', animation: 'pulse-dot 2s infinite', display: 'inline-block' }} />
               <span style={{ fontSize: 11, fontWeight: 500 }}>NSE · Live</span>
             </div>
 
             {/* Bell */}
-            <button style={{ padding: 9, borderRadius: 10, background: 'transparent', border: 'none', color: 'var(--ink-2)', position: 'relative', cursor: 'pointer' }}>
+            <button className="folio-bell-button" style={{ padding: 9, borderRadius: 10, background: 'transparent', border: 'none', color: 'var(--ink-2)', position: 'relative', cursor: 'pointer' }}>
               <Bell size={17} />
               <span style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, background: 'var(--accent)', borderRadius: 99, boxShadow: '0 0 0 2px var(--bg)' }} />
             </button>
 
             {/* Theme */}
-            <button onClick={toggleTheme} style={{ padding: 9, borderRadius: 10, background: 'transparent', border: 'none', color: 'var(--ink-2)', cursor: 'pointer' }} aria-label="Toggle theme">
+            <button className="folio-theme-button" onClick={toggleTheme} style={{ padding: 9, borderRadius: 10, background: 'transparent', border: 'none', color: 'var(--ink-2)', cursor: 'pointer' }} aria-label="Toggle theme">
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </button>
 
@@ -400,7 +400,7 @@ export default function AppLayout({
             </Link>
 
             {/* Ask Folio */}
-            <Link href="/chat" style={{
+            <Link href="/chat" className="folio-ask-button" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '9px 14px', borderRadius: 99,
               background: 'var(--ink)', color: 'var(--bg)',
