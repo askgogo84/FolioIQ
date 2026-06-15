@@ -162,7 +162,7 @@ export default function IntelligencePage() {
           </h1>
 
           <div style={{ marginTop: 14, fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 760 }}>
-            These insights are generated from your current holdings and allocation. No model portfolio, invented alpha, or hardcoded recommendations are shown.
+            These insights are generated from your current holdings and allocation. No model portfolio, invented alpha, or pre-filled recommendations are shown.
           </div>
         </div>
 
