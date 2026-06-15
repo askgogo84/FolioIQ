@@ -428,6 +428,25 @@ export default function AppLayout({
           {children}
         </main>
       </div>
+
+      <nav className="folio-mobile-nav" aria-label="Mobile navigation">
+        {[
+          { href: '/dashboard', label: 'Home', icon: Home },
+          { href: '/portfolio', label: 'Holdings', icon: PieChart },
+          { href: '/upload', label: 'Upload', icon: Upload },
+          { href: '/intelligence', label: 'AI', icon: Sparkle },
+          { href: '/profile', label: 'Profile', icon: User },
+        ].map((item) => {
+          const IconComp = item.icon;
+          const active = isActive(item.href);
+          return (
+            <Link key={item.href} href={item.href} className={active ? 'active' : ''}>
+              <IconComp size={18} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

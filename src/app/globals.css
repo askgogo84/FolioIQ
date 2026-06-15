@@ -528,3 +528,171 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--brand-soft) !important;
   color: var(--brand) !important;
 }
+/* ── Emergency mobile scroll fix ────────────────────────────────────────── */
+.folio-mobile-nav {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  html,
+  body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    position: static !important;
+    touch-action: pan-y pinch-zoom !important;
+    overscroll-behavior-y: auto !important;
+  }
+
+  .folio-shell,
+  .folio-shell[data-mobile="true"],
+  .folio-shell[data-mobile="false"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+    position: relative !important;
+  }
+
+  .folio-shell > aside {
+    display: none !important;
+  }
+
+  .folio-main-col {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .folio-topbar,
+  .folio-shell[data-mobile="true"] .folio-topbar {
+    position: relative !important;
+    top: auto !important;
+    z-index: 10 !important;
+  }
+
+  .folio-topbar > div:first-child,
+  .folio-shell[data-mobile="true"] .folio-topbar > div:first-child {
+    display: none !important;
+  }
+
+  .folio-topbar > div:nth-child(2),
+  .folio-shell[data-mobile="true"] .folio-topbar > div:nth-child(2) {
+    min-height: 52px !important;
+    padding: 8px 12px !important;
+    overflow: hidden !important;
+  }
+
+  .folio-search-box,
+  .folio-live-badge,
+  .folio-bell-button,
+  a[href="/pricing"],
+  a[href="/explore"] {
+    display: none !important;
+  }
+
+  .folio-theme-button {
+    margin-left: auto !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+  }
+
+  .folio-ask-button {
+    display: inline-flex !important;
+    min-height: 38px !important;
+    padding: 9px 14px !important;
+  }
+
+  .folio-main,
+  .folio-shell[data-mobile="true"] .folio-main,
+  .folio-shell[data-mobile="false"] .folio-main {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding-bottom: 96px !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .folio-main > div,
+  .folio-shell[data-mobile="true"] .folio-main > div,
+  .folio-shell[data-mobile="false"] .folio-main > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 16px 12px 106px !important;
+  }
+
+  .folio-main [style*="display: grid"],
+  .folio-main [style*="grid-template-columns"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .folio-main [style*="grid-column"] {
+    grid-column: auto !important;
+  }
+
+  .folio-main h1 {
+    font-size: clamp(38px, 12vw, 58px) !important;
+    line-height: .98 !important;
+  }
+
+  .folio-main h2 {
+    font-size: clamp(28px, 10vw, 46px) !important;
+    line-height: 1 !important;
+  }
+
+  .folio-main table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .folio-mobile-nav {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+    z-index: 100 !important;
+    height: 68px !important;
+    padding: 8px !important;
+    border-radius: 24px !important;
+    border: 1px solid var(--border) !important;
+    background: color-mix(in oklab, var(--surface) 94%, transparent) !important;
+    backdrop-filter: blur(18px) saturate(160%) !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+  }
+
+  .folio-mobile-nav a {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    border-radius: 17px !important;
+    color: var(--ink-3) !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    min-width: 0 !important;
+  }
+
+  .folio-mobile-nav a.active {
+    background: var(--brand-soft) !important;
+    color: var(--brand) !important;
+  }
+}
