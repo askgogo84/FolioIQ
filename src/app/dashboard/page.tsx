@@ -68,115 +68,55 @@ function allocFromHoldings(holdings: DisplayHolding[]) {
     .sort((a, b) => b[1] - a[1])
     .map(([label, val]) => ({ label, pct: (val / total) * 100, color: palette[label] || '#8b8773' }));
 }
-const PERF_MONTHS = ['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'];
-function fmtINR(n: number, opts: { short?: boolean; dec?: number } = {}): string {
-  if (!n && n !== 0) return '';
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : '';
-  if (opts.short) {
-    if (abs >= 1e7) return `${sign}INR ${(abs / 1e7).toFixed(2)} Cr`;
-    if (abs >= 1e5) return `${sign}INR ${(abs / 1e5).toFixed(2)} L`;
-    if (abs >= 1e3) return `${sign}INR ${(abs / 1e3).toFixed(1)}K`;
-    return `${sign}INR ${abs.toFixed(0)}`;
-  }
-  const s = abs.toFixed(opts.dec ?? 0);
-  const [whole, dec] = s.split('.');
-  let last = whole.slice(-3), rest = whole.slice(0, -3);
-  if (rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-  const out = rest ? `${rest},${last}` : last;
-  return `${sign}INR ${out}${dec ? '.' + dec : ''}`;
-}
-function fmtPct(n: number, dec = 2): string { return (n >= 0 ? '+' : '') + n.toFixed(dec) + '%'; }
+type PerfRange = '1M' | '3M' | '6M' | '1Y' | '3Y' | 'All';
 
-function daysBetween(a: Date, b: Date): number {
-  return (b.getTime() - a.getTime()) / 86400000;
+const PERF_LABELS: Record<PerfRange, string[]> = {
+  '1M': ['Start', 'W1', 'W2', 'W3', 'Now'],
+  '3M': ['Start', 'M1', 'M2', 'Now'],
+  '6M': ['Start', 'M2', 'M4', 'Now'],
+  '1Y': ['Jun', 'Aug', 'Oct', 'Dec', 'Feb', 'Apr', 'May'],
+  '3Y': ['Y1', 'Y2', 'Y3', 'Now'],
+  'All': ['Start', '25%', '50%', '75%', 'Now'],
+};
+
+function perfRangeFactor(range: PerfRange): number {
+  if (range === '1M') return 1 / 12;
+  if (range === '3M') return 3 / 12;
+  if (range === '6M') return 6 / 12;
+  return 1;
 }
 
-function calculatePortfolioXirr(holdings: DisplayHolding[]): number | null {
-  const today = new Date();
-  const flows: { amount: number; date: Date }[] = [];
-  let currentTotal = 0;
-  let oldestPurchase: Date | null = null;
-
-  for (const h of holdings) {
-    if (!h.purchaseDate || h.invested <= 0 || h.current <= 0) continue;
-
-    const purchaseDate = new Date(h.purchaseDate);
-    if (Number.isNaN(purchaseDate.getTime())) continue;
-
-    flows.push({ amount: -h.invested, date: purchaseDate });
-    currentTotal += h.current;
-
-    if (!oldestPurchase || purchaseDate < oldestPurchase) {
-      oldestPurchase = purchaseDate;
-    }
-  }
-
-  if (!flows.length || currentTotal <= 0 || !oldestPurchase) return null;
-
-  // Avoid showing misleading annualised XIRR for very new portfolios.
-  if (daysBetween(oldestPurchase, today) < 90) return null;
-
-  flows.push({ amount: currentTotal, date: today });
-
-  const startDate = flows[0].date;
-
-  const xnpv = (rate: number) =>
-    flows.reduce((sum, flow) => {
-      const years = daysBetween(startDate, flow.date) / 365;
-      return sum + flow.amount / Math.pow(1 + rate, years);
-    }, 0);
-
-  let rate = 0.12;
-
-  for (let i = 0; i < 100; i++) {
-    const value = xnpv(rate);
-    const epsilon = 1e-6;
-    const derivative = (xnpv(rate + epsilon) - value) / epsilon;
-
-    if (!Number.isFinite(value) || !Number.isFinite(derivative) || Math.abs(derivative) < 1e-10) {
-      return null;
-    }
-
-    const nextRate = rate - value / derivative;
-
-    if (!Number.isFinite(nextRate) || nextRate <= -0.9999 || nextRate > 100) {
-      return null;
-    }
-
-    if (Math.abs(nextRate - rate) < 1e-7) {
-      return nextRate * 100;
-    }
-
-    rate = nextRate;
-  }
-
-  return null;
-}
-
-function sparkPath(seed: number, w: number, h: number): string {
-  const n = 40; const pts: number[] = []; let v = 50; let s = seed;
-  for (let i = 0; i < n; i++) {
-    s = (s * 9301 + 49297) % 233280; v += (s / 233280 - 0.45) * 6; pts.push(v);
-  }
-  const min = Math.min(...pts), max = Math.max(...pts), range = max - min || 1;
-  return 'M ' + pts.map((p, i) => `${(i / (n - 1)) * w} ${h - ((p - min) / range) * h * 0.85 - h * 0.075}`).join(' L ');
-}
-
-function buildPerf(invested: number, current: number) {
+function buildPerf(invested: number, current: number, range: PerfRange) {
   const start = invested > 0 ? invested : current;
   const end = current > 0 ? current : start;
-  const steps = Math.max(PERF_MONTHS.length - 1, 1);
+  const totalGain = end - start;
+  const labels = PERF_LABELS[range] || PERF_LABELS['1Y'];
+  const factor = perfRangeFactor(range);
 
-  return PERF_MONTHS.map((month, i) => {
+  // Until historical NAV is connected, smaller ranges show an estimated
+  // slice of the same real invested-to-current journey.
+  const rangeStart = Math.round(end - totalGain * factor);
+  const steps = Math.max(labels.length - 1, 1);
+
+  return labels.map((month, i) => {
     const t = i / steps;
     return {
       month,
-      value: Math.round(start + (end - start) * t),
-      bench: Math.round(start),
+      value: Math.round(rangeStart + (end - rangeStart) * t),
+      bench: Math.round(rangeStart),
     };
   });
 }
+
+function estimatedRangeGainPct(totalGainPct: number, range: PerfRange): number {
+  return totalGainPct * perfRangeFactor(range);
+}
+
+function perfRangeNote(range: PerfRange): string {
+  if (range === 'All') return 'Real all-time return from invested to current. Historical NAV path pending.';
+  return `${range} estimated view from invested to current. Historical NAV path pending.`;
+}
+
 function donutArc(pct: number, total: number, acc: number, R: number, r: number, cx: number, cy: number) {
   const start = (acc / total) * Math.PI * 2 - Math.PI / 2;
   const end = ((acc + pct) / total) * Math.PI * 2 - Math.PI / 2;
@@ -308,8 +248,9 @@ function HeroValue() {
 }
 function PerfBlock() {
   const { totals } = usePortfolio();
-  const [range, setRange] = useState('1Y');
-  const data = buildPerf(totals.invested, totals.current);
+  const [range, setRange] = useState<PerfRange>('1Y');
+  const data = buildPerf(totals.invested, totals.current, range);
+  const rangeGainPct = estimatedRangeGainPct(totals.gainPct, range);
   const W = 760, H = 260;
   const pad = { l: 48, r: 16, t: 18, b: 28 };
   const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
@@ -327,11 +268,11 @@ function PerfBlock() {
         <div>
           <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500, marginBottom: 8 }}>Performance - Real all-time return</div>
           <div className="dashboard-performance-value-row" style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 42, lineHeight: 1, letterSpacing: '-0.02em' }}>{fmtPct(totals.gainPct)}</div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>real all-time</span>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 42, lineHeight: 1, letterSpacing: '-0.02em' }}>{fmtPct(rangeGainPct)}</div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500, background: 'var(--up-soft)', color: 'var(--up)', border: 'none' }}>{range === 'All' ? 'real all-time' : ${range} estimated}</span>
           </div>
         </div>
-        <div className="dashboard-performance-tabs"><TabSet tabs={['1M', '3M', '6M', '1Y', '3Y', 'All']} value={range} onChange={setRange} /></div>
+        <div className="dashboard-performance-tabs"><TabSet tabs={['1M', '3M', '6M', '1Y', '3Y', 'All']} value={range} onChange={(v) => setRange(v as PerfRange)} /></div>
       </div>
 
       <div className="dashboard-performance-chart" style={{ marginLeft: -12 }}>
@@ -373,7 +314,7 @@ function PerfBlock() {
           <span style={{ width: 14, display: 'inline-block', borderTop: '2px dashed var(--ink-4)' }} />Invested baseline
         </span>
         <span style={{ flex: 1 }} />
-        <span style={{ color: 'var(--ink-3)' }}>Estimated path from invested to current - historical NAV pending</span>
+        <span style={{ color: 'var(--ink-3)' }}>{perfRangeNote(range)}</span>
       </div>
     </div>
   );
