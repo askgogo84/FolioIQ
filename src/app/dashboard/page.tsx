@@ -2,10 +2,6 @@
 import { useState, useEffect, useContext, createContext } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Link from 'next/link';
-
-// ΓöÇΓöÇ design tokens via CSS vars (applied via globals.css) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-
-// ΓöÇΓöÇ DB row type ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 type DbHolding = {
   scheme_code: string;
   scheme_name: string;
@@ -19,8 +15,6 @@ type DbHolding = {
   sip_amount?: number;
   purchase_date?: string | null;
 };
-
-// ΓöÇΓöÇ Derived display holding ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 type DisplayHolding = {
   id: string; name: string; cat: string; amc: string;
   logo: string; tone: string;
@@ -29,8 +23,6 @@ type DisplayHolding = {
   sipAmount: number;
   purchaseDate: string | null;
 };
-
-// ΓöÇΓöÇ Colour palette for AMCs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const AMC_TONES: Record<string, string> = {
   'PPFAS': '#0f3d2e', 'Mirae Asset': '#c89a3a', 'Axis': '#c1392b',
   'ICICI Prudential': '#1f6b50', 'HDFC': '#2952ff', 'SBI': '#0d4a7d',
@@ -46,8 +38,6 @@ function amcTone(amc: string): string {
 function logoOf(name: string): string {
   return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
 }
-
-// ΓöÇΓöÇ Live data context ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 type PortfolioCtx = {
   holdings: DisplayHolding[];
   totals: { current: number; invested: number; gain: number; gainPct: number; fundCount: number; xirr: number | null; };
@@ -60,8 +50,6 @@ const PCtx = createContext<PortfolioCtx>({
 });
 
 function usePortfolio() { return useContext(PCtx); }
-
-// ΓöÇΓöÇ Allocation computed from real holdings ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function allocFromHoldings(holdings: DisplayHolding[]) {
   const total = holdings.reduce((s, h) => s + h.current, 0) || 1;
   const buckets: Record<string, number> = {};
@@ -80,15 +68,11 @@ function allocFromHoldings(holdings: DisplayHolding[]) {
     .sort((a, b) => b[1] - a[1])
     .map(([label, val]) => ({ label, pct: (val / total) * 100, color: palette[label] || '#8b8773' }));
 }
-
-// ΓöÇΓöÇ Chart fallback data for drawing only ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const PERF_MONTHS = ['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'];
-
-// ΓöÇΓöÇ helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function fmtINR(n: number, opts: { short?: boolean; dec?: number } = {}): string {
   if (!n && n !== 0) return '—';
   const abs = Math.abs(n);
-  const sign = n < 0 ? '−' : '';
+  const sign = n < 0 ? '-' : '';
   if (opts.short) {
     if (abs >= 1e7) return `${sign}₹${(abs / 1e7).toFixed(2)} Cr`;
     if (abs >= 1e5) return `${sign}₹${(abs / 1e5).toFixed(2)} L`;
@@ -204,8 +188,6 @@ function donutArc(pct: number, total: number, acc: number, R: number, r: number,
   return `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${r} ${r} 0 ${large} 0 ${x4} ${y4} Z`;
 }
 
-// ΓöÇΓöÇ sub-components ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-
 function LogoBubble({ logo, tone, size = 40 }: { logo: string; tone: string; size?: number }) {
   return (
     <div style={{
@@ -249,8 +231,6 @@ function TabSet({ tabs, value, onChange }: { tabs: (string | { value: string; la
     </div>
   );
 }
-
-// ΓöÇΓöÇ Hero value card ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function HeroValue() {
   const { totals, holdings, loading } = usePortfolio();
   const gainPct = totals.gainPct;
@@ -283,7 +263,7 @@ function HeroValue() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 18 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600, background: gain >= 0 ? 'var(--up-soft)' : 'var(--down-soft)', color: gain >= 0 ? 'var(--up)' : 'var(--down)', border: 'none' }}>
-              {gain >= 0 ? '▲' : '▼'} {gainPct.toFixed(2)}% all time
+              {gainPct >= 0 ? '+' : ''}{gainPct.toFixed(2)}% all time
             </span>
             <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
               {fmtINR(gain, { short: true })} {gain >= 0 ? 'gained' : 'lost'}
@@ -326,8 +306,6 @@ function HeroValue() {
     </div>
   );
 }
-
-// ΓöÇΓöÇ Performance chart ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function PerfBlock() {
   const { totals } = usePortfolio();
   const [range, setRange] = useState('1Y');
@@ -400,8 +378,6 @@ function PerfBlock() {
     </div>
   );
 }
-
-// ΓöÇΓöÇ Allocation donut ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function AllocationBlock() {
   const { holdings } = usePortfolio();
   const [view, setView] = useState<'asset' | 'cap'>('asset');
@@ -417,13 +393,13 @@ function AllocationBlock() {
   });
 
   return (
-    <div className="card" style={{ padding: 28 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+    <div className="card dashboard-allocation-card" style={{ padding: 28 }}>
+      <div className="dashboard-allocation-head" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-3)', fontWeight: 500 }}>Allocation</div>
         <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>by category</div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 20 }}>
-        <div style={{ position: 'relative', display: 'inline-flex' }}>
+      <div className="dashboard-allocation-body" style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 20 }}>
+        <div className="dashboard-allocation-donut" style={{ position: 'relative', display: 'inline-flex' }}>
           <svg width={size} height={size}>
             {arcs.map((a, i) => <path key={i} d={a.path} fill={a.color} />)}
           </svg>
@@ -433,7 +409,7 @@ function AllocationBlock() {
           </div>
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="dashboard-allocation-legend" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {data.map((d, i) => (
           <div key={i} style={{ display: 'grid', gridTemplateColumns: '10px 1fr auto', gap: 10, alignItems: 'center', fontSize: 12.5 }}>
             <span style={{ width: 8, height: 8, borderRadius: 2, background: d.color, display: 'inline-block' }} />
@@ -445,8 +421,6 @@ function AllocationBlock() {
     </div>
   );
 }
-
-// ΓöÇΓöÇ AI Promo card ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function AIPromo() {
   const { holdings, loading } = usePortfolio();
 
@@ -491,7 +465,7 @@ function AIPromo() {
           </p>
 
           <button style={{ border: 0, borderRadius: 999, background: 'var(--ink)', color: 'var(--surface)', padding: '10px 18px', fontWeight: 600, fontSize: 12 }}>
-            Open Folio AI →
+            Open Folio AI
           </button>
         </div>
 
@@ -611,13 +585,13 @@ function TopHoldings() {
           </div>
         </div>
         <Link href="/portfolio" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 11px', borderRadius: 999, fontSize: 12, fontWeight: 500, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink)', textDecoration: 'none' }}>
-          View portfolio →
+          View portfolio
         </Link>
       </div>
       {loading || !H.length ? (
         <div style={{ padding: '40px 28px', textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>
           {loading ? 'Loading portfolio…' : (
-            <span>No holdings yet. <Link href="/upload" style={{ color: 'var(--brand-2)' }}>Upload your CAS →</Link></span>
+            <span>No holdings yet. <Link href="/upload" style={{ color: 'var(--brand-2)' }}>Upload your CAS</Link></span>
           )}
         </div>
       ) : (
@@ -671,8 +645,6 @@ function TopHoldings() {
     </div>
   );
 }
-
-// ΓöÇΓöÇ Today's movers (real data) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function TopMovers() {
   const { holdings, loading } = usePortfolio();
   if (loading || !holdings.length) return null;
@@ -700,8 +672,6 @@ function TopMovers() {
     </div>
   );
 }
-
-// ΓöÇΓöÇ SIPs mini — real sip_amount from holdings ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function SipsMini() {
   const { holdings } = usePortfolio();
   const sipFunds = holdings.filter(h => h.sipAmount > 0);
@@ -740,8 +710,6 @@ function SipsMini() {
     </div>
   );
 }
-
-// ΓöÇΓöÇ Goals mini — computed from real portfolio corpus ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function GoalsMini() {
   const { totals } = usePortfolio();
   const corpus = totals.current;
@@ -778,14 +746,12 @@ function GoalsMini() {
           );
         })}
         <Link href="/goals" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', borderRadius: 10, border: '1px dashed var(--border)', color: 'var(--ink-3)', fontSize: 12, textDecoration: 'none', marginTop: 4 }}>
-          + Set your own goals →
+          + Set your own goals
         </Link>
       </div>
     </div>
   );
 }
-
-// ΓöÇΓöÇ Inline SVG icons ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function PlusIcon({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>;
 }
@@ -804,8 +770,6 @@ function ArrowRightIcon({ size = 14 }: { size?: number }) {
 function CalendarIcon({ size = 14 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" /></svg>;
 }
-
-// ΓöÇΓöÇ Main page ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 export default function DashboardPage() {
   const [greeting, setGreeting] = useState('Good morning');
   const [userName, setUserName] = useState('');
@@ -915,7 +879,7 @@ export default function DashboardPage() {
           <div className="dashboard-meta" style={{ display: 'flex', alignItems: 'center', gap: 14, color: 'var(--ink-3)', fontSize: 13 }}>
             {lastSync && <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>Synced {lastSync.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>}
             <button onClick={() => loadData(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 99, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
-              ↻ Re-sync
+              Re-sync
             </button>
             <CalendarIcon /> {today}
           </div>

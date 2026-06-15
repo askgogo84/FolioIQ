@@ -155,8 +155,6 @@ export default function AppLayout({
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('folioiq-theme', next);
   };
-
-  // Live ticker — normalize API {name,value,change,up} → {sym,val,chg}
   const normTicker = (d: any[]) => d.map(t => ({
     sym: t.sym ?? t.name ?? '',
     val: t.val ?? t.value ?? '',
@@ -346,7 +344,7 @@ export default function AppLayout({
                   <span style={{ fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink-3)', fontWeight: 500 }}>{t.sym}</span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500, color: 'var(--ink-2)' }}>{t.val}</span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: t.chg >= 0 ? 'var(--up)' : 'var(--down)' }}>
-                    {t.chg >= 0 ? '▲' : '▼'} {Math.abs(t.chg).toFixed(2)}%
+                    {t.chg >= 0 ? '+' : '-'}{Math.abs(t.chg).toFixed(2)}%
                   </span>
                 </div>
               ))}

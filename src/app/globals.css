@@ -844,3 +844,153 @@ button { font-family: inherit; cursor: pointer; }
     min-width: 220px !important;
   }
 }
+/* ── Mobile clarity fix: dashboard allocation + holdings ───────────────── */
+@media (max-width: 1024px) {
+  .dashboard-allocation-card {
+    padding: 18px !important;
+  }
+
+  .dashboard-allocation-head {
+    margin-bottom: 14px !important;
+  }
+
+  .dashboard-allocation-body {
+    margin-bottom: 12px !important;
+    gap: 14px !important;
+    align-items: center !important;
+  }
+
+  .dashboard-allocation-donut svg {
+    width: 112px !important;
+    height: 112px !important;
+  }
+
+  .dashboard-allocation-donut [style*="font-size: 24"] {
+    font-size: 21px !important;
+  }
+
+  .dashboard-allocation-legend {
+    display: grid !important;
+    gap: 8px !important;
+  }
+
+  .dashboard-allocation-legend > div {
+    font-size: 12px !important;
+  }
+
+  .portfolio-page {
+    padding: 14px 12px 104px !important;
+    max-width: 480px !important;
+    margin: 0 auto !important;
+  }
+
+  .portfolio-page h1 {
+    font-size: clamp(44px, 13vw, 64px) !important;
+  }
+
+  .portfolio-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    padding: 18px !important;
+    border-radius: 24px !important;
+  }
+
+  .portfolio-asset-mix {
+    padding: 18px !important;
+    border-radius: 24px !important;
+    margin-bottom: 18px !important;
+  }
+
+  .portfolio-asset-mix > div:nth-child(2) {
+    height: 44px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .portfolio-asset-mix > div:nth-child(3) {
+    gap: 8px 12px !important;
+  }
+
+  .portfolio-holdings-card {
+    border-radius: 24px !important;
+    overflow: hidden !important;
+  }
+
+  .portfolio-holdings-head {
+    display: none !important;
+  }
+
+  .portfolio-holding-row {
+    display: block !important;
+    padding: 18px !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  .portfolio-fund-cell {
+    align-items: flex-start !important;
+    gap: 12px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .portfolio-fund-cell > div:first-child {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 14px !important;
+    font-size: 12px !important;
+  }
+
+  .portfolio-fund-cell [style*="white-space: nowrap"] {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    line-height: 1.25 !important;
+    font-size: 14px !important;
+  }
+
+  .portfolio-cell {
+    display: grid !important;
+    grid-template-columns: 92px minmax(0, 1fr) !important;
+    align-items: baseline !important;
+    gap: 10px !important;
+    text-align: left !important;
+    padding: 6px 0 !important;
+    border-top: 1px solid color-mix(in oklab, var(--border) 60%, transparent) !important;
+    font-size: 13px !important;
+  }
+
+  .portfolio-cell::before {
+    color: var(--ink-3) !important;
+    font-family: var(--font-sans) !important;
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: .12em !important;
+    font-weight: 600 !important;
+  }
+
+  .portfolio-cell-invested::before { content: "Invested"; }
+  .portfolio-cell-current::before { content: "Current"; }
+  .portfolio-cell-gain::before { content: "Gain"; }
+  .portfolio-cell-alloc::before { content: "Allocation"; }
+
+  .portfolio-cell > div,
+  .portfolio-cell {
+    overflow-wrap: anywhere !important;
+  }
+
+  .portfolio-cell-alloc > div:last-child {
+    grid-column: 2 !important;
+    width: 100% !important;
+    margin-top: 4px !important;
+  }
+
+  .portfolio-total-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    padding: 16px 18px !important;
+  }
+
+  .portfolio-total-row > div {
+    text-align: left !important;
+    font-size: 12px !important;
+  }
+}
