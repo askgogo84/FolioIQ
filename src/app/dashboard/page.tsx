@@ -836,7 +836,7 @@ export default function DashboardPage() {
         const navJson = await navRes.json().catch(() => ({}));
 
         const totalText = Number(navJson.totalCurrent || 0).toLocaleString('en-IN');
-        window.alert(
+        console.info(
           navRes.ok
             ? `NAV refresh complete: ${navJson.updated || 0}/${navJson.total || 0} updated, ${navJson.skipped || 0} skipped. Total: INR ${totalText}`
             : `NAV refresh failed (${navRes.status}): ${navJson.error || 'Unknown error'}`

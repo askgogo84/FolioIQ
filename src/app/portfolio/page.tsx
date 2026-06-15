@@ -57,7 +57,7 @@ export default function PortfolioPage() {
   const [filter,    setFilter]    = useState<string>('All');
 
   useEffect(() => {
-    fetch('/api/portfolio/holdings')
+    fetch('/api/portfolio/holdings', { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
         const rows = (data.holdings || []) as Array<{
@@ -137,7 +137,7 @@ export default function PortfolioPage() {
           <Stat label="INVESTED" big={loading ? '—' : fmtL(totals.invested)} />
           <Stat label="CURRENT" big={loading ? '—' : fmtL(totals.current)} />
           <Stat label="UNREALISED GAIN" big={loading ? '—' : fmtL(gain)} sub={gain >= 0 ? `+${gainPct.toFixed(2)}%` : `${gainPct.toFixed(2)}%`} tone={gain >= 0 ? 'up' : 'down'} />
-          <Stat label="XIRR" big="12.7%" sub="annualised" tone="up" />
+          <Stat label="XIRR" big="—" sub="needs 90+ days" />
         </div>
 
         {/* Asset allocation treemap */}
