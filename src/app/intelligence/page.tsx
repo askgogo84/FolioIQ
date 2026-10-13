@@ -20,7 +20,7 @@ export default function Page() {
   return (
     <AppLayout>
       <div className="trust-eyebrow">Evidence-based observations</div>
-      <h1>Understand what you own.</h1>
+      <h1>Allocation Insights</h1>
       <p role="status">{message}</p>
       {findings.map((f) => (
         <section className="trust-card" key={f.id}>

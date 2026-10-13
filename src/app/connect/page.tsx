@@ -1,7 +1,9 @@
-import ImportPortfolio from "@/components/ImportPortfolio";
-import { casProviderKey } from "@/lib/server/cas-provider";
+import Unavailable from "@/components/Unavailable";
 export default function Page() {
   return (
-    <ImportPortfolio connect={true} configured={Boolean(casProviderKey())} />
+    <Unavailable
+      title="Portfolio connection"
+      reason="Imports and provider connections are paused during security containment. Existing holdings remain available and unchanged. No document, password or OTP is collected here."
+    />
   );
 }

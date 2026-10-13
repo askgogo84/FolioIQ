@@ -3,6 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { safeNext } from "@/lib/auth/redirect";
+
+function callbackUrl() {
+  const next = safeNext(
+    new URLSearchParams(window.location.search).get("next"),
+  );
+  const url = new URL("/auth/callback", window.location.origin);
+  url.searchParams.set("next", next);
+  return url.toString();
+}
 
 export default function AuthPage() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -39,7 +49,7 @@ export default function AuthPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          redirectTo: callbackUrl(),
           queryParams: {
             access_type: "online",
             prompt: "consent",
@@ -72,7 +82,7 @@ export default function AuthPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        emailRedirectTo: callbackUrl(),
       },
     });
 

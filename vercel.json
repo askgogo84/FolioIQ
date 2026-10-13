@@ -1,1 +1,7 @@
-{}
+{
+  "git": {
+    "deploymentEnabled": {
+      "fix/phase1-containment": false
+    }
+  }
+}

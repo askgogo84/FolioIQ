@@ -23,10 +23,10 @@ export default function Home() {
       </Link>
       <div className="trust-grid">
         <section className="trust-card">
-          <h2>Connect with consent</h2>
+          <h2>Imports currently paused</h2>
           <p>
-            Import a supported CAS or use the provider connection. Review the
-            results before saving.
+            Existing holders can review their saved snapshot. New imports and
+            provider connections are paused during security containment.
           </p>
         </section>
         <section className="trust-card">

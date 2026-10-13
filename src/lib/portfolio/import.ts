@@ -254,9 +254,11 @@ export function summarize(
     valued.length === rows.length &&
     costed.length === rows.length;
   return {
-    totalCurrent: valued.length === rows.length ? current : null,
+    totalCurrent:
+      rows.length > 0 && valued.length === rows.length ? current : null,
     knownCurrent: current,
-    totalInvested: costed.length === rows.length ? cost : null,
+    totalInvested:
+      rows.length > 0 && costed.length === rows.length ? cost : null,
     totalGain: complete ? current - cost : null,
     gainPct: complete && cost > 0 ? ((current - cost) / cost) * 100 : null,
     fundCount: rows.length,

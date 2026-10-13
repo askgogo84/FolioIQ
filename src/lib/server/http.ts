@@ -29,7 +29,8 @@ export async function authorized(request?: Request) {
     data: { user },
     error,
   } = await db.auth.getUser();
-  if (error || !user) throw new ApiError("Please sign in again.", 401);
+  if (error || !user || user.is_anonymous)
+    throw new ApiError("Please sign in again.", 401);
   return { db, user };
 }
 export async function budget(
@@ -41,12 +42,12 @@ export async function budget(
   });
   if (error)
     throw new ApiError(
-      "Import service is not ready. Please try again later.",
+      "Service quota is unavailable. Please try again later.",
       503,
     );
   if (!data)
     throw new ApiError(
-      "Daily import limit reached. Please try again tomorrow.",
+      "Daily request limit reached. Please try again tomorrow.",
       429,
     );
 }

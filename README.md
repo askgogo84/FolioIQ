@@ -5,12 +5,12 @@ Mutual fund statement review built with Next.js, Supabase Auth/Postgres and CASP
 ## Current capability
 
 - Supabase Google OAuth and email magic links; user-scoped database access.
-- Validated CAMS/KFintech non-demat mutual fund CAS import, preview, explicit replacement confirmation, atomic commit and retained import history.
-- Separate positions for separate folios; statement cost/value and dated exact-identifier AMFI NAV refresh.
-- Imported transaction records and deterministic coverage/concentration observations.
-- Missing values remain unavailable. There is no fabricated XIRR, historical chart, health score, tax result or fund recommendation.
+- Existing owner-scoped holdings, dated exact-identifier NAV refresh and imported transaction records.
+- Missing values remain unavailable. Historical performance, XIRR, tax, goals, fund ranking and personal advice remain unavailable.
+- New uploads and provider connections are paused. Legacy uploads and the provider-token endpoint return 410; no provider session token is issued to browsers.
+- The validated staging/atomic-commit foundation remains, with session-derived ownership and durable quotas. It is not advertised as a working upload flow.
 
-**Provider imports normally require a fresh `FOLIOKEY_CAS_PARSER_API_KEY`.** The owner authorized temporary testing with the existing server-side `CAS_PARSER_API_KEY` before rotation. This is enabled only while `FOLIOKEY_CAS_TEST_EXPIRES_AT` contains an unexpired ISO UTC deadline; a replacement key always takes precedence. No credential is copied into source or returned by the configuration endpoint. Previously exposed CASParser and Resend credentials must still be revoked in their provider dashboards. Removing a credential from current source does not revoke it or remove it from Git history.
+Previously exposed CASParser and Resend credentials still require revocation in their provider dashboards. This release removes the temporary credential test window; source cleanup does not revoke credentials or erase history. No production database change is included. See `docs/phase1-containment.md` for the current scope and review gates.
 
 ## Local development and checks
 

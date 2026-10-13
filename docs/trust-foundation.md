@@ -1,10 +1,12 @@
 # Trust foundation — implementation and remaining work
 
+Current containment supersedes the temporary import pilot described below; see [Phase 1 containment](phase1-containment.md). New uploads/provider connections are disabled. The remaining text records earlier changes and acceptance evidence, not current import availability.
+
 Date: 13 October 2026. Baseline: `ccc9a54` (15 June 2026). No new commits in the preceding approximately three months; production still served that baseline during the audit. This release addresses security and misleading output. It does not finish the Dezerve-class product roadmap.
 
 Verification update: 25 automated checks pass, including an empty Supabase preview and safe migration replay. GitHub quality checks and Supabase Preview pass. The owner applied the reviewed migration through Supabase's SQL editor; read-only verification confirmed all 19 existing holdings remain, all five active portfolio tables have RLS, obsolete public OTP/nutrition access is denied, and all three RPCs are security-invoker with anonymous execution denied. Preview public Supabase configuration is scoped to this branch's isolated database; production connection settings are unchanged.
 
-## Implemented
+## Historical implementation
 
 | Problem | Change | Main files |
 | --- | --- | --- |
