@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FolioIQ - Smart Mutual Fund Analytics",
-  description: "AI-powered mutual fund portfolio analysis and insights",
+  title: "FolioKey — Portfolio Intelligence",
+  description:
+    "Understand your mutual fund portfolio with transparent data and analysis.",
 };
 
 export default async function RootLayout({
@@ -25,12 +26,16 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50`}>
-        <AuthProvider initialUser={user}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50`}
+      >
+        <AuthProvider key={user?.id || "guest"} initialUser={user}>
           {children}
         </AuthProvider>
       </body>

@@ -6,33 +6,31 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit --incremental false",
+    "check": "npm run typecheck && npm test && npm run lint"
   },
   "dependencies": {
     "@cas-parser/connect": "^2.1.0",
-    "@supabase/ssr": "^0.10.2",
-    "@supabase/supabase-js": "^2.104.1",
-    "csv-parser": "^3.2.0",
-    "framer-motion": "^12.38.0",
+    "@supabase/ssr": "0.10.2",
+    "@supabase/supabase-js": "2.105.1",
     "lucide-react": "^1.14.0",
-    "mammoth": "^1.12.0",
-    "multer": "^2.1.1",
-    "next": "16.2.4",
-    "pdf-parse": "^2.4.5",
+    "next": "16.4.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "recharts": "^3.8.1",
-    "tesseract.js": "^7.0.0"
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.9",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.4",
+    "eslint-config-next": "16.4.0",
+    "prettier": "3.9.10",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "xlsx": "^0.18.5"
+    "tsx": "4.23.15",
+    "typescript": "^5"
   }
 }

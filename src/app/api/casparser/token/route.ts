@@ -1,28 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
-
-export async function GET(req: NextRequest) {
+import {
+  authorized,
+  budget,
+  failure,
+  ApiError,
+  json,
+  readJson,
+} from "@/lib/server/http";
+export async function GET() {
+  return json({ configured: !!process.env.FOLIOKEY_CAS_PARSER_API_KEY });
+}
+export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-
-    const key = process.env.CAS_PARSER_API_KEY || 'sk_3b3bb349a0038d3af978f16af4db52da'
-
-    const res = await fetch('https://api.casparser.in/v1/token', {
-      method: 'POST',
-      headers: { 'x-api-key': key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ expiry_minutes: 30 }),
-    })
-
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}))
-      return NextResponse.json({ error: e.detail || 'Token generation failed' }, { status: res.status })
-    }
-
-    const d = await res.json()
-    return NextResponse.json({ access_token: d.access_token })
+    const { db } = await authorized(request);
+    const body = await readJson(request);
+    if (body.consent !== true) throw new ApiError("Consent is required.");
+    const key = process.env.FOLIOKEY_CAS_PARSER_API_KEY;
+    if (!key)
+      throw new ApiError(
+        "Portfolio Connect is awaiting provider configuration.",
+        503,
+      );
+    await budget(db, "token");
+    const res = await fetch("https://api.casparser.in/v1/token", {
+      method: "POST",
+      headers: { "x-api-key": key, "Content-Type": "application/json" },
+      body: JSON.stringify({ expiry_minutes: 5 }),
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+    });
+    if (!res.ok)
+      throw new ApiError(
+        "Portfolio provider could not start a session. Please try later.",
+        502,
+      );
+    const data = await res.json();
+    if (
+      typeof data.access_token !== "string" ||
+      !data.access_token.startsWith("at_")
+    )
+      throw new ApiError("Invalid provider session.", 502);
+    return json({ access_token: data.access_token });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return failure(e);
   }
 }

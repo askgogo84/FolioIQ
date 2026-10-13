@@ -1,34 +1,23 @@
-﻿import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { NextResponse, type NextRequest } from 'next/server'
-
-export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
-
-  if (code) {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {}
-          },
-        },
-      }
-    )
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next.startsWith('/') ? '' : '/'}${next}`)
-    }
-  }
-  return NextResponse.redirect(`${origin}/auth?error=callback_failed`)
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { safeNext } from "@/lib/auth/redirect";
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const db = await createClient();
+  const code = url.searchParams.get("code");
+  const token = url.searchParams.get("token_hash");
+  const type = url.searchParams.get("type");
+  const result = code
+    ? await db.auth.exchangeCodeForSession(code)
+    : token && type === "email"
+      ? await db.auth.verifyOtp({ token_hash: token, type: "email" })
+      : { error: true };
+  return NextResponse.redirect(
+    new URL(
+      result.error
+        ? "/auth?error=callback_failed"
+        : safeNext(url.searchParams.get("next")),
+      url.origin,
+    ),
+  );
 }

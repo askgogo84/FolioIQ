@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FolioKey
 
-## Getting Started
+Mutual fund statement review built with Next.js, Supabase Auth/Postgres and CASParser. The charcoal/lime and ivory/forest themes remain the product design language.
 
-First, run the development server:
+## Current capability
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Supabase Google OAuth and email magic links; user-scoped database access.
+- Validated CAMS/KFintech non-demat mutual fund CAS import, preview, explicit replacement confirmation, atomic commit and retained import history.
+- Separate positions for separate folios; statement cost/value and dated exact-identifier AMFI NAV refresh.
+- Imported transaction records and deterministic coverage/concentration observations.
+- Missing values remain unavailable. There is no fabricated XIRR, historical chart, health score, tax result or fund recommendation.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Provider imports are disabled until a fresh `FOLIOKEY_CAS_PARSER_API_KEY` is configured.** Previously exposed CASParser and Resend credentials must be revoked in their provider dashboards. Removing a credential from current source does not revoke it or remove it from Git history.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local development and checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Use Node.js 24 and `npm ci`. Copy `.env.example` to `.env.local`, configure your own Supabase project, then `npm run dev`. Never commit secrets, statements or real customer fixtures. The app does not need a service-role credential for normal requests.
 
-## Learn More
+Run `npm run check` (TypeScript, node tests, ESLint), `npm audit --omit=dev --audit-level=high`, and `npm run build`. Tests use synthetic statements, mocked providers and an isolated embedded PostgreSQL database, never production customer records. CI runs these checks without production secrets. Vercel's Git integration builds deployments; CI does not publish them.
 
-To learn more about Next.js, take a look at the following resources:
+## Database and deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Production is Vercel project **foliokey**, domains **foliokey.app / www.foliokey.app**, with Supabase project **hvuqwfpcumooegflfrth**. Verify these targets and the exact commit before releasing. The similarly named Vercel project `folioiq` is not the production target.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`supabase/migrations/20261013112245_trust_foundation.sql` upgrades the inspected existing production schema. It is **not a complete bootstrap of a fresh Supabase project**. The integration test creates its own minimal legacy baseline before applying the migration. For a new environment, obtain a sanitized schema baseline and review grants before applying migrations. The former destructive `supabase/schema.sql` and invalid `supabase_fix.sql` scripts are retired; their historical contents remain in Git history.
 
-## Deploy on Vercel
+Apply the migration before deploying the matching app. It preserves existing holdings and unrelated table data, revokes obsolete public access, creates owner-scoped import/transaction/NAV evidence tables, and adds security-invoker RPCs. Verify row counts, RLS, grants and advisors afterward. Import replacement saves the previous snapshot in `portfolio_imports.previous_holdings` inside the same transaction; use a reviewed owner-specific recovery procedure if restoration is needed. Never replay the old destructive schema script.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For rollback, keep the additive schema. Do not restore the old vulnerable auth/import routes. Roll forward with provider features disabled if a regression occurs. Confirm production's Supabase URL/key, OAuth redirect allowlist and email templates. Email links must deliver either a PKCE code or a `token_hash` compatible with `/auth/callback`. No login or consent OTP belongs in logs.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Provider configuration
+
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: public client configuration; session authorization still relies on Supabase and RLS.
+- `FOLIOKEY_CAS_PARSER_API_KEY`: new server-only CASParser credential. The old key name and hardcoded fallbacks are intentionally unsupported. Add the replacement in Vercel's correct environment and redeploy before testing a real import.
+- Manual NAV refresh uses AMFI's dated public feed. Scheduled refresh is disabled until a scoped worker, retry monitoring and freshness alerts are implemented.
+- Jev/TypeSafe: `src/lib/providers/jev.ts` is an **unwired optional adapter**, tested with mocks. It accepts an explicit key and model when called by future server code. It currently sends no requests and no customer data. It only classifies public research; it is not a return calculator, suitability engine or fund selector. Do not add an API key until this use case and model have been evaluated.
+
+Provider connection is not universal mobile-number retrieval. CASParser's CDSL flow requires PAN, birth date and a CDSL account identifier as well as OTP. This release imports supported non-demat mutual fund folios only. Full mobile/OTP aggregation requires a separately approved provider/consent integration and reconciliation tests.
+
+See [implementation status and acceptance gates](docs/trust-foundation.md) before describing this release as ready for customer uploads or investment recommendations.
