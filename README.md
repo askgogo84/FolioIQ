@@ -10,7 +10,7 @@ Mutual fund statement review built with Next.js, Supabase Auth/Postgres and CASP
 - Imported transaction records and deterministic coverage/concentration observations.
 - Missing values remain unavailable. There is no fabricated XIRR, historical chart, health score, tax result or fund recommendation.
 
-**Provider imports are disabled until a fresh `FOLIOKEY_CAS_PARSER_API_KEY` is configured.** Previously exposed CASParser and Resend credentials must be revoked in their provider dashboards. Removing a credential from current source does not revoke it or remove it from Git history.
+**Provider imports normally require a fresh `FOLIOKEY_CAS_PARSER_API_KEY`.** The owner authorized temporary testing with the existing server-side `CAS_PARSER_API_KEY` before rotation. This is enabled only while `FOLIOKEY_CAS_TEST_EXPIRES_AT` contains an unexpired ISO UTC deadline; a replacement key always takes precedence. No credential is copied into source or returned by the configuration endpoint. Previously exposed CASParser and Resend credentials must still be revoked in their provider dashboards. Removing a credential from current source does not revoke it or remove it from Git history.
 
 ## Local development and checks
 
@@ -31,7 +31,8 @@ For rollback, keep the additive schema. Do not restore the old vulnerable auth/i
 ## Provider configuration
 
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: public client configuration; session authorization still relies on Supabase and RLS.
-- `FOLIOKEY_CAS_PARSER_API_KEY`: new server-only CASParser credential. The old key name and hardcoded fallbacks are intentionally unsupported. Add the replacement in Vercel's correct environment and redeploy before testing a real import.
+- `FOLIOKEY_CAS_PARSER_API_KEY`: new server-only CASParser credential. Add the replacement in Vercel's correct environment and redeploy. It takes precedence over any temporary test configuration.
+- `FOLIOKEY_CAS_TEST_EXPIRES_AT`: optional, owner-authorized test deadline, such as an ISO UTC timestamp ending in `Z`. Before the deadline, the existing server-side `CAS_PARSER_API_KEY` can be used. Missing, invalid or expired deadlines disable this fallback on every request. Production's test window is limited to 24 hours when configured; authentication, consent, quotas and preview confirmation remain required. This is not a substitute for rotating the exposed credential.
 - Manual NAV refresh uses AMFI's dated public feed. Scheduled refresh is disabled until a scoped worker, retry monitoring and freshness alerts are implemented.
 - Jev/TypeSafe: `src/lib/providers/jev.ts` is an **unwired optional adapter**, tested with mocks. It accepts an explicit key and model when called by future server code. It currently sends no requests and no customer data. It only classifies public research; it is not a return calculator, suitability engine or fund selector. Do not add an API key until this use case and model have been evaluated.
 

@@ -1,10 +1,11 @@
 import { authorized, budget, failure, ApiError, json } from "@/lib/server/http";
 import { stageImport } from "@/lib/server/imports";
+import { casProviderKey } from "@/lib/server/cas-provider";
 export const maxDuration = 60;
 export async function POST(request: Request) {
   try {
     const { db, user } = await authorized(request);
-    const key = process.env.FOLIOKEY_CAS_PARSER_API_KEY;
+    const key = casProviderKey();
     if (!key)
       throw new ApiError(
         "CAS import is awaiting provider configuration. Please try again after setup is complete.",

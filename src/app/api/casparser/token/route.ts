@@ -6,15 +6,16 @@ import {
   json,
   readJson,
 } from "@/lib/server/http";
+import { casProviderKey } from "@/lib/server/cas-provider";
 export async function GET() {
-  return json({ configured: !!process.env.FOLIOKEY_CAS_PARSER_API_KEY });
+  return json({ configured: Boolean(casProviderKey()) });
 }
 export async function POST(request: Request) {
   try {
     const { db } = await authorized(request);
     const body = await readJson(request);
     if (body.consent !== true) throw new ApiError("Consent is required.");
-    const key = process.env.FOLIOKEY_CAS_PARSER_API_KEY;
+    const key = casProviderKey();
     if (!key)
       throw new ApiError(
         "Portfolio Connect is awaiting provider configuration.",
