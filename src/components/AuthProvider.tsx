@@ -1,56 +1,45 @@
-﻿"use client";
-
-import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
-import { createClient } from '@/utils/supabase/client';
-
-type AuthContextType = {
+"use client";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  type ReactNode,
+} from "react";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
+const AuthContext = createContext<{
   user: User | null;
   isLoading: boolean;
   loading: boolean;
   isAuthenticated: boolean;
-};
-
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isLoading: true,
-  loading: true,
-  isAuthenticated: false,
-});
-
+}>({ user: null, isLoading: false, loading: false, isAuthenticated: false });
 export const useAuth = () => useContext(AuthContext);
-
-export function AuthProvider({ 
-  children, 
-  initialUser 
-}: { 
+export function AuthProvider({
+  children,
+  initialUser,
+}: {
   children: ReactNode;
   initialUser: User | null;
 }) {
-  const [user, setUser] = useState<User | null>(initialUser);
-  const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClient();
-
+  const [user, setUser] = useState(initialUser);
   useEffect(() => {
-    setUser(initialUser);
-    setIsLoading(false);
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user || null);
-      }
+    const {
+      data: { subscription },
+    } = createClient().auth.onAuthStateChange((_event, session) =>
+      setUser(session?.user || null),
     );
-
     return () => subscription.unsubscribe();
-  }, [initialUser]);
-
+  }, []);
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isLoading, 
-      loading: isLoading,
-      isAuthenticated: !!user 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading: false,
+        loading: false,
+        isAuthenticated: !!user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
