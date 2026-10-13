@@ -18,6 +18,10 @@ export default function Page() {
       </p>
       <h2>Document imports</h2>
       <p>
+        New uploads and provider connections are currently disabled. The
+        following describes handling of previously imported records.
+      </p>
+      <p>
         When you consent to a CAS import, the document and any decryption
         details required are sent to CASParser. FolioKey does not persist the
         PDF password, OTP or original PDF. The application saves normalized

@@ -17,7 +17,13 @@ type Data = {
     valuationCoverage: number;
     costCoverage: number;
   };
-  coverage: { valuationDate: string | null; mixedDates: boolean };
+  coverage: {
+    valuationDate: string | null;
+    mixedDates: boolean;
+    missingDates: number;
+    stale: boolean;
+    oldestDate: string | null;
+  };
   user: { name: string };
 };
 export function money(n: number | null | undefined) {
@@ -87,11 +93,11 @@ export default function PortfolioOverview({
         <section className="trust-card">
           <h2>Start with your statement</h2>
           <p>
-            Import a CAS and review its data before saving. Existing portfolios
-            are never replaced without your confirmation.
+            No holdings are saved for this account. New imports are paused
+            during security containment; no sample portfolio is substituted.
           </p>
           <Link href="/upload" className="trust-button">
-            Import portfolio
+            Import unavailable
           </Link>
         </section>
       ) : (
@@ -109,6 +115,26 @@ export default function PortfolioOverview({
               This is your imported mutual fund snapshot. It is not your
               complete net worth or a live market feed.
             </p>
+            {data.coverage.stale && (
+              <p role="status">
+                Stale snapshot: at least one valuation is more than 7 calendar
+                days old. Figures below are dated records, not current market
+                values.
+              </p>
+            )}
+            {data.coverage.missingDates > 0 && (
+              <p role="status">
+                Partial date coverage: {data.coverage.missingDates} positions
+                have no verified valuation date.
+              </p>
+            )}
+            {data.summary.valuationCoverage < data.summary.fundCount && (
+              <p role="status">
+                Partial valuation: only {data.summary.valuationCoverage} of{" "}
+                {data.summary.fundCount} positions have a value. Complete
+                portfolio value and gain are unavailable.
+              </p>
+            )}
             <button onClick={refresh} disabled={busy}>
               {busy ? "Checking NAVs…" : "Refresh available NAVs"}
             </button>
@@ -116,7 +142,7 @@ export default function PortfolioOverview({
           </div>
           <div className="trust-grid">
             <section className="trust-card">
-              <label>Portfolio value</label>
+              <label>Mutual Fund Portfolio Value</label>
               <strong className="trust-number">
                 {money(data.summary.totalCurrent)}
               </strong>
@@ -190,7 +216,7 @@ export default function PortfolioOverview({
                       </td>
                       <td>{money(h.invested_amount)}</td>
                       <td>{money(h.current_value)}</td>
-                      <td>{h.valuation_date || h.nav_date || "Unknown"}</td>
+                      <td>{h.nav_date || h.valuation_date || "Unknown"}</td>
                     </tr>
                   ))}
                 </tbody>

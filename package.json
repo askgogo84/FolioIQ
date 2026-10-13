@@ -12,7 +12,6 @@
     "check": "npm run typecheck && npm test && npm run lint"
   },
   "dependencies": {
-    "@cas-parser/connect": "^2.1.0",
     "@supabase/ssr": "0.10.2",
     "@supabase/supabase-js": "2.105.1",
     "lucide-react": "^1.14.0",

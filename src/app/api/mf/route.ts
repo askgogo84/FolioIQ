@@ -1,7 +1,7 @@
-import { authorized, failure, json, ApiError } from "@/lib/server/http";
+import { authorized, budget, failure, json, ApiError } from "@/lib/server/http";
 export async function GET(request: Request) {
   try {
-    await authorized();
+    const { db } = await authorized();
     const p = new URL(request.url).searchParams,
       action = p.get("action"),
       code = p.get("schemeCode"),
@@ -16,6 +16,8 @@ export async function GET(request: Request) {
     )
       suffix = code + (action === "latest" ? "/latest" : "");
     else throw new ApiError("Invalid fund query.");
+    // Share the existing durable external-data quota; no in-memory serverless counters.
+    await budget(db, "refresh");
     const res = await fetch("https://api.mfapi.in/mf/" + suffix, {
       signal: AbortSignal.timeout(10000),
       next: { revalidate: 3600 },

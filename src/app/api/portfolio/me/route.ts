@@ -1,5 +1,6 @@
 import { authorized, failure, json } from "@/lib/server/http";
 import { summarize } from "@/lib/portfolio/import";
+import { snapshotFreshness } from "@/lib/portfolio/freshness";
 export async function GET() {
   try {
     const { db, user } = await authorized();
@@ -22,10 +23,6 @@ export async function GET() {
       current_nav: h.current_nav === null ? null : Number(h.current_nav),
     }));
     const summary = summarize(holdings);
-    const dates = holdings
-      .map((h) => h.valuation_date || h.nav_date)
-      .filter(Boolean)
-      .sort();
     return json({
       connected: holdings.length > 0,
       holdings,
@@ -39,8 +36,7 @@ export async function GET() {
             .at(-1) || null,
       },
       coverage: {
-        valuationDate: dates.length === holdings.length ? dates[0] : null,
-        mixedDates: new Set(dates).size > 1,
+        ...snapshotFreshness(holdings),
         history: "statement_only",
         performanceAvailable: false,
       },

@@ -6,10 +6,10 @@ import { createClient } from "@/utils/supabase/client";
 const links = [
   ["/dashboard", "Overview"],
   ["/portfolio", "Holdings"],
-  ["/upload", "Import portfolio"],
-  ["/connect", "Connect with OTP"],
+  ["/upload", "Import unavailable"],
+  ["/connect", "Connection unavailable"],
   ["/transactions", "Transactions"],
-  ["/intelligence", "Portfolio insights"],
+  ["/intelligence", "Allocation Insights"],
   ["/calculator", "SIP calculator"],
   ["/profile", "Profile"],
 ];
@@ -88,7 +88,7 @@ export default function AppLayout({
             {theme === "dark" ? "Light theme" : "Dark theme"}
           </button>
           <Link href="/upload" className="trust-button">
-            Import portfolio
+            Import unavailable
           </Link>
         </header>
         <main id="content" className="trust-main">
