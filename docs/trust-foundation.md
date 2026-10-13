@@ -31,13 +31,13 @@ The current import is a **statement snapshot**, not a complete accounting ledger
 | Production migration | Existing 19 holdings retained; grants/RLS/RPCs verified | Verified on 13 October 2026 after owner applied SQL |
 | Production anonymous access | Private pages redirect; private APIs 401; retired APIs 410 | HTTP/browser release checks |
 | Supabase login | Real Google and magic-link login, callback cookies, logout, expiry, redirects | Requires interactive account test; not proven by a build |
-| CASParser | Revoke exposed key, configure new name, incorrect password, timeout, large file, real statement preview/commit | BLOCKED until key replacement; no leaked-key testing |
+| CASParser | Revoke exposed key, configure new name, incorrect password, timeout, large file, real statement preview/commit | Owner authorized temporary testing with the existing key; rotation and real-statement acceptance remain outstanding |
 | Responsive UI | Public pages at desktop/mobile; signed-in upload/table/navigation at mobile | Public browser check plus signed-in follow-up required |
 | Jev | No key means no call; invalid/failing output unavailable; low confidence requires review | Mock tests only; adapter not connected |
 | Dependency security | No high/critical runtime advisories | Runtime audit; dev-only braces chain remains subject to upstream fix |
 | Operations | Provider failures/freshness alerts, restoration drill and incident runbook | Partial: bounded errors/quotas; monitoring and recovery drill still required |
 
-Historical exposed Resend/CASParser credentials remain an external risk until revoked. Source cleanup does not rotate them. The owner deferred rotation. Provider features therefore fail closed under a new key name. Supabase leaked-password protection was disabled at audit time; the app uses OAuth/magic links, but project-level password settings should be reviewed before offering passwords.
+Historical exposed Resend/CASParser credentials remain an external risk until revoked. Source cleanup does not rotate them. The owner subsequently authorized temporary testing before rotation. `FOLIOKEY_CAS_TEST_EXPIRES_AT` now permits the existing server-side key only until an explicit deadline; missing/invalid/expired deadlines disable that fallback, and a replacement key always takes precedence. Real CAS end-to-end acceptance still requires a consented user upload and source reconciliation. Supabase leaked-password protection was disabled at audit time; the app uses OAuth/magic links, but project-level password settings should be reviewed before offering passwords.
 
 ## Phased implementation plan
 

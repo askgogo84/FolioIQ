@@ -1,9 +1,7 @@
 import ImportPortfolio from "@/components/ImportPortfolio";
+import { casProviderKey } from "@/lib/server/cas-provider";
 export default function Page() {
   return (
-    <ImportPortfolio
-      connect={true}
-      configured={Boolean(process.env.FOLIOKEY_CAS_PARSER_API_KEY)}
-    />
+    <ImportPortfolio connect={true} configured={Boolean(casProviderKey())} />
   );
 }
