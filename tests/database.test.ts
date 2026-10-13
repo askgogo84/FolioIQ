@@ -33,6 +33,32 @@ const statement = {
     },
   ],
 };
+test("migration bootstraps an empty preview and can be safely replayed", async () => {
+  const db = new PGlite();
+  try {
+    await db.exec(`create role anon;create role authenticated;create schema auth;
+      create table auth.users(id uuid primary key);
+      create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+      grant usage on schema auth to authenticated,anon;`);
+    const migration = readFileSync(
+      "supabase/migrations/20261013112245_trust_foundation.sql",
+      "utf8",
+    );
+    await db.exec(migration);
+    await db.exec(migration);
+    const tables = await db.query<{ count: number }>(
+      "select count(*)::integer as count from pg_tables where schemaname='public' and tablename like 'portfolio_%'",
+    );
+    assert.equal(tables.rows[0].count, 5);
+    await db.exec("set role anon;");
+    await assert.rejects(
+      db.query("select * from portfolio_holdings"),
+      /permission denied/,
+    );
+  } finally {
+    await db.close();
+  }
+});
 test("PostgreSQL migration: tenant isolation, atomic imports, retries, NAV updates and budgets", async (t) => {
   const db = new PGlite();
   try {

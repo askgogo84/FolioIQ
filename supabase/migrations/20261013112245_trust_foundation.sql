@@ -1,11 +1,30 @@
 -- Additive trust foundation. Existing holdings remain until an owner confirms an import.
 -- Never use legacy schema.sql / supabase_fix.sql as production migrations.
-revoke all on public.otp_codes from anon, authenticated;
-drop policy if exists allow_all on public.otp_codes;
-alter table public.otp_codes enable row level security;
+-- Bootstrap empty preview environments without replaying destructive legacy scripts.
+create table if not exists public.portfolio_holdings (
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references auth.users(id) on delete cascade,
+ scheme_code text not null, scheme_name text not null, category text, amc text,
+ units numeric(18,6) not null, avg_nav numeric(18,6), current_nav numeric(18,6),
+ purchase_date date, sip_amount numeric(12,2), invested_amount numeric(14,2),
+ current_value numeric(14,2), updated_at timestamptz default now()
+);
+alter table public.portfolio_holdings enable row level security;
+do $$ begin
+ if not exists(select 1 from pg_policies where schemaname='public' and tablename='portfolio_holdings' and policyname='users_own') then
+  create policy users_own on public.portfolio_holdings for all to authenticated using((select auth.uid())=user_id) with check((select auth.uid())=user_id);
+ end if;
+end $$;
+revoke all on public.portfolio_holdings from anon;
+grant select,insert,update,delete on public.portfolio_holdings to authenticated;
 
 -- Retired, unrelated tables must not remain public APIs. Preserve all rows.
 do $$ begin
+ if to_regclass('public.otp_codes') is not null then
+  revoke all on public.otp_codes from anon, authenticated;
+  drop policy if exists allow_all on public.otp_codes;
+  alter table public.otp_codes enable row level security;
+ end if;
  if to_regclass('public.nutrition_logs') is not null then
   revoke all on public.nutrition_logs from anon, authenticated;
   drop policy if exists users_own_nutrition_logs on public.nutrition_logs;
@@ -53,6 +72,7 @@ create table if not exists public.portfolio_imports(
 );
 create index if not exists portfolio_imports_owner_date on public.portfolio_imports(user_id,created_at desc);
 alter table public.portfolio_imports enable row level security;
+drop policy if exists imports_owner on public.portfolio_imports;
 create policy imports_owner on public.portfolio_imports for all to authenticated using((select auth.uid())=user_id) with check((select auth.uid())=user_id);
 revoke all on public.portfolio_imports from anon, authenticated;
 grant select,insert,update on public.portfolio_imports to authenticated;
@@ -73,6 +93,7 @@ create table if not exists public.portfolio_transactions(
 );
 create index if not exists portfolio_transactions_owner on public.portfolio_transactions(user_id,import_id);
 alter table public.portfolio_transactions enable row level security;
+drop policy if exists transactions_owner on public.portfolio_transactions;
 create policy transactions_owner on public.portfolio_transactions for all to authenticated using((select auth.uid())=user_id) with check((select auth.uid())=user_id);
 revoke all on public.portfolio_transactions from anon, authenticated;
 grant select,insert on public.portfolio_transactions to authenticated;
@@ -85,6 +106,8 @@ create table if not exists public.portfolio_api_usage(
 );
 create index if not exists portfolio_api_usage_owner_date on public.portfolio_api_usage(user_id,created_at);
 alter table public.portfolio_api_usage enable row level security;
+drop policy if exists usage_read on public.portfolio_api_usage;
+drop policy if exists usage_insert on public.portfolio_api_usage;
 create policy usage_read on public.portfolio_api_usage for select to authenticated using((select auth.uid())=user_id);
 create policy usage_insert on public.portfolio_api_usage for insert to authenticated with check((select auth.uid())=user_id and created_at between now()-interval '1 minute' and now()+interval '1 minute');
 revoke all on public.portfolio_api_usage from anon, authenticated;
@@ -153,6 +176,7 @@ create table if not exists public.portfolio_nav_observations(
  primary key(user_id,position_id,nav_date)
 );
 alter table public.portfolio_nav_observations enable row level security;
+drop policy if exists observations_owner on public.portfolio_nav_observations;
 create policy observations_owner on public.portfolio_nav_observations for all to authenticated using((select auth.uid())=user_id) with check((select auth.uid())=user_id);
 revoke all on public.portfolio_nav_observations from anon,authenticated;
 grant select,insert,update on public.portfolio_nav_observations to authenticated;
