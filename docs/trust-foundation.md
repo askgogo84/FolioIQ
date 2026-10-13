@@ -2,6 +2,8 @@
 
 Date: 13 October 2026. Baseline: `ccc9a54` (15 June 2026). No new commits in the preceding approximately three months; production still served that baseline during the audit. This release addresses security and misleading output. It does not finish the Dezerve-class product roadmap.
 
+Verification update: 25 automated checks pass, including an empty Supabase preview and safe migration replay. GitHub quality checks and Supabase Preview pass. The owner applied the reviewed migration through Supabase's SQL editor; read-only verification confirmed all 19 existing holdings remain, all five active portfolio tables have RLS, obsolete public OTP/nutrition access is denied, and all three RPCs are security-invoker with anonymous execution denied. Preview public Supabase configuration is scoped to this branch's isolated database; production connection settings are unchanged.
+
 ## Implemented
 
 | Problem | Change | Main files |
@@ -26,7 +28,7 @@ The current import is a **statement snapshot**, not a complete accounting ledger
 | Database isolation | A cannot read/write/commit/refresh B; public OTP access denied | Embedded PostgreSQL tests against actual migration |
 | Import safety | Failure after delete rolls back; retry idempotent; distinct folios preserved | Embedded PostgreSQL tests |
 | Cost protection | Durable quota rejects sixth request; users cannot erase usage | Embedded PostgreSQL tests |
-| Production migration | Existing 19 holdings retained; grants/RLS/RPCs verified | Must verify after applying migration |
+| Production migration | Existing 19 holdings retained; grants/RLS/RPCs verified | Verified on 13 October 2026 after owner applied SQL |
 | Production anonymous access | Private pages redirect; private APIs 401; retired APIs 410 | HTTP/browser release checks |
 | Supabase login | Real Google and magic-link login, callback cookies, logout, expiry, redirects | Requires interactive account test; not proven by a build |
 | CASParser | Revoke exposed key, configure new name, incorrect password, timeout, large file, real statement preview/commit | BLOCKED until key replacement; no leaked-key testing |
