@@ -1,1 +1,7 @@
-{}
+{
+  "git": {
+    "deploymentEnabled": {
+      "feat/premium-evidence-workspace": false
+    }
+  }
+}

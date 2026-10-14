@@ -1,0 +1,37 @@
+{
+  "status": "draft-review-only",
+  "branch": "feat/premium-evidence-workspace",
+  "deployment": "Not merged or deployed; Vercel Git deployment disabled for this branch",
+  "screens": ["/dashboard", "/portfolio", "/intelligence", "/upload", "/connect", "/sips", "/transactions", "/rebalance", "/profile", "/chat", "shared unsupported-feature pages"],
+  "implemented": ["Owner-scoped paginated holdings read", "Snapshot summary and field coverage", "Category and AMC allocations with partial-value denominators", "Descriptive concentration observations", "Dated NAV coverage and explicit seven-calendar-day freshness policy", "Missing-data readiness gates", "Filterable evidence queue", "Searchable holdings and statement records", "Rule-based portfolio guide with recommendation abstention", "Responsive beige/green workspace and mobile navigation"],
+  "benchmarkPatterns": {
+    "Dezerv": "Evidence-led review queue and explanatory observations; no copied scores or methodology",
+    "Groww": "Simple import, holdings search and tracking clarity",
+    "ET Money": "Coverage review and monitoring readiness; no unsupported fund consistency ratings",
+    "Kuvera": "Explicit risk, goal, SIP and rebalance prerequisites"
+  },
+  "externalCodeCopied": false,
+  "blocked": {
+    "returns": "Canonical reconciled ledger, corporate-action handling, historical units and NAV series",
+    "underperformance": "Licensed benchmark/category histories and a reviewed comparison methodology",
+    "overlap": "Dated licensed constituents with coverage and weights",
+    "taxAndRebalance": "Acquisition lots, dated tax and exit-load rules, investor suitability and goals",
+    "mobileOnlyImport": "Contracted consent-based provider coverage; current provider connection is not universal mobile-only retrieval",
+    "aiAdvice": "Verified calculations, suitability, provider privacy controls and evaluated explanation layer"
+  },
+  "acceptance": [
+    {"check": "Empty portfolio", "result": "No invented values or chart; import readiness shown", "evidence": "unit tests and local browser"},
+    {"check": "Partial values", "result": "Whole total unavailable; known subtotal and excluded positions labelled", "evidence": "unit tests and local browser"},
+    {"check": "Zero, invalid values and unknown classifications", "result": "Zero preserved; invalid values unavailable; unknown bucket retained", "evidence": "unit tests"},
+    {"check": "Mixed dates and dated NAV coverage", "result": "Date differences and stale/missing NAVs explicitly disclosed", "evidence": "unit tests"},
+    {"check": "Chart selection, insight filter, holding search", "result": "Selections and displayed records update", "evidence": "local browser with labelled synthetic fixtures"},
+    {"check": "390px navigation and recommendation abstention", "result": "Mobile Explore menu and rule-based guide operate", "evidence": "local browser with labelled synthetic fixtures"},
+    {"check": "Provider unavailable and API failure", "result": "Connection disabled; portfolio failure offers retry without fictional fallback", "evidence": "local browser with labelled synthetic fixtures"},
+    {"check": "Authenticated production CAS upload and provider connection", "result": "Not exercised; requires real-user acceptance and configured provider", "evidence": "pending"},
+    {"check": "npm test", "result": "39 passed including local database/RLS tests", "evidence": "local test suite"},
+    {"check": "npx tsc --noEmit", "result": "passed", "evidence": "local"},
+    {"check": "npm run lint", "result": "passed", "evidence": "local"},
+    {"check": "npm run build", "result": "passed; 65 routes generated", "evidence": "local production build"}
+  ],
+  "boundaries": ["No production database mutations", "No paid provider calls during implementation", "Supabase-only authentication retained", "No private competitor API access or proprietary UI/code copying", "Synthetic browser harness is outside the repository and absent from runtime"]
+}
