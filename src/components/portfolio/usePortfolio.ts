@@ -11,6 +11,7 @@ export type PortfolioData = {
 export function useResource<T>(url: string) {
   const [data, setData] = useState<T | null>(null),
     [error, setError] = useState(""),
+    [loadedUrl, setLoadedUrl] = useState(""),
     [loading, setLoading] = useState(true),
     [revision, setRevision] = useState(0);
   const retry = useCallback(() => {
@@ -27,20 +28,28 @@ export function useResource<T>(url: string) {
         if (!controller.signal.aborted) {
           setData(body);
           setError("");
+          setLoadedUrl(url);
         }
       })
       .catch((e) => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setError(
             e instanceof Error ? e.message : "Unable to load this view.",
           );
+          setLoadedUrl(url);
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
   }, [url, revision]);
-  return { data, error, loading, retry };
+  return {
+    data: loadedUrl === url && !error ? data : null,
+    error: loadedUrl === url ? error : "",
+    loading: loadedUrl !== url || loading,
+    retry,
+  };
 }
 export function usePortfolio() {
   return useResource<PortfolioData>("/api/portfolio/me");

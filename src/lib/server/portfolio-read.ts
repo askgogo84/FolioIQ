@@ -1,8 +1,8 @@
 import "server-only";
 import { authorized, ApiError } from "./http";
 import { finite, type Position } from "@/lib/intelligence/types";
-export async function readPortfolio() {
-  const { db, user } = await authorized();
+export async function readPortfolio(request?: Request) {
+  const { db, user } = await authorized(request);
   const holdings: Position[] = [];
   for (let start = 0; start < 10000; start += 1000) {
     const { data, error } = await db
@@ -23,7 +23,7 @@ export async function readPortfolio() {
         invested_amount: finite(h.invested_amount),
         current_nav: finite(h.current_nav),
       });
-    if (!data || data.length < 1000) return { holdings, user };
+    if (!data || data.length < 1000) return { holdings, user, db };
   }
   throw new ApiError(
     "This portfolio exceeds the supported review size. No partial total is shown.",

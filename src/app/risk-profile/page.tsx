@@ -1,9 +1,4 @@
-import Unavailable from "@/components/Unavailable";
+import PlanningWorkspace from "@/components/portfolio/PlanningWorkspace";
 export default function Page() {
-  return (
-    <Unavailable
-      title="Risk profile"
-      reason="A validated risk assessment is not yet available. No sample profile is assigned to you."
-    />
-  );
+  return <PlanningWorkspace key="risk" kind="risk" />;
 }

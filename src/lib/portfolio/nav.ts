@@ -32,7 +32,8 @@ export function parseAmfi(
     if (!/^\d{5,8}$/.test(code || "")) continue;
     const nav = Number(price),
       m = /^(\d{2})-([A-Za-z]{3})-(\d{4})$/.exec(rawDate || "");
-    if (!m || !Number.isFinite(nav) || nav <= 0 || !name) continue;
+    if (!m || !Number.isFinite(nav) || nav <= 0 || nav > 1e12 || !name)
+      continue;
     const month = months.findIndex(
       (v) => v.toLowerCase() === m[2].toLowerCase(),
     );
@@ -45,9 +46,18 @@ export function parseAmfi(
     )
       continue;
     const item = { code, isin1, isin2, name, nav, date };
+    if (
+      result.has(code) &&
+      JSON.stringify(result.get(code)) !== JSON.stringify(item)
+    )
+      throw new Error("Conflicting exact AMFI identifier.");
     result.set(code, item);
     for (const isin of [isin1, isin2])
-      if (/^INF[A-Z0-9]{9}$/.test(isin)) result.set(isin, item);
+      if (/^INF[A-Z0-9]{9}$/.test(isin)) {
+        if (result.has(isin) && result.get(isin)!.code !== code)
+          throw new Error("Ambiguous exact AMFI ISIN.");
+        result.set(isin, item);
+      }
   }
   return result;
 }

@@ -7,6 +7,7 @@ import {
   readJson,
 } from "@/lib/server/http";
 import { casProviderKey } from "@/lib/server/cas-provider";
+import { boundedText } from "@/lib/providers/bounded-response";
 export async function GET() {
   return json({ configured: Boolean(casProviderKey()) });
 }
@@ -28,13 +29,19 @@ export async function POST(request: Request) {
       body: JSON.stringify({ expiry_minutes: 5 }),
       signal: AbortSignal.timeout(15000),
       cache: "no-store",
+      redirect: "error",
     });
     if (!res.ok)
       throw new ApiError(
         "Portfolio provider could not start a session. Please try later.",
         502,
       );
-    const data = await res.json();
+    let data;
+    try {
+      data = JSON.parse(await boundedText(res, 16000));
+    } catch {
+      throw new ApiError("Invalid provider session response.", 502);
+    }
     if (
       typeof data.access_token !== "string" ||
       !data.access_token.startsWith("at_")

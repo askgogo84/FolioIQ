@@ -1,6 +1,7 @@
 import { authorized, budget, failure, ApiError, json } from "@/lib/server/http";
 import { stageImport } from "@/lib/server/imports";
 import { casProviderKey } from "@/lib/server/cas-provider";
+import { boundedText } from "@/lib/providers/bounded-response";
 export const maxDuration = 60;
 export async function POST(request: Request) {
   try {
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
       body,
       signal: AbortSignal.timeout(50000),
       cache: "no-store",
+      redirect: "error",
     });
     if (!res.ok)
       throw new ApiError(
@@ -52,9 +54,15 @@ export async function POST(request: Request) {
           : "Statement provider could not process this request. Check your PDF/password and try again.",
         502,
       );
-    const text = await res.text();
-    if (text.length > 3_500_000)
-      throw new ApiError("Parsed statement is too large.", 413);
+    let text;
+    try {
+      text = await boundedText(res, 3_500_000);
+    } catch {
+      throw new ApiError(
+        "Parsed statement could not be read within supported limits.",
+        502,
+      );
+    }
     return json(
       await stageImport(db, user.id, JSON.parse(text), "casparser-server"),
     );

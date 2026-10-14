@@ -10,10 +10,17 @@ export class ApiError extends Error {
     super(message);
   }
 }
-export function json(data: unknown, status = 200) {
+export function json(
+  data: unknown,
+  status = 200,
+  requestId = crypto.randomUUID(),
+) {
   return NextResponse.json(data, {
     status,
-    headers: { "Cache-Control": "private, no-store" },
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-FolioKey-Request-ID": requestId,
+    },
   });
 }
 export async function authorized(request?: Request) {
@@ -51,15 +58,23 @@ export async function budget(
     );
 }
 export function failure(error: unknown) {
+  const requestId = crypto.randomUUID(),
+    status = error instanceof ApiError ? error.status : 500;
+  if (status >= 500)
+    console.error(
+      JSON.stringify({ event: "foliokey_api_failure", requestId, status }),
+    );
   if (error instanceof ApiError)
-    return json({ error: error.message }, error.status);
+    return json({ error: error.message, requestId }, error.status, requestId);
   // Do not leak provider responses, statements, credentials or database details.
   return json(
     {
       error:
-        "This operation could not be completed. Your previous portfolio is unchanged.",
+        "This operation could not be completed. Please retry or report the request ID.",
+      requestId,
     },
     500,
+    requestId,
   );
 }
 export async function readJson(request: Request) {

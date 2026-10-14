@@ -1,0 +1,62 @@
+{
+  "status": "draft-review-only; not deployed; no production database mutations",
+  "dependsOn": "https://github.com/askgogo84/FolioIQ/pull/4",
+  "branch": "feat/ledger-planning-foundation",
+  "implemented": {
+    "ledger": "Retained source versions, deterministic event fingerprints and same-day occurrence counts; duplicate multiplicity conflicts are disclosed. Index covers the current and up to two recent committed statements; no lifetime completeness claim.",
+    "statementXirr": "Opening units and running balances from the documented provider schema are preserved. Only supported zero-opening, dated, unit-reconciled source statements can produce ACT/365 annualized cash-flow XIRR. Non-conventional sign patterns abstain.",
+    "lots": "FIFO source-amount analysis for reconciled purchases and redemptions. Unsupported corporate actions and reinvestment basis block results. No legal tax-basis certification, tax liability or exit-load estimate.",
+    "planning": "Saved goals, self-reported investment preferences, manual monthly SIP schedules and user-entered category targets, with validation, owner RLS and optimistic save revisions.",
+    "scenarios": "Contribution-only goal illustrations and corrected annual-effective SIP projections; no promised return or auto-assigned allocation.",
+    "navResearch": "Local AMFI-text history parser and comparison on exact common dates, interactive chart inspection, explicit NAV-only scope and no gap filling.",
+    "overlapResearch": "Local user-supplied dated security-weight CSV comparison, exact ISIN matching and sum-of-minimum-weights overlap with unknown coverage retained.",
+    "exports": "Authenticated holdings CSV and evidence JSON; masked folios, explicit export scope, formula-injection protection and private/no-store responses.",
+    "providerConnection": "Documented CASParser CAMS/KFintech email-statement request enabled in the existing consent-based widget. This does not establish ongoing sync or universal mobile-only retrieval.",
+    "jev": "Optional typed question-to-topic routing behind three separate environment settings and explicit question-sharing consent. Only the submitted question goes to TypeSafe; fixed evidence templates supply answer facts. Separate five-attempt rolling 24-hour budget, timeout, schema/confidence checks and unavailable fallback. No live paid model calls performed.",
+    "reliability": "Bounded upstream streaming reads, redirect rejection for credentialed calls, ambiguous NAV-identifier rejection, complete supported-size transaction pagination, table pagination, request IDs and sanitized failure metadata. Aborted and URL-changed client reads cannot reuse another resource's data."
+  },
+  "activation": [
+    "Review and merge PR 4, then review this continuation; no automatic deployment from either review branch",
+    "Review/apply supabase/migrations/20261014173550_portfolio_planning.sql in an approved environment; not applied by this work",
+    "Rotate exposed provider credentials and configure FOLIOKEY_CAS_PARSER_API_KEY securely; the expired test window is not extended",
+    "Optional only: configure FOLIOKEY_ENABLE_JEV_GUIDE=true, FOLIOKEY_JEV_API_KEY and FOLIOKEY_JEV_MODEL after privacy, cost and provider-model evaluation; values never belong in Git/chat",
+    "Run real-account Supabase login, CAS preview/confirm, reimport, NAV marking and exports acceptance before a production release"
+  ],
+  "externalDependenciesStillRequired": {
+    "mobileOtpSync": "Approved provider contract and lawful consent journey, FIU or eligible regulated partner arrangements where required, supported MF financial-information providers, account discovery/linking, consent revocation and signed webhook contract. No private APIs or guessed endpoints implemented.",
+    "automaticFundIntelligence": "Licensed fund universe, benchmark/category total-return histories, dated constituents, costs, risk data and a reviewed suitability/comparison methodology. Manual local research tools do not substitute for verified feeds.",
+    "continuousPortfolioPerformance": "Continuous reconciled event coverage and dated units/NAV history. Current returns cover eligible statements only.",
+    "taxAndExecution": "Reviewed fund tax classifications, dated legal rules, investor circumstances, charges, exit loads and execution-provider/regulatory readiness. Source FIFO arithmetic is not tax advice.",
+    "billing": "Merchant/payment configuration, actual entitlements and a reviewed paid-product release. No paid membership or checkout is fabricated."
+  },
+  "verification": {
+    "automated": "Final local checks passed: 68 tests, npx tsc --noEmit, npm run lint and npm run build (70 routes).",
+    "coverage": [
+      "Microsoft XIRR reference vector",
+      "invalid/multi-sign cash flows",
+      "opening/running/closing units",
+      "unsupported source event gates",
+      "duplicate occurrence counts",
+      "FIFO partial sales/oversells",
+      "owner RLS and stale revision conflicts",
+      "separate guide budget and grant restrictions",
+      "NAV/constituent malformed and conflicting records",
+      "negative/zero SIP scenarios",
+      "CSV injection",
+      "Jev no-call/timeout/429/invalid-schema abstention"
+    ],
+    "browser": "Actual React components in a separate labelled synthetic UI harness: goal staging and mock save response, preferences, manual SIP next dates, target arithmetic, unavailable-storage handling, 390px layout, NAV file chooser, exact-date comparison and keyboard chart observation selection. Not an authenticated production E2E test.",
+    "production": "No production DB writes, paid provider calls, merge or deployment."
+  },
+  "publicReferences": [
+    "https://casparser.in/docs/learn/response-schema",
+    "https://casparser.in/docs/sdk/configuration",
+    "https://support.microsoft.com/en-us/excel/functions/xirr-function",
+    "https://www.amfiindia.com/net-asset-value/nav-history",
+    "https://docs.typesafe.ai/api",
+    "https://supabase.com/docs/guides/database/postgres/row-level-security",
+    "https://docs.setu.co/data/account-aggregator/consent-object",
+    "https://sahamati.org.in/faq/"
+  ],
+  "originality": "All application implementation is original FolioKey code. No proprietary competitor UI/code copied; no private API access or decompilation."
+}
