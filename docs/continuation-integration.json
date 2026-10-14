@@ -17,10 +17,10 @@
   },
   "activation": [
     "Review and merge PR 4, then review this continuation; no automatic deployment from either review branch",
-    "Review/apply supabase/migrations/20261014173550_portfolio_planning.sql in an approved environment; not applied by this work",
-    "Rotate exposed provider credentials and configure FOLIOKEY_CAS_PARSER_API_KEY securely; the expired test window is not extended",
+    "Planning migration applied and tested on disposable PR preview only. Production migration remains subject to the user prohibition on production DB mutations.",
+    "Key rotation deferred at user request. Existing CAS credential supported only through an explicit unexpired test window. No test-window extension or production configuration changed in this work.",
     "Optional only: configure FOLIOKEY_ENABLE_JEV_GUIDE=true, FOLIOKEY_JEV_API_KEY and FOLIOKEY_JEV_MODEL after privacy, cost and provider-model evaluation; values never belong in Git/chat",
-    "Run real-account Supabase login, CAS preview/confirm, reimport, NAV marking and exports acceptance before a production release"
+    "Connected preview ledger/planning/export/RLS checks passed. Google or emailed sign-in delivery, actual CAS PDF parsing and live NAV marking remain untested; they require an approved environment and provider calls."
   ],
   "externalDependenciesStillRequired": {
     "mobileOtpSync": "Approved provider contract and lawful consent journey, FIU or eligible regulated partner arrangements where required, supported MF financial-information providers, account discovery/linking, consent revocation and signed webhook contract. No private APIs or guessed endpoints implemented.",
@@ -45,7 +45,7 @@
       "CSV injection",
       "Jev no-call/timeout/429/invalid-schema abstention"
     ],
-    "browser": "Actual React components in a separate labelled synthetic UI harness: goal staging and mock save response, preferences, manual SIP next dates, target arithmetic, unavailable-storage handling, 390px layout, NAV file chooser, exact-date comparison and keyboard chart observation selection. Not an authenticated production E2E test.",
+    "browser": "Actual authenticated Next.js app connected to disposable Supabase PR preview. 15 connected integration checks passed, plus allocation selection, saved goal persistence after reload, mobile navigation and 390px overflow checks. See docs/preview-e2e.json. Google/email delivery, paid CAS parsing and production flows remain untested.",
     "production": "No production DB writes, paid provider calls, merge or deployment."
   },
   "publicReferences": [

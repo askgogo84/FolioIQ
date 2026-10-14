@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-14T19:10:43.362Z",
+  "environment": "Disposable PR Supabase database; local Next.js app",
+  "syntheticOnly": true,
+  "paidProviderCalls": 0,
+  "productionMutations": 0,
+  "results": [
+    {
+      "name": "Malformed JSON shapes return 400 rather than server errors",
+      "passed": true
+    },
+    {
+      "name": "Supabase issues real sessions for both preview accounts",
+      "passed": true
+    },
+    {
+      "name": "Unauthenticated APIs reject access",
+      "passed": true
+    },
+    {
+      "name": "Protected dashboard redirects unauthenticated visitor",
+      "passed": true
+    },
+    {
+      "name": "Empty portfolio is truthful",
+      "passed": true
+    },
+    {
+      "name": "Cross-origin writes rejected",
+      "passed": true
+    },
+    {
+      "name": "Planning persists and stale revisions cannot overwrite",
+      "passed": true
+    },
+    {
+      "name": "Import validates consent, stages without replacing holdings",
+      "passed": true
+    },
+    {
+      "name": "Another user cannot commit the draft",
+      "passed": true
+    },
+    {
+      "name": "Confirmed import atomically creates owned holdings and transactions",
+      "passed": true
+    },
+    {
+      "name": "Committed statement ledger and export work",
+      "passed": true
+    },
+    {
+      "name": "RLS blocks direct cross-user reads and ownership reassignment",
+      "passed": true
+    },
+    {
+      "name": "Optional AI abstains when unconfigured and makes no provider call",
+      "passed": true
+    },
+    {
+      "name": "Guide database budget blocks after five requests",
+      "passed": true
+    },
+    {
+      "name": "All premium pages render under a real session",
+      "passed": true
+    }
+  ],
+  "browserVerification": [
+    "Actual authenticated application, not component mocks",
+    "Allocation selection changed displayed value and position count",
+    "Goal staged, saved to preview database, and observed after reload",
+    "390px goals and dashboard: document width 384px; no document overflow",
+    "Mobile navigation from goals to dashboard"
+  ],
+  "limits": [
+    "Synthetic fixtures only; no customer portfolio tested",
+    "Supabase password sessions exercised; Google and emailed magic-link delivery not exercised",
+    "CASParser PDF parsing/CDSL provider calls not exercised under no-paid-provider-calls constraint",
+    "No Vercel deployment, production database mutation, merge, or key rotation"
+  ]
+}

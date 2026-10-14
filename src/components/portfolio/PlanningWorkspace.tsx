@@ -501,9 +501,8 @@ export default function PlanningWorkspace({ kind }: { kind: PlanKind }) {
         </section>
       </div>
       <p className="fk-caption">
-        Saving requires the reviewed planning migration. Records are scoped to
-        your Supabase account. No external provider or AI model receives these
-        inputs.
+        Saved plans are private to your account. No external provider or AI
+        model receives these inputs.
       </p>
     </AppLayout>
   );

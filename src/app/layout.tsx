@@ -32,7 +32,12 @@ export default async function RootLayout({
   } = await supabase.auth.getUser();
 
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="light"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50`}
       >
