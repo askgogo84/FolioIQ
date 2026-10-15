@@ -2,10 +2,12 @@
 import { useState } from "react";
 import type { Position } from "@/lib/intelligence/types";
 import { money } from "@/lib/portfolio/format";
+import Pagination from "./Pagination";
 export default function HoldingsTable({ rows }: { rows: Position[] }) {
   const [query, setQuery] = useState(""),
     [category, setCategory] = useState("all"),
-    [sort, setSort] = useState("value");
+    [sort, setSort] = useState("value"),
+    [page, setPage] = useState(0);
   const categories = Array.from(
     new Set(rows.map((r) => r.category || "Unknown")),
   ).sort();
@@ -23,6 +25,10 @@ export default function HoldingsTable({ rows }: { rows: Position[] }) {
         ? a.scheme_name.localeCompare(b.scheme_name)
         : (b.current_value ?? -1) - (a.current_value ?? -1),
     );
+  const currentPage = Math.min(
+    page,
+    Math.max(0, Math.ceil(shown.length / 50) - 1),
+  );
   return (
     <section className="trust-card">
       <div className="fk-section-head">
@@ -39,7 +45,10 @@ export default function HoldingsTable({ rows }: { rows: Position[] }) {
           Find a holding
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(0);
+            }}
             placeholder="Fund, AMC, ISIN or masked folio"
             type="search"
           />
@@ -48,7 +57,10 @@ export default function HoldingsTable({ rows }: { rows: Position[] }) {
           Category
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setPage(0);
+            }}
           >
             <option value="all">All categories</option>
             {categories.map((c) => (
@@ -58,7 +70,13 @@ export default function HoldingsTable({ rows }: { rows: Position[] }) {
         </label>
         <label>
           Sort by
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+          <select
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value);
+              setPage(0);
+            }}
+          >
             <option value="value">Value: highest first</option>
             <option value="name">Fund name</option>
           </select>
@@ -92,32 +110,40 @@ export default function HoldingsTable({ rows }: { rows: Position[] }) {
               </tr>
             </thead>
             <tbody>
-              {shown.map((h) => (
-                <tr key={h.id}>
-                  <td>
-                    <strong>{h.scheme_name}</strong>
-                    <small>
-                      {h.folio_label || "Legacy snapshot"} ·{" "}
-                      {h.isin || h.amfi_code || h.scheme_code || "Unmapped"}
-                    </small>
-                  </td>
-                  <td>{h.category || "Unknown"}</td>
-                  <td>
-                    {h.units?.toLocaleString("en-IN", {
-                      maximumFractionDigits: 4,
-                    }) ?? "Unknown"}
-                  </td>
-                  <td>{money(h.invested_amount)}</td>
-                  <td>{money(h.current_value)}</td>
-                  <td>{h.valuation_date || h.nav_date || "Unknown"}</td>
-                </tr>
-              ))}
+              {shown
+                .slice(currentPage * 50, (currentPage + 1) * 50)
+                .map((h) => (
+                  <tr key={h.id}>
+                    <td>
+                      <strong>{h.scheme_name}</strong>
+                      <small>
+                        {h.folio_label || "Legacy snapshot"} ·{" "}
+                        {h.isin || h.amfi_code || h.scheme_code || "Unmapped"}
+                      </small>
+                    </td>
+                    <td>{h.category || "Unknown"}</td>
+                    <td>
+                      {h.units?.toLocaleString("en-IN", {
+                        maximumFractionDigits: 4,
+                      }) ?? "Unknown"}
+                    </td>
+                    <td>{money(h.invested_amount)}</td>
+                    <td>{money(h.current_value)}</td>
+                    <td>{h.valuation_date || h.nav_date || "Unknown"}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
       ) : (
         <p role="status">No holdings match these filters.</p>
       )}
+      <Pagination
+        page={currentPage}
+        total={shown.length}
+        onChange={setPage}
+        label="Holdings"
+      />
     </section>
   );
 }

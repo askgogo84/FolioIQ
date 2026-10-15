@@ -1,0 +1,40 @@
+{
+  "status": "Implementation and connected preview testing complete; production release not authorized under earlier explicit constraints",
+  "pullRequests": [
+    "https://github.com/askgogo84/FolioIQ/pull/4",
+    "https://github.com/askgogo84/FolioIQ/pull/5"
+  ],
+  "review": {
+    "scope": "Owner-scoped reads and writes, invoker RPCs/RLS, import confirmation and atomic replacement, validated planning revisions, missing-data gates, provider credential boundaries, original premium UI and mobile behavior",
+    "fixesFoundDuringVerification": [
+      "Reject null, arrays and scalar JSON request bodies with 400 instead of a generic 500",
+      "Remove migration instructions from customer planning copy",
+      "Declare smooth scroll behavior for Next.js route transitions"
+    ],
+    "evidence": "docs/preview-e2e.json",
+    "independentHumanApproval": "Pending; draft PRs remain open"
+  },
+  "productionTarget": {
+    "app": "https://foliokey.app",
+    "vercelProject": "foliokey",
+    "supabaseProject": "hvuqwfpcumooegflfrth",
+    "previousProductionCommit": "a6728b0e814a5229eb13f6f18f841afcf428dca1"
+  },
+  "proposedReleaseAfterApproval": [
+    "Apply only the reviewed additive 20261014173550_portfolio_planning.sql migration to production; verify RLS and grants; never seed synthetic fixtures there",
+    "Merge PR 4 and then PR 5, preserving ancestry and checking the final main commit",
+    "Deploy that reviewed main commit to the existing FolioKey Vercel project and verify deployment readiness",
+    "If approved, set a 48-hour CAS test window using the existing server-only credential; rotation deferred; do not remove the expiry guard",
+    "Verify unauthenticated protection and truthful unavailable states; user completes their real Google/email login and consented CAS upload",
+    "No agent-triggered paid provider calls, trading, advice or customer-data exports"
+  ],
+  "rollback": "Redeploy the prior verified production commit if release checks fail. Keep additive planning tables and user records; do not drop tables or restore over customer portfolio data.",
+  "notClaimedComplete": [
+    "Google OAuth and email magic-link delivery to a real user",
+    "Live paid CASParser PDF/CDSL calls and real-customer import acceptance",
+    "Universal mobile-number/OTP portfolio retrieval or ongoing consent sync; approved provider access and contracts absent",
+    "Automatic best-fund recommendations, benchmark underperformance, live constituent look-through or certified tax outputs; verified feeds/methodology absent",
+    "Live Jev model calls; optional configuration and evaluated model absent"
+  ],
+  "keyRotation": "Deferred at explicit user request; not treated as a blocker for code or isolated preview testing"
+}

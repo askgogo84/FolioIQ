@@ -1,7 +1,8 @@
 {
   "git": {
     "deploymentEnabled": {
-      "feat/premium-evidence-workspace": false
+      "feat/premium-evidence-workspace": false,
+      "feat/ledger-planning-foundation": false
     }
   }
 }

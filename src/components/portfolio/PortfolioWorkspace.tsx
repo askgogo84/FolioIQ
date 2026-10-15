@@ -7,6 +7,7 @@ import { TrustStrip, Readiness, LoadingState, ErrorState } from "./Evidence";
 import AllocationChart from "./AllocationChart";
 import InsightQueue from "./InsightQueue";
 import HoldingsTable from "./HoldingsTable";
+import LedgerPanel from "./LedgerPanel";
 import { money } from "@/lib/portfolio/format";
 export default function PortfolioWorkspace({
   view = "overview",
@@ -87,7 +88,7 @@ export default function PortfolioWorkspace({
           <TrustStrip analysis={a} />
           <div className="fk-metrics">
             <section className="trust-card fk-value-card">
-              <span className="fk-kicker">Reported portfolio value</span>
+              <span className="fk-kicker">Reported / NAV-marked value</span>
               <strong className="trust-number">
                 {money(a.summary.totalCurrent)}
               </strong>
@@ -95,7 +96,7 @@ export default function PortfolioWorkspace({
                 {a.summary.totalCurrent === null
                   ? money(a.summary.knownCurrent) +
                     " known subtotal; not the whole portfolio."
-                  : "Statement-based value · not a live feed"}
+                  : "Imported units · reported or dated NAV values"}
               </small>
               <div className="fk-value-footer">
                 <span>
@@ -140,6 +141,9 @@ export default function PortfolioWorkspace({
               : ""}
             Snapshot observations are not independently verified valuations or
             personalized investment advice.
+            {a.nav.priced > 0
+              ? " NAV refresh marks the last imported units; it does not verify subsequent account transactions or balances."
+              : ""}
           </p>
           {view === "holdings" ? <HoldingsTable rows={data.holdings} /> : null}
           <div className="fk-two-col">
@@ -158,7 +162,7 @@ export default function PortfolioWorkspace({
             data={a.allocation.category}
           />
           {view !== "holdings" && <InsightQueue findings={a.findings} />}
-          <Readiness analysis={a} />
+          <LedgerPanel />
           <div className="fk-action-grid">
             {[
               [
@@ -169,12 +173,12 @@ export default function PortfolioWorkspace({
               [
                 "/sips",
                 "Make room for discipline",
-                "See what is needed to track SIP schedules.",
+                "Track schedules you enter and review their next planned dates.",
               ],
               [
                 "/rebalance",
                 "Plan with perspective",
-                "Understand the evidence needed before switching.",
+                "Compare your snapshot with your own allocation targets.",
               ],
               [
                 "/chat",
@@ -191,8 +195,9 @@ export default function PortfolioWorkspace({
           </div>
           {view === "overview" && <HoldingsTable rows={data.holdings} />}
           <p className="fk-caption">
-            Checks evaluated {a.asOf} · {a.method}. No fund ranking, historical
-            performance, tax estimate or AI recommendation is generated.
+            Snapshot checks evaluated {a.asOf} · {a.method}. Statement XIRR has
+            separate reconciliation gates. No continuous historical performance,
+            tax estimate or AI recommendation is generated.
           </p>
         </>
       )}

@@ -1,9 +1,4 @@
-import Unavailable from "@/components/Unavailable";
+import ReportWorkspace from "@/components/portfolio/ReportWorkspace";
 export default function Page() {
-  return (
-    <Unavailable
-      title="Portfolio reports"
-      reason="Verified exports and tax reports are being rebuilt around reconciled records."
-    />
-  );
+  return <ReportWorkspace />;
 }

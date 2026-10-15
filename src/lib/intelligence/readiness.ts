@@ -1,6 +1,8 @@
 export function performanceReadiness(hasPositions: boolean) {
   return {
     available: false as const,
+    scope:
+      "Snapshot alone; statement-period XIRR has a separate source-ledger assessment.",
     checks: [
       {
         id: "snapshot",
@@ -14,7 +16,8 @@ export function performanceReadiness(hasPositions: boolean) {
         id: "ledger",
         label: "Reconciled transaction ledger",
         ready: false,
-        detail: "Statement records do not establish complete dated cash flows.",
+        detail:
+          "A holdings snapshot does not establish cash-flow completeness. The source statement is evaluated separately in the ledger review.",
       },
       {
         id: "history",
@@ -28,12 +31,12 @@ export function performanceReadiness(hasPositions: boolean) {
         label: "Verified return calculation",
         ready: false,
         detail:
-          "XIRR needs complete flows, a terminal value and convergence checks.",
+          "Source-statement XIRR is evaluated separately. Lifetime returns need complete flows, terminal values and convergence checks.",
       },
     ],
     blocked: [
-      "Period returns",
-      "Portfolio XIRR",
+      "Continuous period returns",
+      "Certified lifetime portfolio XIRR",
       "Historical performance chart",
     ],
   };

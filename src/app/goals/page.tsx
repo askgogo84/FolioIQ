@@ -1,9 +1,4 @@
-import Unavailable from "@/components/Unavailable";
+import PlanningWorkspace from "@/components/portfolio/PlanningWorkspace";
 export default function Page() {
-  return (
-    <Unavailable
-      title="Goal planning"
-      reason="Persistent goal allocations and projections are not ready. The SIP calculator supports clearly labeled scenarios."
-    />
-  );
+  return <PlanningWorkspace key="goals" kind="goals" />;
 }

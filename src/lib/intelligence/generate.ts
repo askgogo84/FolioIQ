@@ -84,7 +84,7 @@ export function analyzePortfolio(
       kind: "readiness",
       title: "History before returns",
       detail:
-        "Complete cash flows and historical valuations are needed to establish investment returns.",
+        "The source-statement ledger checks supported cash flows separately. Continuous performance and lifetime returns still need reconciled history and valuations.",
       evidence: "No estimated XIRR or performance series",
       href: "/transactions",
       action: "Review statement records",

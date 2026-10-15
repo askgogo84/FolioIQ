@@ -1,24 +1,40 @@
-import { authorized, budget, failure, json, ApiError } from "@/lib/server/http";
+import { budget, failure, json, ApiError } from "@/lib/server/http";
+import { readPortfolio } from "@/lib/server/portfolio-read";
+import { boundedText } from "@/lib/providers/bounded-response";
 import { parseAmfi } from "@/lib/portfolio/nav";
 export async function POST(request: Request) {
   try {
-    const { db, user } = await authorized(request);
+    const { db, holdings } = await readPortfolio(request);
+    if (!holdings.length)
+      return json({
+        updated: 0,
+        message: "Import a portfolio before refreshing NAVs.",
+      });
+    if (holdings.length > 2000)
+      throw new ApiError(
+        "This portfolio exceeds the supported NAV batch size. No values were changed.",
+        422,
+      );
     await budget(db, "refresh");
-    const { data: holdings, error } = await db
-      .from("portfolio_holdings")
-      .select("id,isin,amfi_code,scheme_code,units,valuation_date,nav_date")
-      .eq("user_id", user.id);
-    if (error) throw new ApiError("Holdings could not be loaded.", 503);
     const res = await fetch("https://portal.amfiindia.com/spages/NAVAll.txt", {
       signal: AbortSignal.timeout(15000),
       cache: "no-store",
+      redirect: "error",
     });
     if (!res.ok)
       throw new ApiError(
         "AMFI NAV service is unavailable. Existing values are unchanged.",
         502,
       );
-    const map = parseAmfi(await res.text());
+    let map;
+    try {
+      map = parseAmfi(await boundedText(res, 8_000_000));
+    } catch {
+      throw new ApiError(
+        "NAV response failed validation. Existing values are unchanged.",
+        502,
+      );
+    }
     if (map.size < 10)
       throw new ApiError("NAV response could not be validated.", 502);
     const updates = [];
@@ -54,7 +70,7 @@ export async function POST(request: Request) {
         updated +
         " of " +
         (holdings?.length || 0) +
-        " positions using dated AMFI NAVs. Unmatched positions retain their earlier values.",
+        " positions using last imported units × dated AMFI NAVs. Subsequent transactions are not verified. Unmatched positions retain their earlier values.",
     });
   } catch (e) {
     return failure(e);

@@ -56,7 +56,7 @@ export default function ImportPortfolio({
           config: {
             enableCdslFetch: true,
             enableInbox: false,
-            enableGenerator: false,
+            enableGenerator: true,
             homeLayout: "actions",
           },
         });
@@ -236,7 +236,9 @@ export default function ImportPortfolio({
               <p>
                 Only supported non-demat mutual fund folios are imported in this
                 release. Review any excluded assets carefully. For wider mutual
-                fund coverage, upload a CAMS/KFintech CAS.
+                fund coverage, use the provider’s CAMS/KFintech statement
+                request or upload a detailed CAS. A statement request is sent to
+                your registered email; it does not establish ongoing sync.
               </p>
             </>
           ) : (
@@ -277,7 +279,9 @@ export default function ImportPortfolio({
               disabled={busy}
             />
             I authorize sending this statement and any required decryption
-            details to CASParser for this import. I have read the{" "}
+            details to CASParser for this import. When using the connection
+            widget, I also authorize the connection details and statement
+            request I choose there. I have read the{" "}
             <Link href="/privacy">data-use notice</Link>.
           </label>
           <button

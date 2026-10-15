@@ -2,18 +2,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import AppLayout from "../AppLayout";
-import { usePortfolio } from "./usePortfolio";
+import { usePortfolio, useResource } from "./usePortfolio";
+import type { LedgerAssessment } from "@/lib/portfolio/ledger";
 import { LoadingState, ErrorState } from "./Evidence";
 import { money } from "@/lib/portfolio/format";
+import JevGuide from "./JevGuide";
 const prompts = [
   "What is my reported portfolio value?",
   "What evidence is missing?",
   "Where is my largest AMC exposure?",
-  "Why are returns unavailable?",
+  "What return evidence is available?",
   "Can you recommend a fund?",
 ];
 export default function PortfolioGuide() {
   const { data, error, loading, retry } = usePortfolio();
+  const ledger = useResource<{ assessment: LedgerAssessment | null }>(
+    "/api/portfolio/ledger",
+  );
   const [selected, setSelected] = useState(0);
   const a = data?.analysis;
   const answers = a
@@ -36,7 +41,19 @@ export default function PortfolioGuide() {
             a.concentration.amc.largest.percent.toFixed(1) +
             "% of known snapshot value. Unvalued positions are excluded; this does not measure underlying security overlap or suitability."
           : "There is not enough reported AMC/value data to identify an exposure.",
-        "A snapshot and latest-statement records do not prove complete cash flows. XIRR and period charts remain unavailable until a reconciled ledger and historical valuations are supported.",
+        ledger.loading
+          ? "Statement reconciliation is loading."
+          : ledger.error
+            ? "Statement reconciliation is unavailable. Review the ledger on your dashboard."
+            : ledger.data?.assessment?.return.rate != null
+              ? "Your annualized statement-period cash-flow XIRR is " +
+                (ledger.data.assessment.return.rate * 100).toFixed(2) +
+                "%, over " +
+                ledger.data.assessment.from +
+                " to " +
+                ledger.data.assessment.to +
+                ". It uses the statement’s closing value and supported cash flows; it is not certified lifetime or live performance."
+              : "Statement XIRR requires valid dates, zero opening units, supported cash flows and reconciled closing units. Review the ledger for your specific blockers. Continuous performance charts still need historical units and valuations.",
         "No. Verified fund history, benchmark and holdings data, costs, and your risk/horizon preferences are needed before a suitable comparison or recommendation can be made.",
       ]
     : [];
@@ -48,8 +65,9 @@ export default function PortfolioGuide() {
       <div className="trust-notice">
         <strong>Rule-based guide · not an AI adviser</strong>
         <p>
-          These answers come from the same checked fields as your dashboard. No
-          AI model is called and no personal investment advice is generated.
+          The questions below use the same checked fields as your dashboard.
+          Selecting them makes no AI call. Optional Jev question matching is
+          separate and requires explicit consent.
         </p>
       </div>
       {error ? (
@@ -88,6 +106,7 @@ export default function PortfolioGuide() {
           </section>
         </div>
       )}
+      <JevGuide />
     </AppLayout>
   );
 }

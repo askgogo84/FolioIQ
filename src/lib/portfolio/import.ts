@@ -18,6 +18,7 @@ export type Holding = {
   nav_date: string | null;
   valuation_date: string | null;
   sip_amount: null;
+  opening_units?: number | null;
 };
 export type Transaction = {
   position_key: string;
@@ -28,6 +29,7 @@ export type Transaction = {
   amount: number | null;
   nav: number | null;
   ordinal: number;
+  balance?: number | null;
 };
 export type ImportPreview = {
   holdings: Holding[];
@@ -36,6 +38,7 @@ export type ImportPreview = {
   warnings: string[];
   checksum: string;
   source: string;
+  statement_from?: string | null;
 };
 type Obj = Record<string, unknown>;
 function obj(v: unknown): Obj {
@@ -85,13 +88,17 @@ export function normalizeCas(
   input: unknown,
   source = "casparser",
 ): ImportPreview {
-  const root = obj(input);
+  const outer = obj(input);
+  const root = outer.raw_response ? obj(outer.raw_response) : outer;
   if (root.status === "failed" || root.status === "error")
     throw new Error(
       "The provider could not parse this statement. Check the file and password.",
     );
   const period = obj(obj(root.meta).statement_period);
   const statement_date = isoDate(period.to);
+  const statement_from = isoDate(period.from);
+  if (statement_from && statement_date && statement_from > statement_date)
+    throw new Error("Statement period is reversed.");
   const holdings: Holding[] = [],
     transactions: Transaction[] = [],
     warnings = new Set<string>();
@@ -145,6 +152,16 @@ export function normalizeCas(
         );
       seen.add(positionKey);
       const units = numeric(s.units ?? s.balance_units);
+      const opening = numeric(extra.open_units),
+        closing = numeric(extra.close_units);
+      if (
+        (opening !== null && opening < 0) ||
+        (closing !== null &&
+          (units === null || Math.abs(closing - units) > 0.00001))
+      )
+        throw new Error(
+          "Source opening or closing units are invalid or inconsistent.",
+        );
       const nav = numeric(s.nav ?? s.last_nav),
         cost = numeric(
           s.cost ?? s.cost_value ?? s.purchase_cost ?? s.invested_value,
@@ -202,6 +219,7 @@ export function normalizeCas(
         nav_date: null,
         valuation_date: statement_date,
         sip_amount: null,
+        opening_units: opening,
       });
       if (s.transactions !== undefined && !Array.isArray(s.transactions))
         throw new Error("Invalid transaction list.");
@@ -219,6 +237,7 @@ export function normalizeCas(
           amount: numeric(t.amount),
           nav: numeric(t.nav),
           ordinal,
+          balance: numeric(t.balance),
         });
       }
     }
@@ -228,7 +247,7 @@ export function normalizeCas(
   warnings.add(
     "Transaction coverage is limited to this statement. Portfolio XIRR, historical returns and tax estimates remain unavailable until complete history is reconciled.",
   );
-  const core = { holdings, transactions, statement_date };
+  const core = { holdings, transactions, statement_date, statement_from };
   return {
     ...core,
     warnings: [...warnings],

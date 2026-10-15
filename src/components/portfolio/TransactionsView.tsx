@@ -5,6 +5,8 @@ import AppLayout from "../AppLayout";
 import { useResource } from "./usePortfolio";
 import { LoadingState, ErrorState } from "./Evidence";
 import { money } from "@/lib/portfolio/format";
+import LedgerPanel from "./LedgerPanel";
+import Pagination from "./Pagination";
 type Tx = {
   id: string;
   scheme_name: string;
@@ -19,13 +21,18 @@ export default function TransactionsView() {
     coverage: string;
   }>("/api/portfolio/transactions");
   const [query, setQuery] = useState(""),
-    [kind, setKind] = useState("all");
+    [kind, setKind] = useState("all"),
+    [page, setPage] = useState(0);
   const rows = data?.transactions || [];
   const types = Array.from(new Set(rows.map((r) => r.transaction_type))).sort();
   const shown = rows.filter(
     (r) =>
       (kind === "all" || r.transaction_type === kind) &&
       r.scheme_name.toLowerCase().includes(query.toLowerCase()),
+  );
+  const currentPage = Math.min(
+    page,
+    Math.max(0, Math.ceil(shown.length / 50) - 1),
   );
   return (
     <AppLayout>
@@ -57,13 +64,22 @@ export default function TransactionsView() {
                 <input
                   type="search"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setPage(0);
+                  }}
                   placeholder="Search statement records"
                 />
               </label>
               <label>
                 Transaction label
-                <select value={kind} onChange={(e) => setKind(e.target.value)}>
+                <select
+                  value={kind}
+                  onChange={(e) => {
+                    setKind(e.target.value);
+                    setPage(0);
+                  }}
+                >
                   <option value="all">All labels</option>
                   {types.map((t) => (
                     <option key={t}>{t}</option>
@@ -95,17 +111,19 @@ export default function TransactionsView() {
                     </tr>
                   </thead>
                   <tbody>
-                    {shown.map((r) => (
-                      <tr key={r.id}>
-                        <td>{r.transaction_date || "Unknown"}</td>
-                        <td>{r.scheme_name}</td>
-                        <td>{r.transaction_type}</td>
-                        <td>{r.units ?? "Unknown"}</td>
-                        <td>
-                          {money(r.amount === null ? null : Number(r.amount))}
-                        </td>
-                      </tr>
-                    ))}
+                    {shown
+                      .slice(currentPage * 50, (currentPage + 1) * 50)
+                      .map((r) => (
+                        <tr key={r.id}>
+                          <td>{r.transaction_date || "Unknown"}</td>
+                          <td>{r.scheme_name}</td>
+                          <td>{r.transaction_type}</td>
+                          <td>{r.units ?? "Unknown"}</td>
+                          <td>
+                            {money(r.amount === null ? null : Number(r.amount))}
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -122,6 +140,12 @@ export default function TransactionsView() {
                 </Link>
               </div>
             )}
+            <Pagination
+              page={currentPage}
+              total={shown.length}
+              onChange={setPage}
+              label="Transactions"
+            />
           </section>
           <div className="fk-action-grid">
             <Link className="fk-action" href="/sips">
@@ -133,6 +157,7 @@ export default function TransactionsView() {
               <p>View your snapshot, coverage and allocations.</p>
             </Link>
           </div>
+          <LedgerPanel />
         </>
       )}
     </AppLayout>
