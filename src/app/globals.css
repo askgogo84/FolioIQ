@@ -1593,3 +1593,24 @@ button {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Lenis (marketing routes only) ───────────────────────────────────────────
+   Scoped to .lenis, which Lenis adds to <html> only while it is running, so
+   every rule here is inert on app routes and under prefers-reduced-motion.
+   See src/components/scroll/smooth-scroll.tsx. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+html.lenis {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
