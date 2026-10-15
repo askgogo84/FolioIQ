@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "./AppLayout";
-import { money } from "./PortfolioOverview";
+import { money } from "@/lib/portfolio/format";
 type Preview = {
   draftId: string;
   holdings: {
@@ -117,11 +117,36 @@ export default function ImportPortfolio({
   }
   return (
     <AppLayout>
-      <div className="trust-eyebrow">Connect · review · confirm</div>
+      <div className="trust-eyebrow">
+        A considered beginning · Your portfolio
+      </div>
       <h1>{connect ? "Connect your portfolio." : "Import your portfolio."}</h1>
       <p>
-        Review every imported position before replacing your current snapshot.
+        Bring your holdings into one considered view. You stay in control of
+        what gets imported.
       </p>
+      <ol className="fk-import-steps" aria-label="Import progress">
+        {[
+          "Choose your source",
+          "Review the evidence",
+          "Confirm your portfolio",
+        ].map((step, i) => (
+          <li
+            key={step}
+            aria-current={
+              (!preview ? 0 : confirmed ? 2 : 1) === i ? "step" : undefined
+            }
+          >
+            <span>{i + 1}</span>
+            {step}
+          </li>
+        ))}
+      </ol>
+      <div className="fk-import-assurance">
+        <span>✓ Review before replacing</span>
+        <span>✓ Separate folios preserved</span>
+        <span>✓ Missing values stay unknown</span>
+      </div>
       {!configured && (
         <div role="status" className="trust-notice">
           Portfolio import is temporarily unavailable while provider access is

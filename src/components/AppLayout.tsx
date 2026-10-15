@@ -10,6 +10,9 @@ const links = [
   ["/connect", "Connect with OTP"],
   ["/transactions", "Transactions"],
   ["/intelligence", "Portfolio insights"],
+  ["/sips", "SIP readiness"],
+  ["/rebalance", "Rebalance readiness"],
+  ["/chat", "Portfolio guide"],
   ["/calculator", "SIP calculator"],
   ["/profile", "Profile"],
 ];
@@ -27,7 +30,12 @@ export default function AppLayout({
   const [theme, setTheme] = useState("light"),
     [error, setError] = useState("");
   useEffect(() => {
-    const saved = localStorage.getItem("folioiq-theme");
+    let saved: string | null = null;
+    try {
+      saved = localStorage.getItem("folioiq-theme");
+    } catch {}
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize a persisted browser preference after hydration.
+    setTheme(saved === "dark" ? "dark" : "light");
     document.documentElement.setAttribute(
       "data-theme",
       saved === "dark" ? "dark" : "light",
@@ -40,7 +48,9 @@ export default function AppLayout({
         : "dark";
     setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("folioiq-theme", next);
+    try {
+      localStorage.setItem("folioiq-theme", next);
+    } catch {}
   }
   async function logout() {
     const { error } = await createClient().auth.signOut();
@@ -83,7 +93,22 @@ export default function AppLayout({
           <Link href="/dashboard" className="trust-brand">
             FolioKey
           </Link>
-          <span>Data before decisions</span>
+          <span>YOUR WEALTH, WITH PERSPECTIVE</span>
+          <details className="fk-mobile-menu">
+            <summary>Explore</summary>
+            <nav aria-label="All workspace pages">
+              {links.map(([href, label]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={current === href ? "page" : undefined}
+                >
+                  {label}
+                </Link>
+              ))}
+              <button onClick={logout}>Sign out</button>
+            </nav>
+          </details>
           <button onClick={toggle} aria-label="Toggle color theme">
             {theme === "dark" ? "Light theme" : "Dark theme"}
           </button>
@@ -98,7 +123,7 @@ export default function AppLayout({
         </main>
       </div>
       <nav className="trust-bottom" aria-label="Mobile navigation">
-        {[links[0], links[1], links[2], links[5], links[7]].map(
+        {[links[0], links[1], links[2], links[5], links[links.length - 1]].map(
           ([href, label]) => (
             <Link
               key={href}

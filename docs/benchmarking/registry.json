@@ -1,0 +1,928 @@
+{
+  "title": "FolioKey · Lawful benchmarking and integration track",
+  "reviewDate": "2026-10-14",
+  "status": "Local review draft; not merged or deployed",
+  "baseline": "Local source 9be7ec3; previously deployed PR2 merge a6728b0. No fresh production inspection in this track.",
+  "scope": "Seven public product benchmarks; nine public repositories at pinned commits. Static evidence review, not an independent product/security audit.",
+  "policy": [
+    "Use public pages, official help/docs, permitted public flows and public repository material only. No private API scraping, auth bypass, decompilation, leaked repositories or proprietary code/UI/assets.",
+    "No paid provider/model calls, production DB mutations, merge or deployment in this track. Local documentation work only; review gates remain before implementation release.",
+    "Software license, dependency license, data redistribution rights, provider access contract and product/advisory eligibility are separate checks. Public visibility is not a blanket permission.",
+    "Keep FolioKey’s existing charcoal/lime and ivory/forest design tokens and original components; keep Supabase as the sole application authentication system.",
+    "Study requirements and general architecture; do not reconstruct proprietary scoring formulas, imitate exact screens, copy marketing text, or infer algorithms from private responses.",
+    "No external code, copyrighted screenshots, production financial records or third-party datasets are included in these deliverables. No external repository code was installed or executed.",
+    "Future reuse requires upstream URL, commit, exact file list, license evidence, dependency SBOM, NOTICE/attribution, modified-file notices where required, and an accountable reviewer. Unknown/absent permission means no code reuse.",
+    "Do not copy example tax rates, fund rankings, health scores, artificial histories or demonstration financial values into product output. Synthetic fixtures stay explicitly test-only."
+  ],
+  "sources": {
+    "dezerv": [
+      "Dezerv Wealth Monitor",
+      "https://www.dezerv.in/wealth-monitor-on-web/"
+    ],
+    "overlap": [
+      "Dezerv public overlap tool",
+      "https://www.dezerv.in/mutual-funds/portfolio-overlap/"
+    ],
+    "groww": [
+      "Groww external-fund help",
+      "https://groww.in/help/mutual-funds/mf-track-and-switch/how-to-i-track-my-external-funds-on-groww--37"
+    ],
+    "compare": [
+      "Groww public comparison page",
+      "https://groww.in/mutual-funds/compare"
+    ],
+    "et": [
+      "ET Money portfolio health",
+      "https://www.etmoney.com/portfolio-health"
+    ],
+    "consistency": [
+      "ET Money consistency methodology overview",
+      "https://www.etmoney.com/help/mutual-funds/fund-report-card/what-is-consistency-of-return"
+    ],
+    "kuvera": [
+      "Kuvera platform overview",
+      "https://kuvera.in/blog/how-to-choose-the-right-mutual-fund-investing-platform/"
+    ],
+    "goals": [
+      "Kuvera goal planning",
+      "https://kuvera.in/blog/the-importance-of-goal-planning-in-investing-a-path-to-financial-success/"
+    ],
+    "trade": [
+      "Kuvera TradeSmart",
+      "https://kuvera.in/feature/trade-smart"
+    ],
+    "ind": [
+      "INDmoney portfolio analytics",
+      "https://www.indmoney.com/mutual-funds/portfolio-analytics"
+    ],
+    "indimport": [
+      "INDmoney external-fund tracking",
+      "https://www.indmoney.com/mutual-funds/track-mutual-funds"
+    ],
+    "paytm": [
+      "Paytm Money portfolio analysis",
+      "https://www.paytmmoney.com/blog/analyse-mutual-fund-portfolio-paytm-money/"
+    ],
+    "coin": [
+      "Zerodha Coin XIRR help",
+      "https://support.zerodha.com/category/mutual-funds/understanding-mutual-funds/about-coin/articles/xirr-on-coin"
+    ],
+    "amfi": [
+      "AMFI public NAV page",
+      "https://www.amfiindia.com/net-asset-value"
+    ],
+    "aa": [
+      "Setu AA onboarding",
+      "https://docs.setu.co/data/account-aggregator/quickstart"
+    ],
+    "discovery": [
+      "Setu discovery and consent screens",
+      "https://docs.setu.co/data/account-aggregator/embed-setu-aa"
+    ],
+    "eligibility": [
+      "Sahamati eligibility FAQ",
+      "https://sahamati.org.in/faq/"
+    ],
+    "cdsl": [
+      "CASParser CDSL prerequisites",
+      "https://casparser.in/docs/guides/cdsl-fetch"
+    ],
+    "licensing": [
+      "GitHub licensing guidance",
+      "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository"
+    ],
+    "apache": [
+      "Apache 2.0 terms",
+      "https://www.apache.org/licenses/LICENSE-2.0"
+    ]
+  },
+  "competitors": [
+    {
+      "name": "Dezerv",
+      "evidence": [
+        "dezerv",
+        "overlap"
+      ],
+      "observed": "Wealth Monitor advertises portfolio red flags and review. The separate public overlap tool compares common equity holdings and fund characteristics.",
+      "limitation": "Private scoring, weightings, paid access and live-account outcomes were not inspected. Abstention behavior was not verified.",
+      "pattern": "Evidence-led findings: what changed, source/date, impact, limitations and a proportionate next step. Diversification and underperformance are separate findings.",
+      "gap": "Only data coverage and simple concentration checks exist. Build category-relative review, dated look-through and recurring monitoring.",
+      "phase": "PR4–PR6"
+    },
+    {
+      "name": "Groww",
+      "evidence": [
+        "groww",
+        "compare"
+      ],
+      "observed": "Official help describes importing external funds through OTP into the dashboard; a public fund comparison page is available.",
+      "limitation": "Help describes the user journey, not an API license or universal account coverage. No authenticated flow was exercised.",
+      "pattern": "Short connect → review → tracker journey. Separate value, cash invested, gains and time-aware returns; compare like-for-like plans.",
+      "gap": "CAS preview exists. Mobile-led provider aggregation, transaction-backed returns and a real comparison engine are missing.",
+      "phase": "PR1–PR4; PR2A"
+    },
+    {
+      "name": "ET Money",
+      "evidence": [
+        "et",
+        "consistency"
+      ],
+      "observed": "Health review covers volatility, sector exposure, category-relative performance and investment behavior. Its methodology overview emphasizes consistency across longer history.",
+      "limitation": "Exact attention/monitor/performing labels and monthly report delivery were not verified. Proprietary ratings/weights are unknown; do not replicate them.",
+      "pattern": "Original review states: insufficient evidence, needs review, monitor, within stated criteria. Monthly in-app snapshots with explicit methodology and change reasons.",
+      "gap": "No consistency engine, supported SIP-discipline measure or monthly analytical report. Do not infer missed SIPs from an incomplete statement.",
+      "phase": "PR4–PR6"
+    },
+    {
+      "name": "Kuvera",
+      "evidence": [
+        "kuvera",
+        "goals",
+        "trade"
+      ],
+      "observed": "Public material describes goal/risk-oriented planning and recommendations. TradeSmart presents tax and exit-load context around transactions.",
+      "limitation": "Some material is historical. Tax thresholds on marketing pages are not authoritative current law. Execution and recommendation internals were not inspected.",
+      "pattern": "Separate risk capacity, tolerance, horizon and liquidity needs; connect goals to holdings; show estimated costs before any action.",
+      "gap": "Risk/goals, lot-based tax, rebalance and execution are unavailable. Build planning before transaction execution.",
+      "phase": "PR7–PR9"
+    },
+    {
+      "name": "INDmoney",
+      "evidence": [
+        "ind",
+        "indimport"
+      ],
+      "observed": "Advertises combined internal/external MF analytics: XIRR, dividends, allocation, underlying sectors and benchmark context.",
+      "limitation": "Advertised analytics were not independently reconciled. The named import backend is not proof of availability to FolioKey.",
+      "pattern": "Explain contributions versus investment growth; show coverage and per-fund attribution before an aggregate conclusion.",
+      "gap": "Missing complete cashflows, dividend accounting, suitable benchmark comparisons and look-through allocation.",
+      "phase": "PR2–PR5"
+    },
+    {
+      "name": "Paytm Money",
+      "evidence": [
+        "paytm"
+      ],
+      "observed": "Official portfolio article describes AMC, fund-type, asset-allocation, sector and underlying-holdings views.",
+      "limitation": "No authenticated app or data feed was inspected; availability and entitlements can vary.",
+      "pattern": "Progressive disclosure: portfolio → fund → underlying exposure, with dates and readable mobile summaries.",
+      "gap": "Basic AMC/category observations only; no dated underlying security/sector exposure.",
+      "phase": "PR5–PR6"
+    },
+    {
+      "name": "Zerodha Coin",
+      "evidence": [
+        "coin"
+      ],
+      "observed": "Official help explains cashflow timing and shows access to portfolio XIRR on app and web.",
+      "limitation": "No calculation code or private endpoints were inspected. A public explanation is not an independent numerical oracle.",
+      "pattern": "Explain why absolute gain differs from annualised money-weighted return; make calculation coverage inspectable.",
+      "gap": "No complete-ledger XIRR; do not average individual fund XIRRs into portfolio XIRR.",
+      "phase": "PR2–PR3"
+    }
+  ],
+  "repositories": [
+    {
+      "repo": "codereverser/folioman",
+      "url": "https://github.com/codereverser/folioman",
+      "sha": "b098bd79202dd3a569916d1a990298d7f2705274",
+      "branch": "main",
+      "pushedAt": "2026-10-08T04:47:09Z",
+      "archived": false,
+      "license": "AGPL-3.0 (license text verified)",
+      "decision": "Study high-level concepts only under this plan. No code port or vendoring without a separate copyleft compatibility decision.",
+      "modules": [
+        "core/src/folioman_core/reconciliation.py",
+        "core/src/folioman_core/fifo.py",
+        "core/src/folioman_core/xirr.py",
+        "app/src/folioman_app/models/ledger.py"
+      ],
+      "pattern": "Reconciliation as a first-class state; ledger completeness separate from valuation; local-first processing and reduced holdings leakage through bulk market data.",
+      "risk": "AGPL network-source obligations may apply to a modified/combined service. A separate process is not automatic exemption. README privacy claims are not a security audit; local ownership assumptions do not replace multi-user RLS.",
+      "fit": "High conceptual fit for PR2–PR3; original TypeScript implementation. Do not lift tax rules or UI.",
+      "depth": "README, license and tree only; implementation files identified, not reviewed or executed.",
+      "licenseUrl": "https://github.com/codereverser/folioman/blob/b098bd79202dd3a569916d1a990298d7f2705274/LICENSE",
+      "readmeUrl": "https://github.com/codereverser/folioman/blob/b098bd79202dd3a569916d1a990298d7f2705274/README.md",
+      "inspectedFiles": []
+    },
+    {
+      "repo": "mf-dashboard/mf-dashboard.github.io",
+      "url": "https://github.com/mf-dashboard/mf-dashboard.github.io",
+      "sha": "7f2935b34aa26059653792fb17a262af79200c03",
+      "branch": "master",
+      "pushedAt": "2026-07-11T20:35:47Z",
+      "archived": false,
+      "license": "No license grant found in reviewed tree/README; current source advertised as private",
+      "decision": "Public product description only. No code, screenshot, asset or historical-source reuse.",
+      "modules": [
+        "README.md"
+      ],
+      "pattern": "Import status, data freshness, transaction drill-down and explicit partial-history labels are useful product requirements.",
+      "risk": "README names an unofficial Groww API. Exclude that integration entirely. Browser storage can expose financial data on shared devices; advertised weighted trailing returns are not an investor-return calculation.",
+      "fit": "Concepts for original reporting only. Not an available open-source integration dependency.",
+      "depth": "README and current public tree; no private source sought and no unofficial endpoint called.",
+      "licenseUrl": "https://github.com/mf-dashboard/mf-dashboard.github.io/blob/7f2935b34aa26059653792fb17a262af79200c03/README.md",
+      "readmeUrl": "https://github.com/mf-dashboard/mf-dashboard.github.io/blob/7f2935b34aa26059653792fb17a262af79200c03/README.md",
+      "inspectedFiles": []
+    },
+    {
+      "repo": "AngelOneWealth/openreversefeed",
+      "url": "https://github.com/AngelOneWealth/openreversefeed",
+      "sha": "42f20efbad07cc678706b423e6db0398b128c925",
+      "branch": "main",
+      "pushedAt": "2026-09-07T14:29:01Z",
+      "archived": false,
+      "license": "Apache-2.0; LICENSE and NOTICE verified",
+      "decision": "Selected code may be adapted after per-file and dependency checks, retaining license, applicable NOTICE/copyright and modification notices. No code copied now.",
+      "modules": [
+        "src/openreversefeed/adapters/cams.py",
+        "src/openreversefeed/adapters/kfintech.py",
+        "src/openreversefeed/core/composite_key.py",
+        "src/openreversefeed/core/fifo.py",
+        "src/openreversefeed/db/models.py"
+      ],
+      "pattern": "Registrar adapters → canonical records → deduplication/correction review → durable ledger; transactional outbox for downstream work.",
+      "risk": "Alpha status and README-listed incomplete integration/publisher tests. Reviewed FIFO ignores unmatched sell remainder: reject this behavior. PAN-based family fallback is not authorization. Registrar files still require lawful access; reverse feed is a feed-processing term, not permission to reverse engineer.",
+      "fit": "Strong architectural reference for PR2. Keep Supabase ownership/RLS and fail on unresolved lots; no Python/Django deployment added merely to reuse it.",
+      "depth": "README, tree, license, NOTICE, dependency manifest, composite-key and FIFO source inspected; no runtime tests run.",
+      "licenseUrl": "https://github.com/AngelOneWealth/openreversefeed/blob/42f20efbad07cc678706b423e6db0398b128c925/LICENSE",
+      "readmeUrl": "https://github.com/AngelOneWealth/openreversefeed/blob/42f20efbad07cc678706b423e6db0398b128c925/README.md",
+      "inspectedFiles": [
+        "NOTICE",
+        "src/openreversefeed/core/fifo.py",
+        "src/openreversefeed/core/composite_key.py",
+        "pyproject.toml"
+      ]
+    },
+    {
+      "repo": "Yashsavgupta/Portfolio-Analysis",
+      "url": "https://github.com/Yashsavgupta/Portfolio-Analysis",
+      "sha": "70dcfe139ff1b222cccde4717e0f5302172e2e2e",
+      "branch": "main",
+      "pushedAt": "2026-05-17T16:15:33Z",
+      "archived": false,
+      "license": "README says MIT; no standalone LICENSE/COPYING file found in inspected tree",
+      "decision": "License declaration recorded, but code reuse held pending clarification of complete grant/attribution and dependency scope. Study public architecture only.",
+      "modules": [
+        "backend/app/services/import_service.py",
+        "backend/app/services/mutual_fund_analytics_service.py",
+        "backend/app/services/tradebook_service.py",
+        "backend/app/models/mf_transaction.py"
+      ],
+      "pattern": "Separate import, transactions, analytics and presentation; treat uploaded broker exports as user-authorized files.",
+      "risk": "README lists its own JWT auth, mfapi and yfinance. Do not substitute its auth for Supabase or adopt undocumented market-data access. No private broker API investigation or connector use.",
+      "fit": "Useful boundaries for PR2–PR3, not a production-ready drop-in. No UI/assets or financial algorithms copied.",
+      "depth": "README and tree inspected; modules identified but source not reviewed because reuse is on hold.",
+      "licenseUrl": "https://github.com/Yashsavgupta/Portfolio-Analysis/blob/70dcfe139ff1b222cccde4717e0f5302172e2e2e/README.md",
+      "readmeUrl": "https://github.com/Yashsavgupta/Portfolio-Analysis/blob/70dcfe139ff1b222cccde4717e0f5302172e2e2e/README.md",
+      "inspectedFiles": []
+    },
+    {
+      "repo": "codereverser/casparser",
+      "url": "https://github.com/codereverser/casparser",
+      "sha": "bca0f442e1b0788a6b6a927e6280a94515f66fd2",
+      "branch": "main",
+      "pushedAt": "2026-09-23T05:17:05Z",
+      "archived": false,
+      "license": "MIT; complete license text verified",
+      "decision": "Candidate for a separately reviewed local-parser pilot; retain copyright/license on adaptation. Dependency/native-library notices require review.",
+      "modules": [
+        "casparser/types.py",
+        "casparser/parsers/cams_detailed.py",
+        "casparser/parsers/cams_summary.py",
+        "casparser/parsers/extract.py",
+        "casparser/analysis/gains.py"
+      ],
+      "pattern": "Typed statement variants, warnings and reconciliation before downstream analytics; optional local parsing reduces third-party document disclosure.",
+      "risk": "Python/native PDFium parser: hostile-PDF resource limits and isolation required. Current manifest uses pypdfium2 and casparser-isin; their license/data scope needs a separate audit. Do not adopt tax results without independent current-rule validation.",
+      "fit": "Strong parser candidate for PR2B, after canonical schema. This repository is distinct from the commercial casparser.in API currently configured; no affiliation or schema equivalence assumed.",
+      "depth": "README, tree, license, dependency manifest and extraction module inspected; no PDF parsed and no dependency installed.",
+      "licenseUrl": "https://github.com/codereverser/casparser/blob/bca0f442e1b0788a6b6a927e6280a94515f66fd2/LICENSE",
+      "readmeUrl": "https://github.com/codereverser/casparser/blob/bca0f442e1b0788a6b6a927e6280a94515f66fd2/README.md",
+      "inspectedFiles": [
+        "pyproject.toml",
+        "casparser/parsers/extract.py"
+      ]
+    },
+    {
+      "repo": "Anexen/pyxirr",
+      "url": "https://github.com/Anexen/pyxirr",
+      "sha": "5f31a85684051fb6badb542afba0ac1af5a68f9c",
+      "branch": "main",
+      "pushedAt": "2025-11-03T22:03:02Z",
+      "archived": false,
+      "license": "Unlicense; text and Cargo declaration verified",
+      "decision": "Candidate for an offline numerical reference or adapted solver after dependency/license review. Preserve provenance voluntarily; no code copied now.",
+      "modules": [
+        "src/core/scheduled/xirr.rs",
+        "src/core/scheduled/day_count.rs",
+        "Cargo.toml"
+      ],
+      "pattern": "Explicit day-count convention, root-solving diagnostics and non-conventional cashflow handling.",
+      "risk": "Numerical output does not prove ledger completeness. Multiple valid roots or no convergence must be disclosed, not silently reduced to a confident return. Native build/dependencies remain unaudited.",
+      "fit": "High testing fit for PR3; not a reason to add Rust/Python to the live Next.js request path.",
+      "depth": "README, license, tree, solver and Cargo manifest inspected; not installed or executed.",
+      "licenseUrl": "https://github.com/Anexen/pyxirr/blob/5f31a85684051fb6badb542afba0ac1af5a68f9c/LICENSE",
+      "readmeUrl": "https://github.com/Anexen/pyxirr/blob/5f31a85684051fb6badb542afba0ac1af5a68f9c/README.md",
+      "inspectedFiles": [
+        "src/core/scheduled/xirr.rs",
+        "Cargo.toml"
+      ]
+    },
+    {
+      "repo": "shahroz-a/mutual-fund-historical-data",
+      "url": "https://github.com/shahroz-a/mutual-fund-historical-data",
+      "sha": "de1004fc1f67e662e3cff02556cc069059d1b14b",
+      "branch": "mutual-fund-historical-data",
+      "pushedAt": "2026-10-13T20:54:42Z",
+      "archived": false,
+      "license": "MIT repository license; upstream dataset rights/provenance not independently cleared",
+      "decision": "Validation/checksum/update architecture is a candidate. Do not ingest the published history into production yet.",
+      "modules": [
+        "scripts/update_dataset_from_amfi.py",
+        "scripts/validation.py",
+        "scripts/generate_checksums.py",
+        "scripts/import_dataset_archive.py"
+      ],
+      "pattern": "Dated partitions, freshness checks, duplicate detection, checksums and reproducible release manifests.",
+      "risk": "Public updater reads AMFI exports, but an optional private-archive import leaves historical collection lineage unverified. “Generated” describes packaging and is not proof of synthetic values; validate provenance. Checksums establish integrity, not truth or redistribution rights.",
+      "fit": "Useful quality gates for PR3. Full-history/inception claims require independent sampling and inactive/merged scheme coverage checks.",
+      "depth": "README, license, tree, public updater, validation and archive-import code inspected; no archive/history downloaded.",
+      "licenseUrl": "https://github.com/shahroz-a/mutual-fund-historical-data/blob/de1004fc1f67e662e3cff02556cc069059d1b14b/LICENSE",
+      "readmeUrl": "https://github.com/shahroz-a/mutual-fund-historical-data/blob/de1004fc1f67e662e3cff02556cc069059d1b14b/README.md",
+      "inspectedFiles": [
+        "scripts/update_dataset_from_amfi.py",
+        "scripts/import_dataset_archive.py",
+        "scripts/validation.py"
+      ]
+    },
+    {
+      "repo": "rajadilipkolli/historical-mf-nav-data",
+      "url": "https://github.com/rajadilipkolli/historical-mf-nav-data",
+      "sha": "8ba2b3772bc6ea9fb7ecd57fac1777cd8ef9f9cc",
+      "branch": "main",
+      "pushedAt": "2026-10-14T06:56:18Z",
+      "archived": false,
+      "license": "MIT repository license; underlying data-use rights require separate confirmation",
+      "decision": "Study/adapt selected indexing and ingestion patterns with MIT attribution; bulk dataset use deferred.",
+      "modules": [
+        "python/fetch.py",
+        "python/generate.py",
+        "src/main/java/com/github/rajadilipkolli/dailynav/application/port/NavLookupPort.java"
+      ],
+      "pattern": "Indexed NAV storage by date/scheme, ISIN lookup and explicit health monitoring.",
+      "risk": "AMFI fetching still needs permitted-use/rate-limit review. Dataset completeness/corrections not independently verified. Do not adopt momentum/DMA or natural-language SQL as suitability or production access controls.",
+      "fit": "Medium PR3 reference. Original Postgres tables fit FolioKey better than adding a Java/SQLite application runtime.",
+      "depth": "README, license, tree, fetch and generation scripts inspected; no dataset or executable downloaded.",
+      "licenseUrl": "https://github.com/rajadilipkolli/historical-mf-nav-data/blob/8ba2b3772bc6ea9fb7ecd57fac1777cd8ef9f9cc/LICENSE",
+      "readmeUrl": "https://github.com/rajadilipkolli/historical-mf-nav-data/blob/8ba2b3772bc6ea9fb7ecd57fac1777cd8ef9f9cc/README.md",
+      "inspectedFiles": [
+        "python/fetch.py",
+        "python/generate.py"
+      ]
+    },
+    {
+      "repo": "NayakwadiS/mftool",
+      "url": "https://github.com/NayakwadiS/mftool",
+      "sha": "12fbdafea049210ee348fb0ad13f131c3becb13d",
+      "branch": "master",
+      "pushedAt": "2026-10-05T16:33:29Z",
+      "archived": false,
+      "license": "MIT; complete license text verified",
+      "decision": "Selected cache/normalization code can be considered with MIT notices; no blanket approval for all provider methods.",
+      "modules": [
+        "mftool/mftool.py",
+        "mftool/const.json",
+        "mftool/cache.py"
+      ],
+      "pattern": "Scheme-code lookup, explicit NAV dates and bounded caching. Separate fetch/parse/cache responsibilities.",
+      "risk": "Configuration mixes public NAV export, mfapi and website module/gateway endpoints. Exclude undocumented endpoints until explicit permitted use is established. Per-fund requests reveal interest/holdings; cached data can become stale.",
+      "fit": "Medium fit for PR3. Prefer FolioKey’s original AMFI parser and a source allowlist; no library-wide dependency now.",
+      "depth": "README, tree, license, implementation, endpoint configuration and JSON cache inspected; no market-data call executed.",
+      "licenseUrl": "https://github.com/NayakwadiS/mftool/blob/12fbdafea049210ee348fb0ad13f131c3becb13d/LICENSE",
+      "readmeUrl": "https://github.com/NayakwadiS/mftool/blob/12fbdafea049210ee348fb0ad13f131c3becb13d/README.md",
+      "inspectedFiles": [
+        "mftool/mftool.py",
+        "mftool/const.json",
+        "mftool/cache.py"
+      ]
+    }
+  ],
+  "contracts": [
+    [
+      "Canonical event",
+      "Owner ID derived from session; owner-scoped account/folio; exact scheme/plan/option; event type; effective and posting dates; decimal-string units/amount; source row reference/hash; source schema version; correction/supersedes reference. PAN is not an authorization key."
+    ],
+    [
+      "Evidence status",
+      "Supported / partial / unavailable / conflicting; as-of and retrieved-at timestamps; method version; source IDs; missing requirements; coverage numerator/denominator. Used consistently from import to AI."
+    ],
+    [
+      "Ledger coverage",
+      "Period start/end, opening units and cost evidence, statement closing units, reconciliation tolerance, unresolved events, supported asset scope. A snapshot is never silently promoted to a full ledger."
+    ],
+    [
+      "NAV/benchmark history",
+      "Exact identity, effective mapping dates, value/date, provider/source, retrieval time, revision identity and quality status. No public feed automatically becomes a licensed commercial history service."
+    ],
+    [
+      "Insight",
+      "Observation and calculation inputs separated from advice; method/threshold version, comparable cohort/window, measured result, source dates, confidence in data coverage and explicit abstention reasons."
+    ],
+    [
+      "Provider connection",
+      "Owner, provider connection ID, consent scope/status/expiry, approved data period, last successful/partial refresh, idempotency keys and revocation state. Never persist OTP or raw CAS in logs."
+    ]
+  ],
+  "prs": [
+    {
+      "id": "PR0",
+      "phase": "1 · Security and truthfulness",
+      "title": "Benchmark evidence, reuse policy and release gates",
+      "now": "Ready for documentation review; added locally in this track.",
+      "depends": [],
+      "change": [
+        "docs/benchmarking/registry.json",
+        "docs/benchmarking/report.html",
+        "docs/benchmarking/acceptance.csv",
+        "docs/trust-foundation.md"
+      ],
+      "build": [],
+      "scope": "Record source dates, pinned commits, license evidence, exclusions, acceptance cases and future PR boundaries. No external code or runtime dependency added.",
+      "gate": "Review matrix and exclusions; ensure every planned metric has data requirements and an unavailable state. No production mutation.",
+      "rollback": "Documentation-only revert."
+    },
+    {
+      "id": "PR1",
+      "phase": "1 · Security and truthfulness",
+      "title": "Finish trustworthy import and account acceptance",
+      "now": "Can build/review locally; real-account acceptance is a separate consented session.",
+      "depends": [
+        "PR0"
+      ],
+      "change": [
+        "src/lib/server/http.ts",
+        "src/lib/server/imports.ts",
+        "src/components/ImportPortfolio.tsx",
+        "src/components/PortfolioOverview.tsx",
+        "src/app/privacy/page.tsx",
+        "tests/database.test.ts"
+      ],
+      "build": [
+        "src/lib/portfolio/coverage.ts",
+        "src/components/EvidenceStatus.tsx",
+        "tests/coverage.test.ts",
+        "tests/import-flow.test.ts"
+      ],
+      "scope": "Shared evidence status and freshness; clear distinction between reported cost and lifetime contributions. Preserve Supabase-only auth and FolioKey tokens. Add safe error/freshness telemetry with no financial or identity payloads.",
+      "gate": "Owner isolation, anonymous rejection, atomic replacement rollback, duplicate commit, consent and missing values; desktop/mobile import review. Document existing exposed-key rotation separately; do not extend the temporary fallback in this track.",
+      "rollback": "Feature flag for new presentation; keep previous verified snapshot and current import contract."
+    },
+    {
+      "id": "PR2",
+      "phase": "2 · Canonical import and ledger",
+      "title": "Canonical events, provenance and reconciliation",
+      "now": "Can implement against synthetic fixtures now; production migration stays unapplied pending review.",
+      "depends": [
+        "PR1"
+      ],
+      "change": [
+        "src/lib/portfolio/import.ts",
+        "src/lib/server/imports.ts",
+        "src/app/api/portfolio/import/commit/route.ts",
+        "src/app/api/portfolio/transactions/route.ts",
+        "src/app/transactions/page.tsx"
+      ],
+      "build": [
+        "src/lib/portfolio/canonical.ts",
+        "src/lib/portfolio/decimal.ts",
+        "src/lib/portfolio/identity.ts",
+        "src/lib/portfolio/ledger.ts",
+        "src/lib/portfolio/reconcile.ts",
+        "src/lib/portfolio/lots.ts",
+        "tests/ledger.test.ts",
+        "tests/reconciliation.test.ts",
+        "supabase/migrations/<review-timestamp>_canonical_ledger.sql"
+      ],
+      "scope": "Append immutable purchase/redemption/switch/dividend/fee/transfer events with original source references and corrections. Exact scheme + plan + option + owner-scoped folio identity. Decimal amounts/units; no guessed opening cost. Quarantine conflicting duplicates, unmatched switches and incomplete opening history. Snapshot replacement must not erase the ledger.",
+      "gate": "Two identical legitimate transactions survive; overlapping statements deduplicate; corrections replay; transfer/split carry cost only with evidence; unmatched sells block affected performance/tax; source units reconcile within documented precision.",
+      "rollback": "Additive shadow tables and read flag; old snapshot import remains usable. No automatic backfill from invented legacy purchase dates."
+    },
+    {
+      "id": "PR2A",
+      "phase": "2 · Provider ingestion branch",
+      "title": "Mobile-led consent connection, provider chosen after eligibility review",
+      "now": "Provider interface and fake-provider tests can be built now; live activation is blocked on contracted access and verified coverage.",
+      "depends": [
+        "PR2"
+      ],
+      "change": [
+        "src/app/connect/page.tsx",
+        "src/components/ImportPortfolio.tsx"
+      ],
+      "build": [
+        "src/lib/providers/portfolio-connection.ts",
+        "src/lib/server/connections.ts",
+        "src/app/api/connections/start/route.ts",
+        "src/app/api/connections/[id]/route.ts",
+        "src/app/api/connections/[id]/revoke/route.ts",
+        "src/app/api/connections/webhook/route.ts",
+        "tests/connections.test.ts",
+        "supabase/migrations/<review-timestamp>_portfolio_connections.sql"
+      ],
+      "scope": "Supabase user owns each connection. Provider-hosted mobile/OTP/account-selection/consent; exact required inputs follow documented contract. Fetch → validate → canonical staging → review/commit. Verify webhook authentication, replay protection and server-side consent state; never trust redirect success alone.",
+      "gate": "Wrong/expired OTP, cancellation, consent expiry/revoke, partial AMC coverage, repeated callback and delayed response. Never promise all accounts from mobile alone. No PAN/OTP in logs; no provider secret in browser.",
+      "rollback": "Disable connection flag; retain consented CAS upload. Stop scheduled retrieval on revoked/expired consent."
+    },
+    {
+      "id": "PR2B",
+      "phase": "2 · Optional parser evaluation",
+      "title": "Offline CAS parser pilot",
+      "now": "Research candidate only; separate dependency/native-code review before installation or execution.",
+      "depends": [
+        "PR2"
+      ],
+      "change": [],
+      "build": [
+        "experiments/local-cas-parser/manifest.json",
+        "experiments/local-cas-parser/acceptance.json",
+        "tests/fixtures/cas/synthetic/"
+      ],
+      "scope": "Evaluate codereverser/casparser behind canonical import contracts in an isolated local worker using synthetic documents. Review MIT and transitive/native notices; do not replace the paid provider or assume identical output schemas.",
+      "gate": "Encrypted/corrupt/oversized PDFs, timeout and memory limits, summary versus detailed statements, no raw PII persisted, no unapproved egress. Independent source reconciliation.",
+      "rollback": "Experiment stays outside production build; omit dependency if gates fail."
+    },
+    {
+      "id": "PR3",
+      "phase": "3 · Performance and NAV history",
+      "title": "Transaction-backed return engine and dated NAV store",
+      "now": "Pure calculations and synthetic history tests now; live history ingest only after data rights/coverage review.",
+      "depends": [
+        "PR2"
+      ],
+      "change": [
+        "src/lib/portfolio/nav.ts",
+        "src/app/api/nav-refresh/route.ts",
+        "src/components/PortfolioOverview.tsx"
+      ],
+      "build": [
+        "src/lib/providers/nav-history.ts",
+        "src/lib/portfolio/cashflows.ts",
+        "src/lib/portfolio/performance.ts",
+        "src/lib/portfolio/xirr.ts",
+        "src/lib/portfolio/valuation.ts",
+        "src/app/api/portfolio/performance/route.ts",
+        "tests/performance.test.ts",
+        "tests/nav-history.test.ts",
+        "supabase/migrations/<review-timestamp>_nav_history.sql"
+      ],
+      "scope": "Store source, retrieval time, NAV date, effective scheme mapping and revisions. Portfolio money-weighted return uses dated external flows plus terminal value; fund and portfolio boundaries treat internal switches differently. Historical valuations require units at each date; no guessed backward charts. Label absolute gain, realized gain, unrealized gain and contributions distinctly.",
+      "gate": "Hand-verifiable cashflows and independent solver cross-check; no root/multiple roots/non-convergence; terminal valuation date, dividends, full redemption, leap days and internal switches. Reject stale/conflicting/future NAVs; no silent forward fill or plan merge.",
+      "rollback": "Return unavailable with reason; no fallback to estimated returns or fabricated chart."
+    },
+    {
+      "id": "PR4",
+      "phase": "4 · Benchmark/category review",
+      "title": "Comparable fund cohorts and explainable underperformance",
+      "now": "Contracts and fixtures now; production analytics await licensed point-in-time category/benchmark histories.",
+      "depends": [
+        "PR3"
+      ],
+      "change": [
+        "src/lib/portfolio/insights.ts",
+        "src/app/api/intelligence/route.ts",
+        "src/app/intelligence/page.tsx",
+        "src/app/compare/page.tsx",
+        "src/app/screener/page.tsx"
+      ],
+      "build": [
+        "src/lib/intelligence/evidence.ts",
+        "src/lib/intelligence/categories.ts",
+        "src/lib/intelligence/benchmarks.ts",
+        "src/lib/intelligence/consistency.ts",
+        "src/lib/intelligence/underperformance.ts",
+        "tests/benchmark.test.ts",
+        "tests/underperformance.test.ts"
+      ],
+      "scope": "Use matching plan/option/category and effective dates; suitable total-return benchmark where licensed. Fund NAV time-weighted comparisons differ from investor XIRR comparisons; a cashflow-matched benchmark is needed for the latter. Version original windows/thresholds and publish reasons. Unrated is not bad.",
+      "gate": "No look-ahead/survivorship bias; closed/merged funds and category changes represented; short history and mixed benchmarks abstain. Validate windows/weights on held-out history before labels influence decisions.",
+      "rollback": "Disable labels/ranking; retain transparent measured values with evidence coverage."
+    },
+    {
+      "id": "PR5",
+      "phase": "5 · Overlap and look-through",
+      "title": "Dated underlying-security exposure",
+      "now": "Engine fixtures now; live calculations require permitted holdings disclosures and security master.",
+      "depends": [
+        "PR4"
+      ],
+      "change": [
+        "src/app/intelligence/page.tsx",
+        "src/app/compare/page.tsx"
+      ],
+      "build": [
+        "src/lib/providers/fund-holdings.ts",
+        "src/lib/intelligence/security-master.ts",
+        "src/lib/intelligence/overlap.ts",
+        "src/lib/intelligence/look-through.ts",
+        "src/components/PortfolioExposure.tsx",
+        "tests/overlap.test.ts"
+      ],
+      "scope": "Original documented weighted common-holdings measure; distinguish common-name count, pairwise overlap and portfolio-weighted security exposure. Keep cash, derivatives, foreign holdings and unknown coverage separate. Multi-level funds need cycle detection and explicit depth limits.",
+      "gate": "Identical/disjoint/partial holdings, duplicate securities, different disclosure dates, fund-of-fund loops and incomplete totals. Missing holdings must never produce reassuring 0% overlap. No copied competitor thresholds.",
+      "rollback": "Hide incomplete metric with coverage reason; keep simple AMC/category observations."
+    },
+    {
+      "id": "PR6",
+      "phase": "5 · Monitoring and reports",
+      "title": "Original monthly review with evidence changes",
+      "now": "Report schema/UI with clearly synthetic fixtures now; scheduled production jobs wait for prior engines and operational review.",
+      "depends": [
+        "PR4",
+        "PR5"
+      ],
+      "change": [
+        "src/app/reports/page.tsx",
+        "src/app/intelligence/page.tsx"
+      ],
+      "build": [
+        "src/lib/intelligence/monitoring.ts",
+        "src/lib/reports/monthly-review.ts",
+        "src/app/api/reports/monthly/route.ts",
+        "tests/monthly-review.test.ts"
+      ],
+      "scope": "Immutable in-app review: coverage, contributions versus growth, changed exposures, benchmark context and unresolved issues. Show within-criteria/monitor/review/insufficient states with versioned reasons. Discipline checks require a verified expected schedule and complete ledger; no assumed missed SIP.",
+      "gate": "Idempotent month/job key, no report on stale data disguised as current, correct month-end dates, repeated-run reproducibility and alert deduplication. Email/push only after separate opt-in and delivery configuration.",
+      "rollback": "Disable scheduling; retained reports remain dated historical records."
+    },
+    {
+      "id": "PR7",
+      "phase": "6 · Goals/risk/rebalance",
+      "title": "Suitability and explicit planning scenarios",
+      "now": "Original forms and scenario contracts now; personalized recommendations wait for verified inputs and operating-model review.",
+      "depends": [
+        "PR6"
+      ],
+      "change": [
+        "src/app/onboarding/page.tsx",
+        "src/app/risk-profile/page.tsx",
+        "src/app/goals/page.tsx",
+        "src/app/rebalance/page.tsx",
+        "src/app/sips/page.tsx"
+      ],
+      "build": [
+        "src/lib/planning/risk-profile.ts",
+        "src/lib/planning/goals.ts",
+        "src/lib/planning/rebalance.ts",
+        "src/lib/intelligence/eligibility.ts",
+        "src/lib/intelligence/ranking.ts",
+        "tests/planning.test.ts"
+      ],
+      "scope": "Separate capacity/tolerance/liquidity/horizon; version answers and allow correction. Scenario assumptions are user-visible, not forecasts. Rank only eligible comparable funds from verified features; show sensitivity and why excluded. Prefer contribution-based rebalance options before taxable actions.",
+      "gate": "Incomplete/contradictory profiles abstain; zero/negative contributions and short horizons; goal funds not double-counted; no guarantee or universal best-fund claim; held-out recommendation evaluation.",
+      "rollback": "Planning stays informational; recommendation flag off; no order generated."
+    },
+    {
+      "id": "PR8",
+      "phase": "6 · Tax/cost intelligence",
+      "title": "Date-versioned tax lots, exit loads and direct/regular scenarios",
+      "now": "Interface and synthetic cases now; rules require current authoritative verification and independent specialist review.",
+      "depends": [
+        "PR7"
+      ],
+      "change": [
+        "src/app/capital-gains/page.tsx",
+        "src/app/tax-harvesting/page.tsx",
+        "src/app/direct-vs-regular/page.tsx"
+      ],
+      "build": [
+        "src/lib/tax/india/policy.ts",
+        "src/lib/tax/india/gains.ts",
+        "src/lib/tax/exit-load.ts",
+        "src/lib/planning/direct-regular.ts",
+        "tests/tax-policy.test.ts"
+      ],
+      "scope": "FIFO where applicable, original acquisition/carryover evidence, grandfathering and rule effective dates. Distinguish gain estimation from user-specific tax liability. Include costs/lock-ins and cost of switching; never assume fee differential guarantees equivalent future performance.",
+      "gate": "Rule-boundary dates, missing basis, transfers, partial redemption, lock-ins, exit-load schedules, fund classification and user tax assumptions. Reconcile supported cases to independent statements.",
+      "rollback": "Withhold tax/switch estimates when unsupported; preserve original lots and source references."
+    },
+    {
+      "id": "PR9",
+      "phase": "6 · Execution readiness only",
+      "title": "Order intent boundary without live execution",
+      "now": "Architecture/readiness spec only until provider, business eligibility and separate launch review exist.",
+      "depends": [
+        "PR8"
+      ],
+      "change": [],
+      "build": [
+        "src/lib/execution/order-intent.ts",
+        "src/lib/execution/eligibility.ts",
+        "tests/order-intent.test.ts"
+      ],
+      "scope": "Separate observation → scenario → recommendation → user-confirmed order intent. No broker scraping, credentials harvesting, payment routing or real order calls in this track.",
+      "gate": "Explicit confirmation, suitability/cost visibility, idempotency and settlement reconciliation requirements documented. Never infer transaction permission from portfolio-read consent.",
+      "rollback": "No live execution provider enabled."
+    },
+    {
+      "id": "PR10",
+      "phase": "7 · AI explanation",
+      "title": "Evidence-bound explanations after deterministic engines",
+      "now": "Typed evidence envelope and offline evaluation plan now; no model/provider call in this track.",
+      "depends": [
+        "PR8"
+      ],
+      "change": [
+        "src/lib/providers/jev.ts",
+        "src/app/api/ai/insights/route.ts",
+        "src/app/chat/page.tsx"
+      ],
+      "build": [
+        "src/lib/intelligence/explanations.ts",
+        "src/lib/intelligence/claim-validator.ts",
+        "tests/ai-explanations.test.ts",
+        "evals/portfolio-explanations.json"
+      ],
+      "scope": "Generate language only from approved calculation/evidence records carrying method version, as-of dates and limitations. Jev remains optional research triage until its use is validated. No raw CAS, PAN, OTP or unrestricted database tools supplied to a model.",
+      "gate": "Exact numeric/source fidelity; abstention on missing evidence; prompt-injection and stale/conflicting-input tests; redaction; provider outage fallback to deterministic prose. No autonomous trade or unsupported best-fund claim.",
+      "rollback": "AI flag off; deterministic findings remain available."
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "A01",
+      "pr": "PR0",
+      "area": "Source provenance",
+      "expected": "Every imported idea links to public evidence and repository commit/license; unknowns marked unknown.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A02",
+      "pr": "PR0",
+      "area": "Reuse compliance",
+      "expected": "Any future copied/adapted module has file-level license/dependency review, notices and recorded changes; forbidden-source count remains zero.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A03",
+      "pr": "PR1",
+      "area": "Owner isolation",
+      "expected": "Synthetic users cannot read, stage, commit, refresh or revoke each other’s records; anonymous requests denied.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A04",
+      "pr": "PR1",
+      "area": "Truthful coverage",
+      "expected": "Null is not zero; partial value is not whole-portfolio value; reported cost is not labeled lifetime contributions.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A05",
+      "pr": "PR1",
+      "area": "Import integrity",
+      "expected": "Failure mid-commit restores previous snapshot; retries do not double-import; existing folios remain separate.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A06",
+      "pr": "PR1",
+      "area": "Mobile and accessibility",
+      "expected": "At 360/390/768px, upload/preview/error/consent work with keyboard and screen reader; table scroll is contained; focus and text remain readable.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A07",
+      "pr": "PR2",
+      "area": "Dedup and corrections",
+      "expected": "Repeated files deduplicate; equal legitimate same-day transactions survive; revised source rows create auditable supersession.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A08",
+      "pr": "PR2",
+      "area": "Reconciliation",
+      "expected": "Incomplete opening balances or unmatched sells/switches are quarantined; no guessed cost/date or zero-clamped oversell.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A09",
+      "pr": "PR2",
+      "area": "Precision",
+      "expected": "Document decimal scale per source; sums reconcile to stated precision; binary floating-point drift cannot affect lot allocation.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A10",
+      "pr": "PR2A",
+      "area": "Consent lifecycle",
+      "expected": "Synthetic pending/approved/rejected/expired/revoked states tested; callbacks replay safely and cannot override server verification.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A11",
+      "pr": "PR2A",
+      "area": "Partial retrieval",
+      "expected": "Missing AMC/folio is reported; partial sync cannot replace complete holdings as if complete; retry preserves source identity.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A12",
+      "pr": "PR2B",
+      "area": "Parser containment",
+      "expected": "Synthetic malformed/password-protected PDFs respect CPU/memory/time limits and produce no PII logs or unapproved egress.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A13",
+      "pr": "PR3",
+      "area": "Cashflow accounting",
+      "expected": "Purchases, payouts, redemptions, fees, switches and terminal valuation have correct signs/boundaries; portfolio XIRR is not an average.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A14",
+      "pr": "PR3",
+      "area": "XIRR ambiguity",
+      "expected": "Known independent fixtures, residual tolerance, multiple/no roots, same-day-only flows and non-convergence return explicit supported/unsupported status.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A15",
+      "pr": "PR3",
+      "area": "NAV history quality",
+      "expected": "Source-date versus retrieval-date retained; future/conflicting points rejected; missing history not interpolated into reported returns.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A16",
+      "pr": "PR4",
+      "area": "Fair comparisons",
+      "expected": "Same time window and appropriate benchmark; investor XIRR never directly compared with unmatched index CAGR; categories are effective-dated.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A17",
+      "pr": "PR4",
+      "area": "Backtest integrity",
+      "expected": "Inactive funds and history revisions tested; no look-ahead or survivorship bias; data shortfall yields insufficient evidence.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A18",
+      "pr": "PR5",
+      "area": "Overlap coverage",
+      "expected": "Identical/disjoint fixtures reconcile; missing data yields unavailable, not zero; partial holdings and date mismatch shown.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A19",
+      "pr": "PR5",
+      "area": "Look-through accounting",
+      "expected": "Aggregate exposure respects fund weights, cash/unknown buckets and recursion limits; no security counted twice.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A20",
+      "pr": "PR6",
+      "area": "Monthly reporting",
+      "expected": "Same inputs produce same dated report; stale feeds cannot generate a fresh-looking report; no inferred missed SIP without schedule evidence.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A21",
+      "pr": "PR7",
+      "area": "Suitability/scenarios",
+      "expected": "Missing horizon/liquidity/capacity blocks personal ranking; assumptions explicit and editable; no guaranteed outcome.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A22",
+      "pr": "PR8",
+      "area": "Tax/exit-load evidence",
+      "expected": "Effective-date boundary fixtures and independent statement reconciliation; unknown basis/rules withhold estimates.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A23",
+      "pr": "PR9",
+      "area": "Execution separation",
+      "expected": "Read consent cannot authorize orders; no live broker/payment call in readiness work.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A24",
+      "pr": "PR10",
+      "area": "AI fidelity",
+      "expected": "Numbers and citations match deterministic evidence; injection, missing-data and provider-failure tests abstain or use safe template.",
+      "status": "Planned — not run by this benchmarking track"
+    },
+    {
+      "id": "A25",
+      "pr": "All runtime PRs",
+      "area": "Release and recovery",
+      "expected": "Review required before merge/deploy; local/isolated staging migrations only; rollback rehearsed, telemetry redacted, feature disabled when prerequisite fails.",
+      "status": "Planned — not run by this benchmarking track"
+    }
+  ]
+}

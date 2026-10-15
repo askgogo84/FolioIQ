@@ -1,5 +1,7 @@
 # Trust foundation — implementation and remaining work
 
+Benchmarking track added 14 October 2026: [lawful competitor/open-source review and PR plan](benchmarking/report.html), [pinned evidence and license registry](benchmarking/registry.json), and [planned acceptance matrix](benchmarking/acceptance.csv). This documentation-only track preserves the phase order below and adds no production changes. External code reuse, provider access and each implementation release require their recorded review gates; no merge or deployment is authorized without review.
+
 Date: 13 October 2026. Baseline: `ccc9a54` (15 June 2026). No new commits in the preceding approximately three months; production still served that baseline during the audit. This release addresses security and misleading output. It does not finish the Dezerve-class product roadmap.
 
 Verification update: 25 automated checks pass, including an empty Supabase preview and safe migration replay. GitHub quality checks and Supabase Preview pass. The owner applied the reviewed migration through Supabase's SQL editor; read-only verification confirmed all 19 existing holdings remain, all five active portfolio tables have RLS, obsolete public OTP/nutrition access is denied, and all three RPCs are security-invoker with anonymous execution denied. Preview public Supabase configuration is scoped to this branch's isolated database; production connection settings are unchanged.
