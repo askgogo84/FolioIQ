@@ -4,6 +4,7 @@ import "./globals.css";
 import "./premium.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { createClient } from "@/utils/supabase/server";
+import SmoothScroll from "@/components/scroll/smooth-scroll";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +45,7 @@ export default async function RootLayout({
         <AuthProvider key={user?.id || "guest"} initialUser={user}>
           {children}
         </AuthProvider>
+        <SmoothScroll />
       </body>
     </html>
   );
